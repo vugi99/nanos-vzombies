@@ -85,8 +85,12 @@ DestroyZombie_After_death_ms = 20000
 Max_zombies_spawned = 40
 
 Zombies_Acceptance_Radius = 70.0 -- At which distance from the player they can hurt him
+Zombies_Route_Update_ms = 100
+Zombies_Look_At_Update_ms = 300
 
 Zombies_Target_Refresh_ms = 2500
+
+Zombies_Ragdoll_Get_Up_Timeout_ms = 10000
 
 Zombies_Damage_Amount = 20
 Zombies_Damage_Barricade_Cooldown_ms = 3000

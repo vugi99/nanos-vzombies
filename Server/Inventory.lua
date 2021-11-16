@@ -364,7 +364,9 @@ Grenade.Subscribe("Throw", function(grenade)
         local char = GetCharacterFromId(char_id)
         if char then
             if not char:GetValue("PlayerDown") then
-                char:SetValue("ZGrenadesNB", char:GetValue("ZGrenadesNB") - 1, true)
+                if not ZDEV_MODE then
+                    char:SetValue("ZGrenadesNB", char:GetValue("ZGrenadesNB") - 1, true)
+                end
 
                 local charInvID = GetCharacterInventory(char)
                 if charInvID then

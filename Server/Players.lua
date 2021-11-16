@@ -71,6 +71,12 @@ function PlayerCharacterDie(char)
         end
         char:Destroy()
         Buy(ply, math.floor(ply:GetValue("ZMoney") * Dead_MoneyLost / 100))
+
+        -- For When the character is destroyed because of Z Limits
+        local al_nb = GetPlayersAliveNB()
+        if al_nb == 0 then
+            RoundFinished(false, true)
+        end
     end
 end
 
@@ -180,8 +186,8 @@ Character.Subscribe("TakeDamage", function(char, damage, bone, type, from_direct
     end
 end)
 
-Player.Subscribe("Spawn", function(ply)
-    print("Player Joined")
+function HandlePlayerJoin(ply)
+    print("Player Joined", ply:GetAccountName())
     Events.CallRemote("LoadMapConfig", ply, MAP_CONFIG_TO_SEND)
     if ROUND_NB > 0 then
         Events.CallRemote("SetClientRoundNumber", ply, ROUND_NB)
@@ -197,10 +203,12 @@ Player.Subscribe("Spawn", function(ply)
     else
         table.insert(WAITING_PLAYERS, ply)
     end
-end)
+end
+Player.Subscribe("Spawn", HandlePlayerJoin)
+Events.Subscribe("VZPlayerJoinedAfterReload", HandlePlayerJoin)
 
 Player.Subscribe("Destroy", function(ply)
-    print("Player Left")
+    print("Player Left", ply:GetAccountName())
     local char = ply:GetControlledCharacter()
     if char then
         if char:GetValue("PlayerDown") then

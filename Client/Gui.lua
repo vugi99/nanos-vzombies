@@ -4,6 +4,10 @@
 -- Group 1 : Buy something text
 -- Group 2 : Health text
 
+for i = 1, 2 do
+    Render.ClearItems(i)
+end
+
 GUI = WebUI("vzombies GUI", "file:///gui/index.html", true, true, true)
 
 ROUND_NB = 0
@@ -321,13 +325,6 @@ if ZDEV_MODE then
     Character.Subscribe("Spawn", function(character)
         character:SetHighlightEnabled(true, 0)
     end)
-
-    for k, v in pairs(StaticMesh.GetPairs()) do
-        if v:GetValue("MapPowerHANDLE") then
-            print("HADLE")
-            v:SetHighlightEnabled(true, 0)
-        end
-    end
 end
 
 
@@ -371,23 +368,3 @@ Character.Subscribe("Destroy", function(char)
         UpdateGrenadesNB(0)
     end
 end)
-
-if ZDEV_MODE then
-    local timer_crash
-    Client.Subscribe("Chat", function(text)
-        if text == "/trycrash" then
-            local money = 500
-            AddPlayerMoney(666, money)
-            timer_crash = Timer.SetInterval(function()
-                money = money + math.random(50)
-                SetPlayerMoney(666, money)
-            end, 50)
-        elseif text == "/stopcrash" then
-            if timer_crash then
-                Timer.ClearInterval(timer_crash)
-                timer_crash = nil
-                RemovePlayerMoney(666)
-            end
-        end
-    end)
-end

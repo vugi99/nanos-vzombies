@@ -75,45 +75,55 @@ end
 function ZombieRefreshTarget(zombie)
     if zombie:IsValid() then
         if not zombie:GetValue("PunchCoolDownTimer") then
-            local cur_target = zombie:GetValue("Target")
-            if cur_target then
-                cur_target = GetCharacterFromId(cur_target)
-            end
-            local nearest_ply_char
-            local nearest_dist_sq
-            local zombie_loc = zombie:GetLocation()
-            for k, v in pairs(Character.GetPairs()) do
-                local ply = v:GetPlayer()
-                if ply then
-                    if not v:GetValue("PlayerDown") then
-                        local dist_sq = zombie_loc:DistanceSquared(v:GetLocation())
-                        if (not nearest_ply_char or (nearest_dist_sq > dist_sq)) then
-                            nearest_ply_char = v
-                            nearest_dist_sq = dist_sq
+            if not zombie:IsInRagdollMode() then
+                local cur_target = zombie:GetValue("Target")
+                if cur_target then
+                    cur_target = GetCharacterFromId(cur_target)
+                end
+                local nearest_ply_char
+                local nearest_dist_sq
+                local zombie_loc = zombie:GetLocation()
+                for k, v in pairs(Character.GetPairs()) do
+                    local ply = v:GetPlayer()
+                    if ply then
+                        if not v:GetValue("PlayerDown") then
+                            local dist_sq = zombie_loc:DistanceSquared(v:GetLocation())
+                            if (not nearest_ply_char or (nearest_dist_sq > dist_sq)) then
+                                nearest_ply_char = v
+                                nearest_dist_sq = dist_sq
+                            end
                         end
                     end
                 end
-            end
-            if (nearest_ply_char and (not cur_target or cur_target ~= nearest_ply_char)) then
-                zombie:SetValue(
-                    "Target_type",
-                    "player",
-                    false
-                )
-                zombie:SetValue(
-                    "Target",
-                    nearest_ply_char:GetID(),
-                    false
-                )
-                Package.Call("tempfollow", "FollowCharacter", zombie, nearest_ply_char, Zombies_Acceptance_Radius, 100)
-            elseif (not nearest_ply_char) then
-                --print("StopFollow")
-                zombie:SetValue(
-                    "Target",
-                    nil,
-                    false
-                )
-                Package.Call("tempfollow", "StopFollowCharacter", zombie)
+                if (nearest_ply_char and (not cur_target or cur_target ~= nearest_ply_char)) then
+                    zombie:SetValue(
+                        "Target_type",
+                        "player",
+                        false
+                    )
+                    zombie:SetValue(
+                        "Target",
+                        nearest_ply_char:GetID(),
+                        false
+                    )
+                    
+                    zombie:Follow(nearest_ply_char, Zombies_Acceptance_Radius, true, true, Zombies_Route_Update_ms / 1000)
+                    UpdateZombieLookAt(zombie)
+
+                    -- OLD tempfollow
+                    --Package.Call("tempfollow", "FollowCharacter", zombie, nearest_ply_char, Zombies_Acceptance_Radius, 100)
+                elseif (not nearest_ply_char) then
+                    --print("StopFollow")
+                    zombie:SetValue(
+                        "Target",
+                        nil,
+                        false
+                    )
+
+                    zombie:MoveTo(zombie_loc, 100)
+                    -- OLD tempfollow
+                    --Package.Call("tempfollow", "StopFollowCharacter", zombie)
+                end
             end
         end
     end
@@ -208,51 +218,47 @@ Character.Subscribe("MoveCompleted", function(zombie, succeeded)
                     zombie:SetHealth(0)
                 end, 1)
             end
-        end
-    end
-end)
-
-Events.Subscribe("FollowCharacterCompleted", function(char, FollowingChar)
-    local zombie = char
-    local target_type = zombie:GetValue("Target_type")
-    if target_type == "player" then
-        if not zombie:GetValue("CanDamageTimeout") then
-            local charid = zombie:GetValue("Target")
-            local plychar = GetCharacterFromId(charid)
-            if not ZDEV_MODE then
-                plychar:ApplyDamage(Zombies_Damage_Amount, "", DamageType.Punch)
-            end
-            if zombie:IsValid() then
-                zombie:PlayAnimation(Zombies_Attack_Animation, AnimationSlotType.FullBody, false)
+        elseif target_type == "player" then
+            --print("MoveCompleted", "player", succeeded)
+            if (succeeded and not zombie:GetValue("CanDamageTimeout")) then
+                local charid = zombie:GetValue("Target")
+                if charid then
+                    local plychar = GetCharacterFromId(charid)
+                    if plychar then
+                        if not ZDEV_MODE then
+                            plychar:ApplyDamage(Zombies_Damage_Amount, "", DamageType.Punch)
+                        end
+                        zombie:PlayAnimation(Zombies_Attack_Animation, AnimationSlotType.FullBody, false)
+                        zombie:SetValue("Target", nil, false)
+                        zombie:SetValue("StuckNB", nil, false)
+                        if not ZDEV_MODE then
+                            zombie:SetValue("PunchCoolDownTimer", Timer.SetTimeout(function()
+                                if zombie:IsValid() then
+                                    zombie:SetValue("PunchCoolDownTimer", nil, false)
+                                    local zloc = zombie:GetLocation()
+                                    zombie:SetValue("LastLocation", {zloc.X, zloc.Y, zloc.Z}, false)
+                                    zombie:SetValue("StuckNB", 0, false)
+                                end
+                            end, Zombies_Damage_Cooldown_ms), false)
+                        else
+                            zombie:SetValue("PunchCoolDownTimer", true, false)
+                        end
+        
+        
+                        local zombie_loc = zombie:GetLocation()
+                        local play_sound_for_players = GetPlayersInRadius(zombie_loc, RANDOM_SOUNDS.zombie_attack.falloff_distance)
+                        for i, v in ipairs(play_sound_for_players) do
+                            Events.CallRemote("ZombieAttackSound", v, VZ_RandomSound(RANDOM_SOUNDS.zombie_attack), zombie_loc)
+                        end
+                    end
+                end
+            else
                 zombie:SetValue("Target", nil, false)
                 zombie:SetValue("StuckNB", nil, false)
-                if not ZDEV_MODE then
-                    zombie:SetValue("PunchCoolDownTimer", Timer.SetTimeout(function()
-                        if zombie:IsValid() then
-                            zombie:SetValue("PunchCoolDownTimer", nil, false)
-                            local zloc = zombie:GetLocation()
-                            zombie:SetValue("LastLocation", {zloc.X, zloc.Y, zloc.Z}, false)
-                            zombie:SetValue("StuckNB", 0, false)
-                        end
-                    end, Zombies_Damage_Cooldown_ms), false)
-                else
-                    zombie:SetValue("PunchCoolDownTimer", true, false)
-                end
-
-
-                local zombie_loc = zombie:GetLocation()
-                local play_sound_for_players = GetPlayersInRadius(zombie_loc, RANDOM_SOUNDS.zombie_attack.falloff_distance)
-                for i, v in ipairs(play_sound_for_players) do
-                    Events.CallRemote("ZombieAttackSound", v, VZ_RandomSound(RANDOM_SOUNDS.zombie_attack), zombie_loc)
-                end
             end
-        else
-            zombie:SetValue("Target", nil, false)
-            zombie:SetValue("StuckNB", nil, false)
         end
     end
 end)
-
 
 Character.Subscribe("Death", function(char, last_damage_taken, last_bone_damage, damage_type_reason, hit_from_direction, instigator)
     if char:GetValue("Zombie") == true then
@@ -366,26 +372,87 @@ Timer.SetInterval(function()
         if v:IsValid() then
             if v:GetValue("Zombie") then
                 if v:GetHealth() > 0 then
-                    local stuck_nb = v:GetValue("StuckNB")
-                    local last_loc = v:GetValue("LastLocation")
-                    if (stuck_nb and last_loc) then
-                        last_loc = Vector(last_loc[1], last_loc[2], last_loc[3])
-                        local loc = v:GetLocation()
-                        if last_loc:DistanceSquared(loc) <= Zombies_Stuck_DistanceSq then
-                            stuck_nb = stuck_nb + 1
-                            v:SetValue("StuckNB", stuck_nb, false)
-                            if stuck_nb >= Zombies_Stuck_Respawn_After_x_Stuck then
-                                SpawnZombie(v:GetValue("ZombieType"))
-                                v:SetHealth(0)
-                                --print("Zombie Respawn, stuck")
+                    if not v:IsInRagdollMode() then
+                        local stuck_nb = v:GetValue("StuckNB")
+                        local last_loc = v:GetValue("LastLocation")
+                        if (stuck_nb and last_loc) then
+                            last_loc = Vector(last_loc[1], last_loc[2], last_loc[3])
+                            local loc = v:GetLocation()
+                            if last_loc:DistanceSquared(loc) <= Zombies_Stuck_DistanceSq then
+                                stuck_nb = stuck_nb + 1
+                                v:SetValue("StuckNB", stuck_nb, false)
+                                if stuck_nb >= Zombies_Stuck_Respawn_After_x_Stuck then
+                                    SpawnZombie(v:GetValue("ZombieType"))
+                                    v:SetHealth(0)
+                                    --print("Zombie Respawn, stuck")
+                                end
+                            else
+                                v:SetValue("StuckNB", nil, false)
                             end
-                        else
-                            v:SetValue("StuckNB", nil, false)
+                            v:SetValue("LastLocation", {loc.X, loc.Y, loc.Z}, false)
                         end
-                        v:SetValue("LastLocation", {loc.X, loc.Y, loc.Z}, false)
                     end
                 end
             end
         end
     end
 end, Zombies_Stuck_Check_Each_ms)
+
+function UpdateZombieLookAt(v)
+    if v:IsValid() then
+        if v:GetValue("Zombie") then
+            if v:GetHealth() > 0 then
+                local target_type = v:GetValue("Target_type")
+                if (target_type and target_type == "player") then
+                    local target_charid = v:GetValue("Target")
+                    if target_charid then
+                        local char = GetCharacterFromId(target_charid)
+                        if char then
+                            v:LookAt(char:GetLocation())
+                        end
+                    end
+                end
+            end
+        end
+    end
+end
+
+Timer.SetInterval(function()
+    for k, v in pairs(ZOMBIES_CHARACTERS) do
+        UpdateZombieLookAt(v)
+    end
+end, Zombies_Look_At_Update_ms)
+
+Character.Subscribe("RagdollModeChanged", function(zombie, old_state, new_state)
+    if zombie:GetValue("Zombie") then
+        if new_state then
+            --print("Zombie Ragdoll", zombie:GetHealth())
+            if zombie:GetHealth() > 0 then
+                local target_type = zombie:GetValue("Target_type")
+                if target_type == "barricade" then
+                    if zombie:GetValue("AttackB") then
+                        Timer.ClearInterval(zombie:GetValue("AttackBInterval"))
+                        zombie:SetValue("AttackBInterval", nil, false)
+                        zombie:SetValue("AttackB", nil, false)
+                        zombie:SetValue("AttackBID", nil, false)
+                    end
+                    Timer.SetTimeout(function()
+                        SpawnZombie(zombie:GetValue("ZombieType"))
+                        zombie:SetHealth(0)
+                    end, Zombies_Ragdoll_Get_Up_Timeout_ms)
+                elseif target_type == "player" then
+                    zombie:SetValue("Target", nil, false)
+                    zombie:SetValue("StuckNB", nil, false)
+
+                    Timer.SetTimeout(function()
+                        if zombie:IsValid() then
+                            if zombie:GetHealth() > 0 then
+                                zombie:SetRagdollMode(false)
+                            end
+                        end
+                    end, Zombies_Ragdoll_Get_Up_Timeout_ms)
+                end
+            end
+        end
+    end
+end)

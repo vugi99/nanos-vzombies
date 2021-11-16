@@ -52,6 +52,8 @@ function LoadServerFiles()
     Package.Require("SoundsFuncs.lua")
     Package.Require("Inventory.lua")
     Package.Require("Powerups.lua")
+
+    Events.Call("VZOMBIES_GAMEMODE_LOADED")
 end
 
 
