@@ -3,7 +3,6 @@ POWER_ON = false
 
 
 PLAYING_PLAYERS = {}
-WAITING_PLAYERS = {}
 
 ROUND_NB = 0
 REMAINING_ZOMBIES_TO_SPAWN = 0
@@ -11,10 +10,13 @@ REMAINING_ZOMBIES_TO_SPAWN = 0
 ZOMBIES_TO_SPAWN_TBL = {}
 
 WaitingNewRound_Timer = nil
-WaitingNewWave = false
 
 function RoundFinished(reset_all, restart_game)
     print("RoundFinished", reset_all, restart_game)
+    if WaitingNewRound_Timer then
+        Timer.ClearTimeout(WaitingNewRound_Timer)
+        WaitingNewRound_Timer = nil
+    end
     Timer.ClearInterval(ZOMBIES_SPAWN_INTERVAL)
     ZOMBIES_SPAWN_INTERVAL = 0
     REMAINING_ZOMBIES_TO_SPAWN = 0
@@ -36,7 +38,6 @@ function RoundFinished(reset_all, restart_game)
         DestroyBarricades()
         DestroyMapDoors()
         DestroyPowerups()
-        DestroyMapGrenades()
 
         -- To avoid them buying things in the game over interval
         for k, v in pairs(PLAYING_PLAYERS) do
@@ -53,57 +54,30 @@ function RoundFinished(reset_all, restart_game)
         local t = WaveInterval_ms
         if restart_game then
             t = GameOverInterval_ms
-            if WaitingNewRound_Timer then
-                if WaitingNewWave then
-                    Events.BroadcastRemote("GameOver")
-                    Timer.ClearTimeout(WaitingNewRound_Timer)
-                    WaitingNewRound_Timer = nil
-                    WaitingNewWave = false
-                end
-            else
-                Events.BroadcastRemote("GameOver")
-            end
+            Events.BroadcastRemote("GameOver")
         else
-            if WaitingNewRound_Timer then
-                Timer.ClearTimeout(WaitingNewRound_Timer)
-                WaitingNewRound_Timer = nil
-            end
             Events.BroadcastRemote("WaveFinished")
-            WaitingNewWave = true
         end
-        if not WaitingNewRound_Timer then
-            WaitingNewRound_Timer = Timer.SetTimeout(function()
-                WaitingNewRound_Timer = nil
-                WaitingNewWave = false
-                if PLAYING_PLAYERS_NB > 0 then
-                    StartRound()
-                end
-            end, t)
-        end
-    else
-        if WaitingNewRound_Timer then
-            Timer.ClearTimeout(WaitingNewRound_Timer)
+        WaitingNewRound_Timer = Timer.SetTimeout(function()
             WaitingNewRound_Timer = nil
-            WaitingNewWave = false
-        end
-        if Dynamic_Server_Description then
-            Server.SetDescription(DSD_Idle_Text, false)
-        end
+            if PLAYING_PLAYERS_NB > 0 then
+                StartRound()
+            end
+        end, t)
     end
 end
 
 function StartRound()
-    print("StartRound " .. tostring(ROUND_NB + 1))
+    print("StartRound")
     if ROUND_NB == 0 then
         SpawnMapDoors()
         SpawnMapBarricades()
         PickNewMysteryBox()
         UnlockRoom(1)
-        DestroyMapGrenades()
     end
     ROUND_NB = ROUND_NB + 1
     Events.BroadcastRemote("SetClientRoundNumber", ROUND_NB)
-    REMAINING_ZOMBIES_TO_SPAWN = first_wave_zombies[1] + (Add_at_each_wave[1] * (ROUND_NB - 1)) + (Add_at_each_wave_per_player * (ROUND_NB - 1) * PLAYING_PLAYERS_NB)
+    REMAINING_ZOMBIES_TO_SPAWN = first_wave_zombies[1] + (Add_at_each_wave[1] * (ROUND_NB - 1))
 
     -- Calculate Number of fast zombies and slow zombies to spawn at this wave, add them to the ZOMBIES_TO_SPAWN_TBL tbl so i can use random on this table in the spawn zombie function
     local FastZombiesToSpawnNB = math.floor((Running_Zombies_Percentage_Start + (Added_Running_Zombies_Percentage_At_Each_Wave * (ROUND_NB - 1))) * REMAINING_ZOMBIES_TO_SPAWN / 100)
@@ -122,23 +96,9 @@ function StartRound()
     for k, v in pairs(PLAYING_PLAYERS) do
         if ROUND_NB == 1 then
             v:SetValue("ZMoney", Player_Start_Money, true)
-            v:SetValue("ZScore", 0, false)
-            v:SetValue("ZKills", 0, false)
             SpawnCharacterForPlayer(v, k)
         end
     end
     ZOMBIES_SPAWN_INTERVAL = Timer.SetInterval(SpawnZombieIntervalFunc, math.ceil(Zombies_Spawn_Cooldown/REMAINING_ZOMBIES_TO_SPAWN))
     SpawnZombieIntervalFunc()
-
-    if Dynamic_Server_Description then
-        local new_text = DSD_In_Game_Text[1] .. tostring(ROUND_NB)
-        if DSD_In_Game_Text[2] then
-            new_text = new_text .. DSD_In_Game_Text[2]
-        end
-        Server.SetDescription(new_text, false)
-    end
-end
-
-if Dynamic_Server_Description then
-    Server.SetDescription(DSD_Idle_Text, false)
 end

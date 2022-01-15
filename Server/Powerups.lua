@@ -80,7 +80,6 @@ function PowerupGrabbed(powerup_name, by_char, at_loc)
                             end
                         end
                     end
-                    char:SetValue("ZGrenadesNB", Max_Grenades_NB, true)
                 end
             end
         end

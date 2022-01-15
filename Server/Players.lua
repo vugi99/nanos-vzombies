@@ -1,22 +1,12 @@
 
 
-
-function ZPlayingPlayerInit(ply)
-    PLAYING_PLAYERS_NB = PLAYING_PLAYERS_NB + 1
-    table.insert(PLAYING_PLAYERS, ply)
-    ply:SetValue("ZMoney", Player_Start_Money, true)
-    ply:SetValue("ZScore", 0, false)
-    ply:SetValue("ZKills", 0, false)
-    ply:SetValue("playing", true, false)
-end
-
 function SpawnCharacterForPlayer(ply, spawn_id)
     local cur_char = ply:GetControlledCharacter()
     if cur_char then
         cur_char:Destroy()
     end
 
-    local new_char = Character(PLAYER_SPAWNS[spawn_id].location, PLAYER_SPAWNS[spawn_id].rotation)
+    local new_char = Character(PLAYER_SPAWNS[spawn_id].location)
     new_char:SetCameraMode(CAMERA_MODE)
     new_char:SetFallDamageTaken(0)
     ply:Possess(new_char)
@@ -26,18 +16,16 @@ function SpawnCharacterForPlayer(ply, spawn_id)
     new_char:SetAccelerationSettings(1152, 512, 768, 128, 256, 256, 1024)
     new_char:SetBrakingSettings(2, 2, 128, 3000, 10, 0)
     new_char:SetValue("OwnedPerks", {}, true)
-    new_char:SetValue("ZGrenadesNB", Start_Grenades_NB, true)
 
     AddCharacterWeapon(new_char, Player_Start_Weapon.weapon_name, Player_Start_Weapon.ammo)
 end
 
 function GetPlayersInRadius(loc, radius)
-    local radius_sq = radius * radius
     local in_radius_players = {}
     for k, v in pairs(Character.GetPairs()) do
         local ply = v:GetPlayer()
         if ply then
-            if v:GetLocation():DistanceSquared(loc) <= radius_sq then
+            if v:GetLocation():Distance(loc) <= radius then
                 table.insert(in_radius_players, ply)
             end
         end
@@ -71,12 +59,6 @@ function PlayerCharacterDie(char)
         end
         char:Destroy()
         Buy(ply, math.floor(ply:GetValue("ZMoney") * Dead_MoneyLost / 100))
-
-        -- For When the character is destroyed because of Z Limits
-        local al_nb = GetPlayersAliveNB()
-        if al_nb == 0 then
-            RoundFinished(false, true)
-        end
     end
 end
 
@@ -95,6 +77,7 @@ Character.Subscribe("TakeDamage", function(char, damage, bone, type, from_direct
     local ply = char:GetPlayer()
     if ply then
 
+        -- Tempfix for character in the same team damage
         if instigator then
             return false
         end
@@ -110,17 +93,6 @@ Character.Subscribe("TakeDamage", function(char, damage, bone, type, from_direct
                     ZombieRefreshTarget(v)
                 end
             end
-
-            local grenade = char:GetPicked()
-            if (grenade and NanosUtils.IsA(grenade, Grenade)) then
-                grenade:Destroy()
-                local charInvID = GetCharacterInventory(char)
-                if charInvID then
-                    local Inv = PlayersCharactersWeapons[charInvID]
-                    EquipSlot(char, Inv.selected_slot)
-                end
-            end
-
             char:SetValue(
                 "PlayerDownDieTimer",
                 Timer.SetTimeout(PlayerCharacterDie, PlayerDeadAfterTimerDown_ms, char),
@@ -129,26 +101,6 @@ Character.Subscribe("TakeDamage", function(char, damage, bone, type, from_direct
             char:SetMovementEnabled(false)
             char:SetCanAim(false)
             char:PlayAnimation("nanos-world::A_Mannequin_Sit_Bench", AnimationSlotType.FullBody, true)
-
-            local charInvID = GetCharacterInventory(char)
-            if charInvID then
-                local Inv = PlayersCharactersWeapons[charInvID]
-                for i, v in ipairs(Inv.weapons) do
-                    if v.slot == 3 then
-                        if v.weapon then
-                            if v.weapon:IsValid() then
-                                v.destroying = true
-                                v.weapon:Destroy()
-                            end
-                        end
-                        table.remove(PlayersCharactersWeapons[charInvID].weapons, i)
-                        break
-                    end
-                end
-                if Inv.selected_slot == 3 then
-                    EquipSlot(char, 1)
-                end
-            end
 
             local al_nb = GetPlayersAliveNB()
             if al_nb == 0 then
@@ -186,8 +138,9 @@ Character.Subscribe("TakeDamage", function(char, damage, bone, type, from_direct
     end
 end)
 
-function HandlePlayerJoin(ply)
-    print("Player Joined", ply:GetAccountName())
+Player.Subscribe("Spawn", function(ply)
+    print("Player Joined")
+    PLAYERS_NB = PLAYERS_NB + 1
     Events.CallRemote("LoadMapConfig", ply, MAP_CONFIG_TO_SEND)
     if ROUND_NB > 0 then
         Events.CallRemote("SetClientRoundNumber", ply, ROUND_NB)
@@ -196,19 +149,23 @@ function HandlePlayerJoin(ply)
         Events.CallRemote("SetClientPowerON", ply, true)
     end
     if PLAYING_PLAYERS_NB < MAX_PLAYERS then
-        ZPlayingPlayerInit(ply)
+        PLAYING_PLAYERS_NB = PLAYING_PLAYERS_NB + 1
+        table.insert(PLAYING_PLAYERS, ply)
+        ply:SetValue("ZMoney", Player_Start_Money, true)
+        for k, v in pairs(PLAYING_PLAYERS) do
+            if v == ply then
+                ply:SetValue("playing_id", k, true)
+                break
+            end
+        end
         if ROUND_NB == 0 then
             StartRound()
         end
-    else
-        table.insert(WAITING_PLAYERS, ply)
     end
-end
-Player.Subscribe("Spawn", HandlePlayerJoin)
-Events.Subscribe("VZPlayerJoinedAfterReload", HandlePlayerJoin)
+end)
 
 Player.Subscribe("Destroy", function(ply)
-    print("Player Left", ply:GetAccountName())
+    print("Player Left")
     local char = ply:GetControlledCharacter()
     if char then
         if char:GetValue("PlayerDown") then
@@ -223,32 +180,16 @@ Player.Subscribe("Destroy", function(ply)
         end
         char:Destroy()
     end
-    local p = ply:GetValue("playing")
-    if p then
+    PLAYERS_NB = PLAYERS_NB - 1
+    local p_id = ply:GetValue("playing_id")
+    if p_id then
         PLAYING_PLAYERS_NB = PLAYING_PLAYERS_NB - 1
-        for k, v in pairs(PLAYING_PLAYERS) do
-            if v == ply then
-                table.remove(PLAYING_PLAYERS, k)
-                break
-            end
-        end
-        if WAITING_PLAYERS[1] then
-            local wply = WAITING_PLAYERS[1]
-            ZPlayingPlayerInit(wply)
-            table.remove(WAITING_PLAYERS, 1)
-        end
+        PLAYING_PLAYERS[p_id] = nil
         if GetPlayersAliveNB() == 0 then
             if PLAYING_PLAYERS_NB == 0 then
                 RoundFinished(true)
             else
                 RoundFinished(false, true)
-            end
-        end
-    else
-        for k, v in pairs(WAITING_PLAYERS) do
-            if v == ply then
-                table.remove(WAITING_PLAYERS, k)
-                break
             end
         end
     end
@@ -295,35 +236,6 @@ Events.Subscribe("RevivePlayerStopped", function(ply, revived_char)
     if (ply:IsValid() and revived_char:IsValid() and reviving_char) then
         if revived_char:GetValue("RevivingPlayer") == reviving_char:GetID() then
             revived_char:SetValue("RevivingPlayer", nil, true)
-            reviving_char:SetMovementEnabled(true)
-            reviving_char:SetCanAim(true)
         end
     end
 end)
-
-Events.Subscribe("RequestTabData", function(ply)
-    if ply:IsValid() then
-        local tblToSend = {}
-        for k, v in pairs(PLAYING_PLAYERS) do
-            table.insert(tblToSend, {
-                v:GetAccountName(),
-                tostring(v:GetValue("ZKills")),
-                tostring(v:GetValue("ZScore")),
-                tostring(v:GetPing()),
-            })
-        end
-        Events.CallRemote("TabData", ply, tblToSend)
-    end
-end)
-
-if ZDEV_MODE then
-    Server.Subscribe("Chat", function(text, sender)
-        if text == "/kill" then
-            local char = sender:GetControlledCharacter()
-            if char then
-                local health = char:GetHealth()
-                char:ApplyDamage(health - 1000)
-            end
-        end
-    end)
-end

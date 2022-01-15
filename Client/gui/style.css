@@ -20,16 +20,14 @@ body {
     position: absolute;
     right: 0px;
     bottom: 0px;
-    width: 600px;
-    height: 300px;
-    background-image: url("images/ammo_background.png");
-    background-size: 600px 300px;
 }
 
 #ammo_text {
     font-size: xx-large;
-    margin-top: 155px;
-    margin-left: 225px;
+    position: absolute;
+    top: 50%;
+    left: 45%;
+    transform: translate(-50%, -45%);
 }
 
 #players_money {
@@ -43,10 +41,7 @@ body {
 }
 
 .player_money {
-    padding-top: 0.65em;
-    padding-bottom: 1em;
-    padding-left: 1.4em;
-    padding-right: 1.6em;
+    padding: 0.8em 1.5em;
     text-align: left;
     font-size: xx-large;
     background-image: url("./images/player_money_bg.png");
@@ -98,7 +93,7 @@ body {
     color: darkred;
     position: absolute;
     left: 85px;
-    bottom: 50px;
+    bottom: 0px;
 }
 
 .waves_animation {
@@ -135,46 +130,4 @@ body {
 
 .powerup {
     padding-left: 10px;
-}
-
-#tab_container {
-    text-align: center;
-    font-family: Arial, Helvetica, sans-serif;
-    font-size: 20px;
-    width: 800px;
-    height: 70%;
-    overflow: auto;
-    margin-top: 5%;
-    margin-left: auto;
-    margin-right: auto;
-    display: grid;
-    grid-auto-rows: 50px;
-}
-
-.tab_line {
-    background-image: url("images/tab_bar.png");
-    overflow: hidden;
-    display: grid;
-    grid-template-columns: repeat( auto-fit, minmax(80px, 1fr) );
-}
-
-.tab_item {
-    height: 100%;
-    margin-left: 0;
-    padding-top: 15px;
-    color: white;
-}
-
-.tab_hidden {
-    visibility: hidden;
-}
-
-#grenades_container {
-    position: absolute;
-    right: 185px;
-    bottom: 165px;
-    width: 320px;
-    display: grid;
-    direction: rtl;
-    grid-template-columns: repeat(auto-fill, 35px);
 }

@@ -16,7 +16,6 @@ function AddMoney(ply, added)
             added = added * 2
         end
         ply:SetValue("ZMoney", pmoney + added, true)
-        ply:SetValue("ZScore", ply:GetValue("ZScore") + added, false)
         return true
     end
 end

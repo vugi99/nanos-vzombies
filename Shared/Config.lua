@@ -76,8 +76,7 @@ Player_Revive_Money = 100
 ----------------------------------------------------------------------------------------------------------
 -- ZOMBIES CONFIG
 first_wave_zombies = {5, 100} -- number, health
-Add_at_each_wave = {1, 5}
-Add_at_each_wave_per_player = 1 -- number of zombies added at each wave per playing player
+Add_at_each_wave = {2, 5}
 Zombies_Spawn_Cooldown = 60000 -- All the wave zombies will be spawned (if it doesn't reach the limit) after this time
 
 DestroyZombie_After_death_ms = 20000
@@ -85,17 +84,12 @@ DestroyZombie_After_death_ms = 20000
 Max_zombies_spawned = 40
 
 Zombies_Acceptance_Radius = 70.0 -- At which distance from the player they can hurt him
-Zombies_Route_Update_ms = 100
-Zombies_Look_At_Update_ms = 300
 
 Zombies_Target_Refresh_ms = 2500
-
-Zombies_Ragdoll_Get_Up_Timeout_ms = 10000
 
 Zombies_Damage_Amount = 20
 Zombies_Damage_Barricade_Cooldown_ms = 3000
 Zombies_Damage_Cooldown_ms = 1500
-Zombies_Can_Damage_After_ms = 1000 -- They can damage after waiting this time after leaving barricade (false reach fix)
 
 Zombies_Collision_Radius = 17.0
 
@@ -111,6 +105,7 @@ Added_Running_Zombies_Percentage_At_Each_Wave = 7
 Zombies_Stuck_DistanceSq = 4
 Zombies_Stuck_Check_Each_ms = 2500
 Zombies_Stuck_Respawn_After_x_Stuck = 8 -- Respawns after x times his location was flagged as same, resets when he reaches his target
+
 
 
 Zombies_Models = {
@@ -214,18 +209,6 @@ Mystery_box_weapons = {
     },
     {
         weapon_name = "AWP",
-        max_ammo = 100,
-    },
-    {
-        weapon_name = "M1Garand",
-        max_ammo = 200,
-    },
-    {
-        weapon_name = "Lewis",
-        max_ammo = 400,
-    },
-    {
-        weapon_name = "ColtPython",
         max_ammo = 100,
     },
 }
@@ -333,7 +316,7 @@ RANDOM_SOUNDS = {
         always_digits = 2,
         volume = 1,
         radius = 400,
-        falloff_distance = 2000,
+        falloff_distance = 2500,
     },
     zombie_attack = {
         base_ref = "vzombies-assets::attack_",
@@ -342,56 +325,13 @@ RANDOM_SOUNDS = {
         always_digits = 2,
         volume = 1,
         radius = 400,
-        falloff_distance = 2000,
+        falloff_distance = 2500,
     },
     zombie_death = {
         base_ref = "vzombies-assets::death_",
         random_start = 0,
         random_to = 10,
         always_digits = 2,
-    },
-    barricade_snap = {
-        base_ref = "vzombies-assets::snap_",
-        random_start = 0,
-        random_to = 5,
-        always_digits = 2,
-        volume = 1,
-        radius = 400,
-        falloff_distance = 2000,
-    },
-    zombie_behind = {
-        base_ref = "vzombies-assets::behind_",
-        random_start = 0,
-        random_to = 4,
-        always_digits = 2,
-        volume = 1,
-        radius = 400,
-        falloff_distance = 2000,
-    },
-    zombie_soft = {
-        base_ref = "vzombies-assets::soft_",
-        random_start = 0,
-        random_to = 5,
-        always_digits = 2,
-        volume = 1,
-        radius = 400,
-        falloff_distance = 4000,
-    },
-    zombie_sprint = {
-        base_ref = "vzombies-assets::sprint_",
-        random_start = 0,
-        random_to = 8,
-        always_digits = 2,
-        volume = 1,
-        radius = 500,
-        falloff_distance = 4000,
-    },
-    zombie_hit_player = {
-        base_ref = "vzombies-assets::zombie_hit_player_",
-        random_start = 0,
-        random_to = 5,
-        always_digits = 2,
-        volume = 1,
     },
 }
 
@@ -464,27 +404,27 @@ Powerup_Grab_Sound = {
 }
 
 Carpenter_Sound = {
-    asset = "vzombies-assets::carpiter",
+    asset = "vzombies-assets::carpiter_s",
     volume = 1,
 }
 
 MaxAmmo_Sound = {
-    asset = "vzombies-assets::maxammo",
+    asset = "vzombies-assets::maxammo_s",
     volume = 1,
 }
 
 Nuke_Sound = {
-    asset = "vzombies-assets::nuke",
+    asset = "vzombies-assets::nuke_s",
     volume = 1,
 }
 
 Instakill_Sound = {
-    asset = "vzombies-assets::instakill",
+    asset = "vzombies-assets::instakill_s",
     volume = 1,
 }
 
 x2_Sound = {
-    asset = "vzombies-assets::x2",
+    asset = "vzombies-assets::x2_s",
     volume = 1,
 }
 
@@ -495,7 +435,7 @@ PowerOn_Sound = {
 
 PowerOn3D_Sound = {
     asset = "vzombies-assets::power_on_3D",
-    volume = 0.8,
+    volume = 1,
     radius = 400,
     falloff_distance = 2500,
 }
@@ -519,50 +459,10 @@ PAP_Ready_Sound = {
     falloff_distance = 2500,
 }
 
-Zombie_Behind_Sound_Trigger_Config = {
-    Interval_ms = 1000,
-    Cooldown_ms = 19000,
-    max_distance_sq = 810000,
-    Rel_Rot_Between = {-70, 70},
-    max_z_dist = 200,
-}
-
-Zombie_Amb_Sounds = {
-    Interval_ms = 1000,
-    Cooldown_ms = 10000
-}
-
-LastStand_Enter_Sound = {
-    asset = "vzombies-assets::laststand_enter",
-    volume = 1,
-}
-
-LastStand_Exit_Sound = {
-    asset = "vzombies-assets::laststand_exit",
-    volume = 1,
-}
-
-LowHealth_Loop_Sound = {
-    asset = "vzombies-assets::lowhealth_lp",
-    volume = 1,
-}
-
-LowHealth_Enter_Sound = {
-    asset = "vzombies-assets::lowhealth_enter",
-    volume = 1,
-}
-
-LowHealth_Exit_Sound = {
-    asset = "vzombies-assets::lowhealth_exit",
-    volume = 1,
-}
-
-LowHealth_Trigger_Health = 50 -- When health is <= of this value
-
 -------------------------------------------------------------------------------------------------------------
 -- Powerups Config
 
-Powerup_Check_Grab_Interval_ms = 250
+Powerup_Check_Grab_Interval_ms = 300
 Powerup_Grab_Distance_Squared = 5625
 
 Powerup_Delete_after_ms = 20000
@@ -620,21 +520,4 @@ Pack_a_punch_upgrade_time_ms = 3500
 Pack_a_punch_destroy_weapon_time_ms = 20000
 
 Pack_a_punch_weapon_material = "vzombies-assets::M_Pack_a_punch"
-Pack_a_punch_weapon_material_index = -1
-
--------------------------------------------------------------------------------------------------------------------
--- Server Description Config
-
-Dynamic_Server_Description = true
-
-DSD_In_Game_Text = {"Gamemode like COD:Zombies, Current wave : ", ", Join to help"} -- Wave number in the middle
-DSD_Idle_Text = "Gamemode like COD:Zombies, Waiting for players"
-
---------------------------------------------------------------------------------------------------------------------
--- Grenades Config
-
-Start_Grenades_NB = 2
-Max_Grenades_NB = 4
-
-Grenade_TimeToExplode = 5
-Grenade_Damage_Config = {200, 0, 200, 1000, 1} -- See : https://docs.nanos.world/docs/next/scripting-reference/classes/grenade#-setdamage
+Pack_a_punch_weapon_material_index = 0

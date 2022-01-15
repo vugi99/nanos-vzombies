@@ -4,10 +4,6 @@
 -- Group 1 : Buy something text
 -- Group 2 : Health text
 
-for i = 1, 2 do
-    Render.ClearItems(i)
-end
-
 GUI = WebUI("vzombies GUI", "file:///gui/index.html", true, true, true)
 
 ROUND_NB = 0
@@ -19,9 +15,6 @@ local PlayersMoney = {}
 local Powerups_On_GUI = {}
 
 CurPerks = {}
-
-local RequestedTabData = false
-local Tab_Open = false
 
 function IsSelfCharacter(char)
     local local_player = Client.GetLocalPlayer()
@@ -46,9 +39,7 @@ end
 
 function NeedToUpdateAmmoText(char, weapon)
     if IsSelfCharacter(char) then
-        if not NanosUtils.IsA(weapon, Grenade) then
-            GUI:CallEvent("SetAmmoText", tostring(weapon:GetAmmoClip()), tostring(weapon:GetAmmoBag()))
-        end
+        GUI:CallEvent("SetAmmoText", tostring(weapon:GetAmmoClip()), tostring(weapon:GetAmmoBag()))
     end
 end
 Character.Subscribe("Fire", NeedToUpdateAmmoText)
@@ -161,13 +152,15 @@ Player.Subscribe("Destroy", function(ply)
     RemovePlayerMoney(ply)
 end)
 
-RemoveAllPlayersMoney()
-BuildPlayersMoney()
-local _ply = Client.GetLocalPlayer()
-local ply_m = _ply:GetValue("ZMoney")
-if ply_m then
-    AddPlayerMoney(_ply, ply_m)
-end
+Client.Subscribe("SpawnLocalPlayer", function()
+    RemoveAllPlayersMoney()
+    BuildPlayersMoney()
+    local ply = Client.GetLocalPlayer()
+    local ply_m = ply:GetValue("ZMoney")
+    if ply_m then
+        AddPlayerMoney(ply, ply_m)
+    end
+end)
 
 function SetRoundNumber(nb)
     GUI:CallEvent("NewWave", tostring(nb))
@@ -212,18 +205,10 @@ end
 
 
 
-Character.Subscribe("TakeDamage", function(char, damage, bone, dtype, from_direction, instigator, causer)
+Character.Subscribe("TakeDamage", function(char, damage, bone, type, from_direction, instigator, causer)
     if IsSelfCharacter(char) then
         local health = char:GetHealth() - damage - 1000
         Render.UpdateItemText(2, HealthText, tostring(health) .. " HP")
-        if (health <= LowHealth_Trigger_Health and health > 0) then
-            if not Playing_LowHealth_Sound then
-                PlayLowHealthLoop()
-            end
-        end
-        if dtype == DamageType.Punch then
-            PlayPlayerHurtSound()
-        end
     end
 end)
 
@@ -239,10 +224,6 @@ Events.Subscribe("UpdateGUIHealth", function()
     if char then
         local health = char:GetHealth() - 1000
         Render.UpdateItemText(2, HealthText, tostring(health) .. " HP")
-        if (Playing_LowHealth_Sound and health > LowHealth_Trigger_Health) then
-            PlayExitLowHealthSound()
-            StopLowHealthLoop()
-        end
     end
 end)
 
@@ -325,46 +306,11 @@ if ZDEV_MODE then
     Character.Subscribe("Spawn", function(character)
         character:SetHighlightEnabled(true, 0)
     end)
-end
 
-
-Input.Register("Scoreboard", "Tab")
-
-Input.Bind("Scoreboard", InputEvent.Pressed, function()
-    if (not RequestedTabData and not Tab_Open) then
-        RequestedTabData = true
-        Events.CallRemote("RequestTabData")
-    end
-end)
-
-
-Input.Bind("Scoreboard", InputEvent.Released, function()
-    if Tab_Open then
-        GUI:CallEvent("HideTab")
-        Tab_Open = false
-    end
-end)
-
-Events.Subscribe("TabData", function(tab_data)
-    Tab_Open = true
-    GUI:CallEvent("ShowTab", JSON.stringify(tab_data))
-    RequestedTabData = false
-end)
-
-function UpdateGrenadesNB(nb)
-    GUI:CallEvent("SetGrenadesNB", nb)
-end
-
-Character.Subscribe("ValueChange", function(char, key, value)
-    if IsSelfCharacter(char) then
-        if key == "ZGrenadesNB" then
-            UpdateGrenadesNB(value)
+    for k, v in pairs(StaticMesh.GetPairs()) do
+        if v:GetValue("MapPowerHANDLE") then
+            print("HADLE")
+            v:SetHighlightEnabled(true, 0)
         end
     end
-end)
-
-Character.Subscribe("Destroy", function(char)
-    if IsSelfCharacter(char) then
-        UpdateGrenadesNB(0)
-    end
-end)
+end

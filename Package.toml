@@ -5,9 +5,9 @@
     # contributors
     author =               "Voltaism"
     # version
-    version =              "0.1.1"
+    version =              "0.1.0"
     # image URL
-    image =                "https://i.imgur.com/iriB7Kq.png"
+    image =                ""
     # package type: 'script' (normal package), 'game-mode' (unique package - can only load one at a time) or 'loading-screen' (special package loaded in loading screen)
     type =                 "game-mode"
     # whether to force the custom map Script to do not load
@@ -16,7 +16,7 @@
     auto_cleanup =         true
     # packages requirements
     packages_requirements = [
-        
+        "tempfollow",
     ]
     # asset packs requirements
     assets_requirements = [

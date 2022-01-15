@@ -22,27 +22,13 @@ function GenerateWeaponToInsert(weapon_name, ammo_bag, slot, ammo_clip, pap)
     }
 end
 
-function GetInsertSlot(char, Inv)
-    local has_three_gun = char:GetValue("OwnedPerks").three_gun
-    if (Inv.weapons[1] and not has_three_gun) then
+function GetInsertSlot(Inv)
+    if Inv.weapons[1] then
+        --print("GetInsertSlot", "weapons[1]")
         if Inv.weapons[1].slot == 1 then
             return 2
         elseif Inv.weapons[1].slot == 2 then
             return 1
-        end
-    elseif has_three_gun then
-        local empty_slots = {
-            [1] = true,
-            [2] = true,
-            [3] = true,
-        }
-        for k, v in pairs(Inv.weapons) do
-            empty_slots[v.slot] = false
-        end
-        for k, v in pairs(empty_slots) do
-            if v then
-                return tonumber(k)
-            end
         end
     end
     return Inv.selected_slot
@@ -72,52 +58,47 @@ function EquipSlot(char, slot)
     local charInvID = GetCharacterInventory(char)
     if charInvID then
         local Inv = PlayersCharactersWeapons[charInvID]
-        local picked_thing = char:GetPicked()
-        if (not picked_thing or not NanosUtils.IsA(picked_thing, Grenade)) then
-            if slot ~= Inv.selected_slot then
-                for i, v in ipairs(Inv.weapons) do
-                    if (v.slot == Inv.selected_slot and v.weapon) then
-                        if v.weapon:IsValid() then
-                            v.ammo_bag = v.weapon:GetAmmoBag()
-                            v.ammo_clip = v.weapon:GetAmmoClip()
+        if slot ~= Inv.selected_slot then
+            for i, v in ipairs(Inv.weapons) do
+                if (v.slot == Inv.selected_slot and v.weapon) then
+                    if v.weapon:IsValid() then
+                        v.ammo_bag = v.weapon:GetAmmoBag()
+                        v.ammo_clip = v.weapon:GetAmmoClip()
 
-                            --print("Before:", v, PlayersCharactersWeapons[charInvID].weapons[i])
-                            v.destroying = true
-                            v.weapon:Destroy()
-                            --print("holding WEAPON DESTROYED", char:GetPicked())
-                            --print("After:", v, PlayersCharactersWeapons[charInvID].weapons[i])
-                        end
-                        v.weapon = nil
-                        break
+                        --print("Before:", v, PlayersCharactersWeapons[charInvID].weapons[i])
+                        v.destroying = true
+                        v.weapon:Destroy()
+                        --print("holding WEAPON DESTROYED", char:GetPicked())
+                        --print("After:", v, PlayersCharactersWeapons[charInvID].weapons[i])
                     end
+                    v.weapon = nil
+                    break
                 end
-                for i, v in ipairs(Inv.weapons) do
-                    if v.slot == slot then
+            end
+            for i, v in ipairs(Inv.weapons) do
+                if v.slot == slot then
+                    GiveInventoryPlayerWeapon(char, charInvID, i, v)
+                    break
+                end
+            end
+            Inv.selected_slot = slot
+        else
+            for i, v in ipairs(Inv.weapons) do
+                if (v.slot == Inv.selected_slot) then
+                    if not v.weapon then
+                        GiveInventoryPlayerWeapon(char, charInvID, i, v)
+                        break
+                    elseif v.weapon:IsValid() then
+                        v.ammo_bag = v.weapon:GetAmmoBag()
+                        v.ammo_clip = v.weapon:GetAmmoClip()
+                        v.destroying = true
+                        v.weapon:Destroy()
+
                         GiveInventoryPlayerWeapon(char, charInvID, i, v)
                         break
                     end
                 end
-                Inv.selected_slot = slot
-            else
-                for i, v in ipairs(Inv.weapons) do
-                    if (v.slot == Inv.selected_slot) then
-                        if not v.weapon then
-                            GiveInventoryPlayerWeapon(char, charInvID, i, v)
-                            break
-                        elseif v.weapon:IsValid() then
-                            v.ammo_bag = v.weapon:GetAmmoBag()
-                            v.ammo_clip = v.weapon:GetAmmoClip()
-                            v.destroying = true
-                            v.weapon:Destroy()
-
-                            GiveInventoryPlayerWeapon(char, charInvID, i, v)
-                            break
-                        end
-                    end
-                end
             end
-        else
-            --print("EquipSlot Locked Because He has Grenade")
         end
     end
 end
@@ -145,8 +126,7 @@ function AddCharacterWeapon(char, weapon_name, ammo_bag, equip, ammo_clip, pap)
         --print("inv_w_count", inv_w_count)
 
         -- If the player slots are full, drop the weapon in the selected slot
-        local has_three_gun = char:GetValue("OwnedPerks").three_gun
-        if ((inv_w_count == 2 and not has_three_gun) or (inv_w_count == 3 and has_three_gun)) then
+        if inv_w_count == 2 then
             for i, v in ipairs(PlayersCharactersWeapons[charInvID].weapons) do
                 if v.slot == PlayersCharactersWeapons[charInvID].selected_slot then
                     if v.weapon then
@@ -176,9 +156,7 @@ function AddCharacterWeapon(char, weapon_name, ammo_bag, equip, ammo_clip, pap)
             end
         end
 
-        insert_sl = GetInsertSlot(char, PlayersCharactersWeapons[charInvID])
-        --print("GetInsertSlot", insert_sl)
-
+        insert_sl = GetInsertSlot(PlayersCharactersWeapons[charInvID])
         table.insert(PlayersCharactersWeapons[charInvID].weapons, GenerateWeaponToInsert(weapon_name, ammo_bag, insert_sl, ammo_clip, pap))
         if equip then
             EquipSlot(char, insert_sl)
@@ -201,7 +179,7 @@ Character.Subscribe("Destroy", function(char)
     local charInvID = GetCharacterInventory(char)
     if charInvID then
         for i, v in ipairs(PlayersCharactersWeapons[charInvID].weapons) do
-            if (v.weapon and v.weapon:IsValid()) then
+            if v.weapon then
                 v.destroying = true
                 v.weapon:Destroy()
             end
@@ -258,14 +236,9 @@ Events.Subscribe("VZ_Switch_Weapon", function(ply)
     if char then
         local charInvID = GetCharacterInventory(char)
         if charInvID then
-            local has_three_gun = char:GetValue("OwnedPerks").three_gun
             if PlayersCharactersWeapons[charInvID].selected_slot == 1 then
                 EquipSlot(char, 2)
-            elseif (PlayersCharactersWeapons[charInvID].selected_slot == 2 and not has_three_gun) then
-                EquipSlot(char, 1)
-            elseif (PlayersCharactersWeapons[charInvID].selected_slot == 2 and has_three_gun) then
-                EquipSlot(char, 3)
-            elseif PlayersCharactersWeapons[charInvID].selected_slot == 3 then
+            elseif PlayersCharactersWeapons[charInvID].selected_slot == 2 then
                 EquipSlot(char, 1)
             end
         end
@@ -311,96 +284,3 @@ Weapon.Subscribe("Interact", function(weapon, char)
         end
     end
 end)
-
-Events.Subscribe("PickupGrenade", function(ply)
-    if ply:IsValid() then
-        local char = ply:GetControlledCharacter()
-        if char then
-            if not char:GetValue("PlayerDown") then
-                local grenades = char:GetValue("ZGrenadesNB")
-                if (grenades and grenades > 0) then
-                    local grenade = Grenade(
-                        Vector(0, 0, 0),
-                        Rotator(0, 0, 0),
-                        "nanos-world::SM_Grenade_G67",
-                        "nanos-world::P_Grenade_Special",
-                        "nanos-world::A_Explosion_Large"
-                    )
-                    grenade:SetDamage(table.unpack(Grenade_Damage_Config))
-                    grenade:SetTimeToExplode(Grenade_TimeToExplode)
-                    grenade:SetValue("GrenadeOwner", char:GetID(), false)
-
-                    local charInvID = GetCharacterInventory(char)
-                    if charInvID then
-                        local Inv = PlayersCharactersWeapons[charInvID]
-                        
-                        for i, v in ipairs(Inv.weapons) do
-                            if (v.slot == Inv.selected_slot and v.weapon) then
-                                if v.weapon:IsValid() then
-                                    v.ammo_bag = v.weapon:GetAmmoBag()
-                                    v.ammo_clip = v.weapon:GetAmmoClip()
-
-                                    v.destroying = true
-                                    v.weapon:Destroy()
-                                end
-                                v.weapon = nil
-                                break
-                            end
-                        end
-                    end
-
-                    char:PickUp(grenade)
-
-                    grenade:PullUse()
-                end
-            end
-        end
-    end
-end)
-
-Grenade.Subscribe("Throw", function(grenade)
-    local char_id = grenade:GetValue("GrenadeOwner")
-    if char_id then
-        local char = GetCharacterFromId(char_id)
-        if char then
-            if not char:GetValue("PlayerDown") then
-                if not ZDEV_MODE then
-                    char:SetValue("ZGrenadesNB", char:GetValue("ZGrenadesNB") - 1, true)
-                end
-
-                local charInvID = GetCharacterInventory(char)
-                if charInvID then
-                    local Inv = PlayersCharactersWeapons[charInvID]
-
-                    EquipSlot(char, Inv.selected_slot)
-                end
-            else
-                grenade:Destroy()
-            end
-        end
-    end
-end)
-
-Events.Subscribe("ThrowGrenade", function(ply)
-    if ply:IsValid() then
-        local char = ply:GetControlledCharacter()
-        if char then
-            local grenade = char:GetPicked()
-            if (grenade and NanosUtils.IsA(grenade, Grenade)) then
-                grenade:ReleaseUse()
-            end
-        end
-    end
-end)
-
-Grenade.Subscribe("Interact", function(grenade)
-    return false
-end)
-
-function DestroyMapGrenades()
-    for k, v in pairs(Grenade.GetPairs()) do
-        if not v:GetHandler() then
-            v:Destroy()
-        end
-    end
-end

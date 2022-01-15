@@ -14,7 +14,7 @@ Character.Subscribe("Highlight", function(char, Highlight, ent)
             local m_weap_id = ent:GetValue("MapWeaponID")
             if m_weap_id then
                 if Highlight then
-                    BuyText(MAP_WEAPONS[m_weap_id].weapon_name .. " / Ammo", tostring(MAP_WEAPONS[m_weap_id].price) .. "$ / " .. tostring(math.floor(MAP_WEAPONS[m_weap_id].price * Weapons_Ammo_Price_Percentage / 100)) .. " $ / " .. tostring(Pack_a_punch_price))
+                    BuyText(MAP_WEAPONS[m_weap_id].weapon_name .. "/ Ammo", tostring(MAP_WEAPONS[m_weap_id].price) .. "$ / " .. tostring(math.floor(MAP_WEAPONS[m_weap_id].price * Weapons_Ammo_Price_Percentage / 100)) .. " $ / " .. tostring(Pack_a_punch_price))
                     InteractType = "MapWeapon"
                     InteractThing = m_weap_id
                 elseif (InteractType == "MapWeapon" and InteractThing == m_weap_id) then
@@ -41,25 +41,10 @@ Timer.SetInterval(function()
                     if door_id then
                         local distance_sq = local_char_location:DistanceSquared(v:GetLocation())
                         if distance_sq <= Doors_Interact_Check_Distance_Squared_Max then
+                            BuyText("Door", tostring(MAP_DOORS[door_id].price))
                             InteractType = "MapDoor"
+                            InteractThing = door_id
                             found_door = true
-
-                            local power_needed = false
-                            if not POWER_ON then
-                                for i3, v3 in ipairs(MAP_DOORS[door_id].required_rooms) do
-                                    if v3 == -1 then
-                                        power_needed = true
-                                        break
-                                    end
-                                end
-                            end
-                            if not power_needed then
-                                BuyText("Door", tostring(MAP_DOORS[door_id].price))
-                                InteractThing = door_id
-                            else
-                                InteractText("Missing Power")
-                                InteractThing = "NoPower"
-                            end
                         end
                     end
                 end
@@ -95,7 +80,7 @@ Timer.SetInterval(function()
                                         Timer.ClearInterval(RepairBarricadeInterval)
                                         RepairBarricadeInterval = nil
                                     end
-                                    InteractText("Hold to Repair Barricade")
+                                    InteractText("Repair Barricade")
                                     InteractType = "MapBarricade"
                                     InteractThing = v
                                 end
@@ -121,7 +106,7 @@ Timer.SetInterval(function()
 end, Barricades_Interact_Check_Interval_ms)
 
 function RepairBarricadeIFunc()
-    if (InteractThing and NanosUtils.IsA(InteractThing, StaticMesh) and InteractThing:IsValid() and InteractThing:GetValue("BarricadeLife") and InteractThing:GetValue("BarricadeLife") < 5) then
+    if (InteractThing and InteractThing ~= "NoPower" and InteractThing:IsValid() and InteractThing:GetValue("BarricadeLife") < 5) then
         local repair_sound = Sound(
             Vector(0, 0, 0),
             Barricade_Repair_Sound.asset,
@@ -255,12 +240,16 @@ Timer.SetInterval(function()
                         local distance_sq = local_char_location:DistanceSquared(v:GetLocation())
                         if distance_sq <= Perk_Interact_Check_Distance_Squared_Max then
                             InteractType = "MapPerk"
-                            if POWER_ON then
+                            if (POWER_ON and perk ~= "three_gun") then
                                 InteractThing = v
                                 BuyText(perk .. " Perk", tostring(PERKS_CONFIG[perk].price))
                             else
                                 InteractThing = "NoPower"
-                                InteractText("Missing Power")
+                                if perk == "three_gun" then
+                                    InteractText("SOON")
+                                else
+                                    InteractText("Missing Power")
+                                end
                             end
                             found_Perk = true
                         end
@@ -361,14 +350,8 @@ Input.Bind("Interact", InputEvent.Pressed, function()
     if char then
         if not char:GetValue("PlayerDown") then
             if InteractType == "MapDoor" then
-                if InteractThing ~= "NoPower" then
-                    Events.CallRemote("BuyDoor", InteractThing)
-                end
+                Events.CallRemote("BuyDoor", InteractThing)
             elseif InteractType == "MapBarricade" then
-                if RepairBarricadeInterval then
-                    Timer.ClearInterval(RepairBarricadeInterval)
-                    RepairBarricadeInterval = nil
-                end
                 RepairBarricadeInterval = Timer.SetInterval(RepairBarricadeIFunc, Repair_Barricade_Interval_ms)
             elseif InteractType == "RevivePlayer" then
                 Events.CallRemote("RevivePlayer", InteractThing)

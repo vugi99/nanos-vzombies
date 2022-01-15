@@ -70,8 +70,8 @@ if MAP_POWER then
     MAP_POWER_SM = SM
 
     local SM_Handle = StaticMesh(
-        MAP_POWER.handle_location,
-        MAP_POWER.handle_rotation,
+        MAP_POWER.location + Vector(0, 19, 117),
+        MAP_POWER.rotation + Rotator(0, 0, 90),
         "vzombies-assets::power_handle"
     )
     SM_Handle:SetScale(Vector(0.01, 0.01, 0.01))
@@ -79,15 +79,13 @@ if MAP_POWER then
     SM_Handle:SetValue("MapPowerHANDLE", true, true)
 
     MAP_POWER_SM_HANDLE = SM_Handle
-else
-    POWER_ON = true
 end
 
 function ResetMapPower()
     if MAP_POWER then
         POWER_ON = false
         Events.BroadcastRemote("SetClientPowerON", false)
-        MAP_POWER_SM_HANDLE:SetRotation(MAP_POWER.handle_rotation)
+        MAP_POWER_SM_HANDLE:SetRotation(MAP_POWER.rotation + Rotator(0, 0, 90))
     end
 end
 
@@ -102,38 +100,6 @@ Events.Subscribe("TurnPowerON", function(ply, power_sm)
                         ROOMS_UNLOCKED[-1] = true
                         MAP_POWER_SM_HANDLE:RotateTo(MAP_POWER.rotation, 1, false)
                         Events.BroadcastRemote("PowerONSound")
-
-                        for i, v in ipairs(MAP_DOORS) do
-                            if v.price == 0 then
-                                local good_needed_power = false
-                                for i2, v2 in ipairs(v.required_rooms) do
-                                    if v2 == -1 then
-                                        good_needed_power = true
-                                        break
-                                    end
-                                end
-                                if good_needed_power then
-                                    local good_required_all = true
-                                    for i2, v2 in ipairs(v.required_rooms) do
-                                        if not ROOMS_UNLOCKED[v2] then
-                                            good_required_all = false
-                                            break
-                                        end
-                                    end
-
-                                    if good_required_all then
-                                        local map_door = GetMapDoorFromID(i)
-
-                                        if map_door then
-                                            map_door:Destroy()
-                                            for i2, v2 in ipairs(v.between_rooms) do
-                                                UnlockRoom(v2)
-                                            end
-                                        end
-                                    end
-                                end
-                            end
-                        end
                     end
                 end
             end
@@ -168,20 +134,18 @@ function SpawnBearForMBOX(SM)
     return Bear_SM
 end
 
-if MAP_MYSTERY_BOXES then
-    for i, v in ipairs(MAP_MYSTERY_BOXES) do
-        local SM = StaticMesh(
-            v.location,
-            v.rotation,
-            "vzombies-assets::mystery_box"
-        )
-        SM:SetScale(Vector(0.01, 0.01, 0.01))
+for i, v in ipairs(MAP_MYSTERY_BOXES) do
+    local SM = StaticMesh(
+        v.location,
+        v.rotation,
+        "vzombies-assets::mystery_box"
+    )
+    SM:SetScale(Vector(0.01, 0.01, 0.01))
 
-        table.insert(SM_MysteryBoxes, {
-            mbox = SM,
-            bear = SpawnBearForMBOX(SM),
-        })
-    end
+    table.insert(SM_MysteryBoxes, {
+        mbox = SM,
+        bear = SpawnBearForMBOX(SM),
+    })
 end
 
 function OpenedMBOXResetStage1()
@@ -239,20 +203,18 @@ function PickNewMysteryBox()
         end
     end
 
-    if table_count(pick_tbl) > 0 then -- If theres more than 1 box on the map
-        local random_pick_id = math.random(table_count(pick_tbl))
-        local random_pick = SM_MysteryBoxes[pick_tbl[random_pick_id]]
+    local random_pick_id = math.random(table_count(pick_tbl))
+    local random_pick = SM_MysteryBoxes[pick_tbl[random_pick_id]]
 
-        if Active_MysteryBox_ID then
-            ResetMBOX(Active_MysteryBox_ID)
-        end
-
-        random_pick.bear:Destroy()
-        random_pick.bear = nil
-        random_pick.mbox:SetValue("CanBuyMysteryBox", true, true)
-
-        Active_MysteryBox_ID = pick_tbl[random_pick_id]
+    if Active_MysteryBox_ID then
+        ResetMBOX(Active_MysteryBox_ID)
     end
+
+    random_pick.bear:Destroy()
+    random_pick.bear = nil
+    random_pick.mbox:SetValue("CanBuyMysteryBox", true, true)
+
+    Active_MysteryBox_ID = pick_tbl[random_pick_id]
 end
 
 function OpenedMBoxNewFakeWeapon()
@@ -291,9 +253,6 @@ function OpenActiveMysteryBox(char)
 
                 local mbox_weapons_count = table_count(Mystery_box_weapons)
                 local random_weap_id = math.random(mbox_weapons_count + 1)
-                if table_count(MAP_MYSTERY_BOXES) == 1 then
-                    random_weap_id = math.random(mbox_weapons_count)
-                end
                 if random_weap_id <= mbox_weapons_count then
                     if char:IsValid() then
                         local random_weap = Mystery_box_weapons[random_weap_id]
@@ -376,7 +335,6 @@ function SpawnBarricade(zspawn, zspawnid)
     )
     SM_Root:SetValue("BarricadeSpawnID", zspawnid, true)
     SM_Root:SetValue("BarricadeLife", 5, true)
-    SM_Root:SetCollision(CollisionType.NoCollision)
 
     local SM_Root_Ground = StaticMesh(
         zspawn.z_ground_debris_location,
@@ -385,7 +343,6 @@ function SpawnBarricade(zspawn, zspawnid)
     )
     SM_Root_Ground:AttachTo(SM_Root, AttachmentRule.KeepWorld, "")
     SM_Root_Ground:SetRelativeRotation(Barricades_Config.ground_root.rrotation)
-    SM_Root_Ground:SetCollision(CollisionType.NoCollision)
 
     local SM_Barricade_1 = StaticMesh(
         Vector(0, 0, 0),
@@ -508,13 +465,6 @@ function RepairBarricade(barricade)
         SM_Barricade:AttachTo(barricade.top.root, AttachmentRule.KeepWorld, "")
         SM_Barricade:SetRelativeLocation(Barricades_Config.top[top_barricades + 1].rlocation)
         SM_Barricade:SetRelativeRotation(Barricades_Config.top[top_barricades + 1].rrotation)
-
-        local repaired_loc = barricade.top.root:GetLocation()
-
-        local play_sound_for_players = GetPlayersInRadius(repaired_loc, RANDOM_SOUNDS.barricade_snap.falloff_distance)
-        for i, v in ipairs(play_sound_for_players) do
-            Events.CallRemote("RepairBarricadeSound", v, VZ_RandomSound(RANDOM_SOUNDS.barricade_snap), repaired_loc)
-        end
 
         ApplySMBarricadeOptions(SM_Barricade)
         table.insert(barricade.top.barricades, SM_Barricade)
