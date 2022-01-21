@@ -1,5 +1,14 @@
 
-ZDEV_MODE = false
+ZDEV_CONFIG = {
+    ENABLED = false,
+    DEV_CHEAT_MODES = {
+        ZDEV_COMMANDS = true,
+        ZDEV_DEBUG_TRACES = false,
+        ZDEV_GODMODE = true,
+        ZDEV_INFINITE_GRENADES = true,
+        ZDEV_DEBUG_TRIGGERS = true,
+    }
+}
 
 SKY_TIME = {3, 0} -- hours, min
 
@@ -7,10 +16,16 @@ WaveInterval_ms = 20000
 GameOverInterval_ms = 30000
 
 Weapons_Ammo_Price_Percentage = 50
-
 Weapons_Dropped_Destroyed_After_ms = 60000
 
 Map_Z_Limits_Check_Interval_ms = 20000
+
+How_To_Play_Text_Destroy_ms = 5000
+
+Remaining_Zombies_Text = true
+
+Player_Names_On_Heads = true
+Player_Name_Displayed_at_dist_sq = 1440000
 
 --------------------------------------------------------------------------------------------------------------
 -- Player Config
@@ -38,7 +53,7 @@ ReviveTime_ms = 5000
 Interact_Text_Y_Offset = 200
 
 Doors_Interact_Check_Interval_ms = 500
-Doors_Interact_Check_Distance_Squared_Max = 40000
+Doors_Interact_Check_Trace_Distance_Max = 175
 
 Barricades_Interact_Check_Interval_ms = 500
 Barricades_Interact_Check_Distance_Squared_Max = 22500
@@ -59,6 +74,15 @@ Perk_Interact_Check_Distance_Squared_Max = 40000
 PAP_Interact_Check_Interval_ms = 500
 PAP_Interact_Check_Distance_Squared_Max = 40000
 
+Wunderfizz_Interact_Check_Interval_ms = 500
+Wunderfizz_Interact_Check_Distance_Squared_Max = 40000
+
+Wunderfizz_Bottle_Interact_Check_Interval_ms = 500
+Wunderfizz_Bottle_Interact_Check_Distance_Squared_Max = 35000
+
+Custom_Interact_Check_Interval_ms = 500
+
+Teleporters_Interact_Check_Interval_ms = 500
 
 ----------------------------------------------------------------------------------------------------------
 -- Money Config
@@ -69,16 +93,34 @@ Dead_MoneyLost = 50 -- percentage
 
 Player_Zombie_Damage_Money = 10
 Player_Zombie_Kill_Money = 50
+Player_Zombie_Kill_Knife_Money = 100
 
 Player_Repair_Barricade_Money = 10
 Player_Revive_Money = 100
 
 ----------------------------------------------------------------------------------------------------------
 -- ZOMBIES CONFIG
-first_wave_zombies = {5, 100} -- number, health
-Add_at_each_wave = {1, 5}
+first_wave_zombies = 5
+Add_at_each_wave = 1
 Add_at_each_wave_per_player = 1 -- number of zombies added at each wave per playing player
+Zombies_Number_Mult = 2 -- The calculated number of zombies is multiplied by this
+
+Zombies_Health_Start = {
+    40,
+    50,
+    60,
+    70,
+    80,
+    90,
+    100,
+    120,
+    140,
+    160,
+}
+Zombies_Health_Multiplier_At_Each_Wave = 1.1
+
 Zombies_Spawn_Cooldown = 60000 -- All the wave zombies will be spawned (if it doesn't reach the limit) after this time
+Zombies_Spawn_Interval_min_time_ms = 500
 
 DestroyZombie_After_death_ms = 20000
 
@@ -92,9 +134,10 @@ Zombies_Target_Refresh_ms = 2500
 
 Zombies_Ragdoll_Get_Up_Timeout_ms = 10000
 
-Zombies_Damage_Amount = 20
+Zombies_Damage_Amount = 30
+Zombies_Damage_At_Distance_sq = 23000
 Zombies_Damage_Barricade_Cooldown_ms = 3000
-Zombies_Damage_Cooldown_ms = 1500
+Zombies_Damage_Cooldown_ms = 1350
 Zombies_Can_Damage_After_ms = 1000 -- They can damage after waiting this time after leaving barricade (false reach fix)
 
 Zombies_Collision_Radius = 17.0
@@ -112,6 +155,9 @@ Zombies_Stuck_DistanceSq = 4
 Zombies_Stuck_Check_Each_ms = 2500
 Zombies_Stuck_Respawn_After_x_Stuck = 8 -- Respawns after x times his location was flagged as same, resets when he reaches his target
 
+Zombies_Ground_Dirt_Scale = Vector(5, 5, 5)
+
+Zombies_Joker_Chance = 5 -- x amount TakeDamage will lead to joker for 10000 shots
 
 Zombies_Models = {
     "vzombies-assets::SK_TSZombie",
@@ -120,20 +166,38 @@ Zombies_Models = {
     "vzombies-assets::SK_TSZombie4",
 }
 
-Zombies_Attack_Animation = "vzombies-assets::Zombie_Atk_Arms_3_SHORT_Loop_IPC"
+Zombies_Attack_Animations = {
+    {"vzombies-assets::Zombie_Atk_Cut_1", 150},
+    {"vzombies-assets::Zombie_Atk_Cut_2", 280},
+    {"vzombies-assets::Zombie_Atk_Cut_3", 400},
+    {"vzombies-assets::ZombieAttack", 730},
+    {"vzombies-assets::ZombieAttack2", 530},
+}
 
+Zombies_Vault_Animations = {
+    walk = {"vzombies-assets::VaultOverBox", 1500},
+    run = {"vzombies-assets::JumpingRunning", 1420}
+}
 
 ------------------------------------------------------------------------------------------------------------
 -- MYSTERY BOX CONFIG
 Mystery_box_price = 950
 
-Mystery_box_weapon_speed = 1
-Mystery_box_weapon_speed_reverse = 1
+Mystery_box_weapon_time = 4.4
+Mystery_box_weapon_time_reverse = 6
+Mystery_box_translate_exp = 0
+
 Mystery_box_fake_weapon_interval_ms = 250
 Mystery_box_weapon_spawn_offset_z = 50
 Mystery_box_weapon_target_offset_z = 100 -- box z + Mystery_box_weapon_target_offset_z target
 
 NewMysteryBox_Timeout_ms = 3000
+
+Active_MysteryBox_Particle = {
+    path = "vzombies-assets::P_Launch",
+    scale = Vector(0.5, 0.5, 0.5),
+    relative_location = Vector(0, 0, 320),
+}
 
 Mystery_box_weapons = {
     {
@@ -228,6 +292,11 @@ Mystery_box_weapons = {
         weapon_name = "ColtPython",
         max_ammo = 100,
     },
+    -- Test Custom Weapon
+    --[[{
+        weapon_name = "LaserRifle",
+        max_ammo = 400,
+    },]]--
 }
 
 ------------------------------------------------------------------------------------------
@@ -241,6 +310,12 @@ PERKS_CONFIG = {
         scale = Vector(1.5, 1.5, 1.5),
         bottle_asset = "vzombies-assets::jugg_bottle",
         icon = "images/Juggernog_icon.png",
+        Amb_Sound = {
+            asset = "vzombies-assets::mus_jugganog_jingle",
+            volume = 1,
+            radius = 200,
+            falloff_distance = 1500,
+        },
     },
     quick_revive = {
         price = 1500,
@@ -249,6 +324,12 @@ PERKS_CONFIG = {
         scale = Vector(0.01, 0.01, 0.01),
         bottle_asset = "vzombies-assets::revive_bottle",
         icon = "images/Quick_Revive_icon.png",
+        Amb_Sound = {
+            asset = "vzombies-assets::mus_revive_jingle",
+            volume = 1,
+            radius = 200,
+            falloff_distance = 1500,
+        },
     },
     doubletap = {
         price = 2000,
@@ -257,6 +338,12 @@ PERKS_CONFIG = {
         scale = Vector(0.01, 0.01, 0.01),
         bottle_asset = "vzombies-assets::doubletap_bottle",
         icon = "images/Doubletap_icon.png",
+        Amb_Sound = {
+            asset = "vzombies-assets::mus_doubletap_jingle",
+            volume = 1,
+            radius = 200,
+            falloff_distance = 1500,
+        },
     },
     three_gun = {
         price = 4000,
@@ -264,7 +351,35 @@ PERKS_CONFIG = {
         scale = Vector(0.01, 0.01, 0.01),
         bottle_asset = "vzombies-assets::three_gun_bottle",
         icon = "images/three_gun_icon.png",
+        Amb_Sound = {
+            asset = "vzombies-assets::mus_mulekick_jingle",
+            volume = 1,
+            radius = 200,
+            falloff_distance = 1500,
+        },
     },
+    stamin_up = {
+        price = 2000,
+        Speed_Multiplier = 1.6,
+        Asset = "vzombies-assets::stamin_up",
+        scale = Vector(1, 1, 1),
+        bottle_asset = "vzombies-assets::stamin_up_bottle",
+        icon = "images/StaminUp_icon.png",
+        Amb_Sound = {
+            asset = "vzombies-assets::mus_stamin_jingle",
+            volume = 1,
+            radius = 200,
+            falloff_distance = 1500,
+        },
+    }
+}
+
+
+Prone_Perk_Config = {
+    enabled = true,
+    money = 100,
+    Rel_Rot_Between = {60, 120},
+    Max_Distance_sq = 40000,
 }
 
 
@@ -349,6 +464,9 @@ RANDOM_SOUNDS = {
         random_start = 0,
         random_to = 10,
         always_digits = 2,
+        volume = 1,
+        radius = 400,
+        falloff_distance = 2000,
     },
     barricade_snap = {
         base_ref = "vzombies-assets::snap_",
@@ -356,6 +474,15 @@ RANDOM_SOUNDS = {
         random_to = 5,
         always_digits = 2,
         volume = 1,
+        radius = 400,
+        falloff_distance = 2000,
+    },
+    barricade_break = {
+        base_ref = "vzombies-assets::zmb_break_board_",
+        random_start = 0,
+        random_to = 5,
+        always_digits = 2,
+        volume = 0.6,
         radius = 400,
         falloff_distance = 2000,
     },
@@ -393,6 +520,24 @@ RANDOM_SOUNDS = {
         always_digits = 2,
         volume = 1,
     },
+    wunderfizz_impact = {
+        base_ref = "vzombies-assets::random_perk_imp_",
+        random_start = 0,
+        random_to = 2,
+        always_digits = 2,
+        volume = 1,
+        radius = 400,
+        falloff_distance = 2500,
+    },
+    spawn_dirt_sound = {
+        base_ref = "vzombies-assets::spawn_dirt_",
+        random_start = 0,
+        random_to = 1,
+        always_digits = 2,
+        volume = 1,
+        radius = 400,
+        falloff_distance = 2500,
+    }
 }
 
 NewWave_Sound = {
@@ -559,10 +704,55 @@ LowHealth_Exit_Sound = {
 
 LowHealth_Trigger_Health = 50 -- When health is <= of this value
 
+Wunderfizz_leave_Sound = {
+    asset = "vzombies-assets::rand_perk_mach_leave",
+    volume = 1,
+    radius = 400,
+    falloff_distance = 2500,
+}
+
+Pack_A_Punch_Amb_Sound = {
+    asset = "vzombies-assets::mus_packapunch_jingle",
+    volume = 1,
+    radius = 200,
+    falloff_distance = 1500,
+}
+
+Wunderfizz_loop_Sound = {
+    asset = "vzombies-assets::rand_perk_mach_loop",
+    volume = 0.5,
+    radius = 400,
+    falloff_distance = 2500,
+}
+
+Wunderfizz_vortex_Sound = {
+    asset = "vzombies-assets::wunder_vortex_loop",
+    volume = 0.5,
+    radius = 400,
+    falloff_distance = 2500,
+}
+
+Wunderfizz_stop_Sound = {
+    asset = "vzombies-assets::rand_perk_mach_stop",
+    volume = 0.5,
+    radius = 400,
+    falloff_distance = 2500,
+}
+
+Barricade_Start_Repair = {
+    asset = "vzombies-assets::barricade_start_repair",
+    volume = 1,
+}
+
+Player_Teleport_Sound = {
+    asset = "vzombies-assets::teleport_plr",
+    volume = 1,
+}
+
 -------------------------------------------------------------------------------------------------------------
 -- Powerups Config
 
-Powerup_Check_Grab_Interval_ms = 250
+Powerup_Check_Grab_Interval_ms = 200
 Powerup_Grab_Distance_Squared = 5625
 
 Powerup_Delete_after_ms = 20000
@@ -638,3 +828,149 @@ Max_Grenades_NB = 4
 
 Grenade_TimeToExplode = 5
 Grenade_Damage_Config = {200, 0, 200, 1000, 1} -- See : https://docs.nanos.world/docs/next/scripting-reference/classes/grenade#-setdamage
+
+---------------------------------------------------------------------------------------------------------------------
+-- Wonderfizz Config
+
+Wonderfizz_Price = 1500
+Wonderfizz_Fake_Bottle_Interval_ms = 300
+Wonderfizz_Real_Bottle_After_ms = 5000
+Wonderfizz_Real_Bottle_Destroyed_After_ms = 10000
+Wonderfizz_Move_Percentage = 7
+Wonderfizz_Bottles_Offset = Vector(0, 0, 130)
+
+Wonderfizz_Particle = "vzombies-assets::P_ky_cutter1"
+Wonderfizz_Particle_Offset = Vector(0, 0, 115)
+
+--------------------------------------------------------------------------------------------------------------------------------------------
+-- Knife Config
+
+Knife_Base_Damage = 40
+Knife_Cooldown_ms = 2000
+Knife_Switch_ms = 1500
+
+-------------------------------------------------------------------------------------------------------------------------------------
+-- Flashlights config
+
+FLight_Config = {
+    5, -- Intensity
+    8000, -- Attenuation Radius
+    31, -- Cone Angle (Relevant only for Spot light type)
+    0, -- Inner Cone Angle Percent (Relevant only for Spot light type)
+    35000, -- Max Draw Distance (Good for performance - 0 for infinite)
+    true, -- Whether to use physically based inverse squared distance falloff, where Attenuation Radius is only clamping the light's contribution. (Spot and Point types only)
+    true, -- Cast Shadows?
+    true -- Enabled?
+}
+
+FLight_Profile = LightProfile.Shattered_05
+
+
+---------------------------------------------------------------------------------------------------------------------------------------
+-- Bots Config
+
+Bots_Enabled = true
+Bots_Start_Moving_ms = 7500
+Max_Bots = 3
+
+Bots_Move_Max_Radius = 2500
+
+Bots_Acceptance_Radius = 80
+
+Bots_Remaining_Ammo_Bag_Buy_Refill = 30
+
+Bots_CheckTarget_Interval = 2500
+Bots_Target_MaxDistance3D_Sq = 36000000
+
+Bots_Shoot_Inaccuracy_Each_Distance_Unit = 0.02
+
+Bots_Reach_PAP_Around = 100
+Bots_Reach_Door_Around = 125
+
+Bots_Ragdoll_Get_Up_Timeout_ms = 10000
+
+Bots_Behavior_Config = {
+    "REVIVE",
+    "POWER",
+    "POWERUPS",
+    "PERKS",
+    "WEAPONS",
+    "PACKAPUNCH",
+    "DOORS",
+    "MOVE",
+}
+
+Bots_Weapons_Ranks = {
+    "Makarov",
+    "M1911",
+    "Glock",
+    "ColtPython",
+    "DesertEagle",
+    "AWP",
+    "M1Garand",
+    "Lewis",
+    "Ithaca37",
+    "Moss500",
+    "Rem870",
+    "SPAS12",
+    "SMG11",
+    "AP5",
+    "UMP45",
+    "P90",
+    "ASVal",
+    "AR4",
+    "GE3",
+    "GE36",
+    "SA80",
+    "AK5C",
+    "AK74U",
+    "AK47",
+}
+
+Bots_Perks_Buy_Order = {
+    "juggernog",
+    "doubletap",
+    "three_gun",
+    "quick_revive",
+    "stamin_up",
+}
+
+-------------------------------------------------------------------------------------------------------------------------------
+-- Discord Rich Presence
+
+DRP_Enabled = true
+
+DRP_ClientID = 923919278036635719 -- Put 0 for no clientID, large_image and large_text can't work with that
+
+-- Use {ROUND_NB} for the round, {MAP_NAME} for the map name
+DRP_CONFIG = {
+    state = "In Round {ROUND_NB}",
+    details = "Killing Zombies (Nanos World)",
+    large_text = "On {MAP_NAME}",
+    large_image = "avatar",
+}
+
+----------------------------------------------------------------------------------------------------------------------------------
+-- Mapvote Settings
+
+Mapvote_tbl = {
+    time = 20,
+    maps = {
+        BlankMap = {
+            path = "nanos-world::BlankMap",
+            UI_name = "BlankMap",
+            image = "images/missing.png",
+        },
+        --[[zm_kino_der_toten = {
+            path = "zm-kino-der-toten::zm_kino_der_toten",
+            UI_name = "Kino Der Toten",
+            image = "../../../../../../../Server/Assets/zm-kino-der-toten/zm_kino_der_toten/zm_kino_der_toten/zm_kino_der_toten.jpg",
+        },]]--
+    }
+}
+
+--[[Mapvote_Time = 20
+Mapvote_AllowCurrentMap = false
+Mapvote_NotForMaps = {
+    "nanos-world::BlankMap"
+}]]--

@@ -1,3 +1,7 @@
+@font-face {
+    font-family: "Dirty Ego";
+    src: url("fonts/DIRTYEGO.woff");
+}
 
 :root {
     --players: 1;
@@ -6,9 +10,13 @@
     --revive_time: 1;
 }
 
+html, body {
+    height: 100%;
+}
+
 html {
     font-size: medium;
-    font-family: Verdana;
+    font-family: "Dirty Ego";
     color: white;
 }
 
@@ -27,8 +35,8 @@ body {
 }
 
 #ammo_text {
-    font-size: xx-large;
-    margin-top: 155px;
+    font-size: 50px;
+    margin-top: 147px;
     margin-left: 225px;
 }
 
@@ -38,17 +46,17 @@ body {
     direction: rtl;
     position: absolute;
     right: 30px;
-    bottom: 250px;
+    bottom: 270px;
     line-height: 30px; /* Set space between players money */
 }
 
 .player_money {
-    padding-top: 0.65em;
+    padding-top: 0.6em;
     padding-bottom: 1em;
-    padding-left: 1.4em;
-    padding-right: 1.6em;
-    text-align: left;
-    font-size: xx-large;
+    padding-left: 1.1em;
+    padding-right: 1.3em;
+    text-align: center;
+    font-size: 40px;
     background-image: url("./images/player_money_bg.png");
     background-position: top center;
     background-size: contain;
@@ -56,16 +64,20 @@ body {
     background-repeat: no-repeat;
 }
 
+.self_money {
+    color: rgb(231, 231, 0);
+}
+
 @keyframes slidein {
     0% {
         opacity: 1;
         right: 180px;
-        top: calc(20px + 90px * var(--player_win_money_player));
+        top: calc(20px + 94px * var(--player_win_money_player));
     }
     100% {
         opacity: 0;
         right: 240px;
-        top: calc(var(--player_win_money_top) * 1px + 90px * var(--player_win_money_player));
+        top: calc(var(--player_win_money_top) * 1px + 94px * var(--player_win_money_player));
     }
 }
 .player_money_won, .player_money_lost {
@@ -94,11 +106,11 @@ body {
 }
 
 #waves_text {
-    font-size: 85px;
+    font-size: 160px;
     color: darkred;
     position: absolute;
     left: 85px;
-    bottom: 50px;
+    bottom: 40px;
 }
 
 .waves_animation {
@@ -107,12 +119,12 @@ body {
 
 #player_perks {
     position: absolute;
-    left: 40px;
+    left: 20px;
     bottom: 200px;
 }
 
 .player_perk {
-    padding-left: 10px;
+    margin-left: -10px;
 }
 
 #revive_bar_container {
@@ -134,19 +146,22 @@ body {
 }
 
 .powerup {
-    padding-left: 10px;
+    padding-left: 0px;
 }
 
 #tab_container {
+    position: absolute;
     text-align: center;
-    font-family: Arial, Helvetica, sans-serif;
-    font-size: 20px;
+    font-size: 38px;
     width: 800px;
     height: 70%;
     overflow: auto;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    margin: auto;
     margin-top: 5%;
-    margin-left: auto;
-    margin-right: auto;
     display: grid;
     grid-auto-rows: 50px;
 }
@@ -161,11 +176,11 @@ body {
 .tab_item {
     height: 100%;
     margin-left: 0;
-    padding-top: 15px;
+    padding-top: 5px;
     color: white;
 }
 
-.tab_hidden {
+.hidden {
     visibility: hidden;
 }
 
@@ -177,4 +192,42 @@ body {
     display: grid;
     direction: rtl;
     grid-template-columns: repeat(auto-fill, 35px);
+}
+
+#HTP_frame {
+    position: absolute;
+    font-family: Verdana;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    margin: auto;
+    margin-top: 5%;
+    background-color: rgba(78, 78, 78, 0.92);
+    border-radius: 30px;
+    overflow-x: hidden;
+    overflow-y: auto;
+    width: 75%;
+    height: 65%;
+    text-align: center;
+}
+
+.HTP_title {
+    margin-top: 10px;
+    font-size: 28px;
+    font-weight: bold;
+}
+
+.HTP_category_title {
+    margin-top: 25px;
+    font-size: 26px;
+    font-weight: bold;
+    color: rgb(12, 175, 12);
+}
+
+.HTP_text {
+    margin-top: 10px;
+    font-size: 17px;
+    margin-left: 12px;
+    margin-right: 12px;
 }

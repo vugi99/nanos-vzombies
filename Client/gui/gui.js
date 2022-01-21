@@ -23,12 +23,15 @@ Events.Subscribe("SetAmmoText", function(ammo_in_mag, ammo_without_mag) {
 const players_money = document.getElementById("players_money");
 let money_players_count = 0
 
-Events.Subscribe("AddPlayerMoney", function(money) {
+Events.Subscribe("AddPlayerMoney", function(money, is_self) {
     money_players_count = money_players_count + 1
     players_money.style.setProperty('--players', money_players_count);
     let cell = document.createElement("div");
     cell.innerText = (money);
     players_money.appendChild(cell).className = "player_money";
+    if (is_self) {
+        cell.classList.add("self_money");
+    }
 })
 
 Events.Subscribe("SetPlayerMoney", function(id, money, added_money) {
@@ -36,26 +39,28 @@ Events.Subscribe("SetPlayerMoney", function(id, money, added_money) {
     let players_money_elements = document.getElementsByClassName("player_money");
     for (i = 0; i < players_money_elements.length; i++) {
         if (i == id) {
-            players_money_elements[i].innerText = (money);
-            let money_won = document.createElement("div");
             let parsed = parseInt(added_money, 10);
-            if (parsed >= 0) {
-                money_won.innerText = (added_money);
-            } else {
-                money_won.innerText = ((parsed * -1).toString());
+            if (parsed != 0) {
+                players_money_elements[i].innerText = (money);
+                let money_won = document.createElement("div");
+                if (parsed >= 0) {
+                    money_won.innerText = (added_money);
+                } else {
+                    money_won.innerText = ((parsed * -1).toString());
+                }
+                let r_int = getRandomInt(41)
+                // console.log(r_int)
+                // console.log(parsed >= 0);
+                money_won.style.setProperty('--player_win_money_top', r_int);
+                money_won.style.setProperty('--player_win_money_player', id);
+                let append_element = players_money_elements[i].appendChild(money_won);
+                if (parsed >= 0) {
+                    append_element.className = "player_money_won"
+                } else {
+                    append_element.className = "player_money_lost"
+                }
+                setTimeout(() => {  if (players_money_elements[i] && money_won && players_money_elements[i].contains(money_won)) { players_money_elements[i].removeChild(money_won); } }, 2000);
             }
-            let r_int = getRandomInt(41)
-            // console.log(r_int)
-            // console.log(parsed >= 0);
-            money_won.style.setProperty('--player_win_money_top', r_int);
-            money_won.style.setProperty('--player_win_money_player', id);
-            let append_element = players_money_elements[i].appendChild(money_won);
-            if (parsed >= 0) {
-                append_element.className = "player_money_won"
-            } else {
-                append_element.className = "player_money_lost"
-            }
-            setTimeout(() => {  if (players_money_elements[i] && money_won && players_money_elements[i].contains(money_won)) { players_money_elements[i].removeChild(money_won); } }, 2000);
             break;
         }
     }
@@ -93,8 +98,8 @@ const player_perks = document.getElementById("player_perks");
 Events.Subscribe("AddPerk", function(perk_src) {
     let img = document.createElement('img');
     img.src = perk_src;
-    img.width = "50";
-    img.height = "50";
+    img.width = "95";
+    img.height = "95";
     player_perks.appendChild(img).className = "player_perk";
 })
 
@@ -149,8 +154,8 @@ Events.Subscribe("AddPowerup", function(powerup_src) {
     let img = document.createElement('img');
     img.src = powerup_src;
     img.powerup = powerup_src
-    img.width = "50";
-    img.height = "50";
+    img.width = "95";
+    img.height = "95";
     powerups_div.appendChild(img).className = "powerup";
 })
 
@@ -185,14 +190,14 @@ Events.Subscribe("ShowTab", function(players) {
 
         tab_container.appendChild(div_line);
     }
-    tab_container.classList.remove("tab_hidden");
+    tab_container.classList.remove("hidden");
 })
 
 Events.Subscribe("HideTab", function() {
     while (tab_container.lastChild != tab_top) {
         tab_container.removeChild(tab_container.lastChild);
     }
-    tab_container.classList.add("tab_hidden");
+    tab_container.classList.add("hidden");
 })
 
 
@@ -211,7 +216,18 @@ Events.Subscribe("SetGrenadesNB", function(nb) {
     }
 })
 
+const htp_frame = document.getElementById("HTP_frame");
 
+Events.Subscribe("ShowHTPFrame", function() {
+    htp_frame.classList.remove("hidden");
+})
+
+Events.Subscribe("HideHTPFrame", function() {
+    htp_frame.classList.add("hidden");
+})
+
+
+//testFuncs.ShowHTPFrame()
 
 /*testFuncs.AddPowerup("images/instakill_icon.png")
 testFuncs.AddPowerup("images/x2_icon.png")
@@ -235,7 +251,7 @@ testFuncs.AddPerk("images/three_gun_icon.png")*/
 /*NewWave("2")
 setTimeout(() => { testFuncs. NewWave("3"); }, 5000);*/
 
-/*AddPlayerMoney("500")
+/*testFuncs.AddPlayerMoney("500")
 
 testFuncs.AddPlayerMoney("1000")
 testFuncs.AddPlayerMoney("1111")

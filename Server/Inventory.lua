@@ -12,6 +12,17 @@ function GetCharacterInventory(char)
     return false
 end
 
+function GetPlayerInventoryTable(ply)
+    local char = ply:GetControlledCharacter()
+    if char then
+        for i, v in ipairs(PlayersCharactersWeapons) do
+            if v.char == char then
+                return v
+            end
+        end
+    end
+end
+
 function GenerateWeaponToInsert(weapon_name, ammo_bag, slot, ammo_clip, pap)
     return {
         ammo_bag = ammo_bag,
@@ -63,6 +74,12 @@ local function GiveInventoryPlayerWeapon(char, charInvID, i, v)
         weapon:SetMaterial(Pack_a_punch_weapon_material, Pack_a_punch_weapon_material_index)
     end
     char:PickUp(weapon)
+
+    local FLZones = char:GetValue("InFlashlightZones")
+    if table_count(FLZones) > 0 then
+        AttachFlashLightToCurWeapon(char)
+    end
+
     --print("a", PlayersCharactersWeapons[charInvID].weapons[i])
     PlayersCharactersWeapons[charInvID].weapons[i].weapon = weapon
 end
@@ -73,7 +90,7 @@ function EquipSlot(char, slot)
     if charInvID then
         local Inv = PlayersCharactersWeapons[charInvID]
         local picked_thing = char:GetPicked()
-        if (not picked_thing or not NanosUtils.IsA(picked_thing, Grenade)) then
+        if (not picked_thing or (not NanosUtils.IsA(picked_thing, Grenade) and not NanosUtils.IsA(picked_thing, Melee))) then
             if slot ~= Inv.selected_slot then
                 for i, v in ipairs(Inv.weapons) do
                     if (v.slot == Inv.selected_slot and v.weapon) then
@@ -197,7 +214,7 @@ function AddCharacterWeapon(char, weapon_name, ammo_bag, equip, ammo_clip, pap)
     end
 end
 
-Character.Subscribe("Destroy", function(char)
+VZ_EVENT_SUBSCRIBE("Character", "Destroy", function(char)
     local charInvID = GetCharacterInventory(char)
     if charInvID then
         for i, v in ipairs(PlayersCharactersWeapons[charInvID].weapons) do
@@ -210,13 +227,14 @@ Character.Subscribe("Destroy", function(char)
     end
 end)
 
-Weapon.Subscribe("Drop", function(weapon, char, was_triggered_by_player)
+VZ_EVENT_SUBSCRIBE("Weapon", "Drop", function(weapon, char, was_triggered_by_player)
     --print("Drop", weapon, char, was_triggered_by_player, weapon:GetAssetName())
     local charInvID = GetCharacterInventory(char)
     if charInvID then
         for i, v in ipairs(PlayersCharactersWeapons[charInvID].weapons) do
             if (v.weapon and v.weapon == weapon) then
                 if not v.destroying then
+                    DetachFlashLightFromWeapon(weapon)
                     weapon:SetValue("DroppedWeaponName", v.weapon_name, false)
                     weapon:SetValue("DroppedWeaponPAP", v.pap, false)
                     weapon:SetValue("DroppedWeaponDTimeout", Timer.SetTimeout(function()
@@ -239,7 +257,7 @@ Weapon.Subscribe("Drop", function(weapon, char, was_triggered_by_player)
     end
 end)
 
-Weapon.Subscribe("PickUp", function(weapon, char)
+VZ_EVENT_SUBSCRIBE("Weapon", "PickUp", function(weapon, char)
     --print("PickUp Event")
     local d_weap_name = weapon:GetValue("DroppedWeaponName")
     if d_weap_name then
@@ -253,7 +271,7 @@ Weapon.Subscribe("PickUp", function(weapon, char)
     end
 end)
 
-Events.Subscribe("VZ_Switch_Weapon", function(ply)
+VZ_EVENT_SUBSCRIBE("Events", "VZ_Switch_Weapon", function(ply)
     local char = ply:GetControlledCharacter()
     if char then
         local charInvID = GetCharacterInventory(char)
@@ -272,7 +290,7 @@ Events.Subscribe("VZ_Switch_Weapon", function(ply)
     end
 end)
 
-Weapon.Subscribe("Interact", function(weapon, char)
+VZ_EVENT_SUBSCRIBE("Weapon", "Interact", function(weapon, char)
     if weapon:IsValid() then
         local mbox_fake_weapon = weapon:GetValue("MBOXFakeWeapon")
         if mbox_fake_weapon then
@@ -291,7 +309,7 @@ Weapon.Subscribe("Interact", function(weapon, char)
     end
 end)
 
-Weapon.Subscribe("Interact", function(weapon, char)
+function InteractPAPWeapon(weapon, char)
     if weapon:IsValid() then
         local pap_weapon_for_char = weapon:GetValue("PAPWeaponForCharacterID")
         if pap_weapon_for_char then
@@ -310,9 +328,11 @@ Weapon.Subscribe("Interact", function(weapon, char)
             return false
         end
     end
-end)
+end
 
-Events.Subscribe("PickupGrenade", function(ply)
+VZ_EVENT_SUBSCRIBE("Weapon", "Interact", InteractPAPWeapon)
+
+VZ_EVENT_SUBSCRIBE("Events", "PickupGrenade", function(ply)
     if ply:IsValid() then
         local char = ply:GetControlledCharacter()
         if char then
@@ -358,13 +378,13 @@ Events.Subscribe("PickupGrenade", function(ply)
     end
 end)
 
-Grenade.Subscribe("Throw", function(grenade)
+VZ_EVENT_SUBSCRIBE("Grenade", "Throw", function(grenade)
     local char_id = grenade:GetValue("GrenadeOwner")
     if char_id then
         local char = GetCharacterFromId(char_id)
         if char then
             if not char:GetValue("PlayerDown") then
-                if not ZDEV_MODE then
+                if not ZDEV_IsModeEnabled("ZDEV_INFINITE_GRENADES") then
                     char:SetValue("ZGrenadesNB", char:GetValue("ZGrenadesNB") - 1, true)
                 end
 
@@ -381,7 +401,7 @@ Grenade.Subscribe("Throw", function(grenade)
     end
 end)
 
-Events.Subscribe("ThrowGrenade", function(ply)
+VZ_EVENT_SUBSCRIBE("Events", "ThrowGrenade", function(ply)
     if ply:IsValid() then
         local char = ply:GetControlledCharacter()
         if char then
@@ -393,7 +413,8 @@ Events.Subscribe("ThrowGrenade", function(ply)
     end
 end)
 
-Grenade.Subscribe("Interact", function(grenade)
+
+VZ_EVENT_SUBSCRIBE("Grenade", "Interact", function(grenade)
     return false
 end)
 
@@ -401,6 +422,107 @@ function DestroyMapGrenades()
     for k, v in pairs(Grenade.GetPairs()) do
         if not v:GetHandler() then
             v:Destroy()
+        end
+    end
+end
+
+function SpawnKnife(location, rotation)
+	local melee = Melee(location or Vector(), rotation or Rotator(), "nanos-world::SM_M9", CollisionType.Normal, true, HandlingMode.SingleHandedMelee)
+	melee:SetAnimationCharacterUse("nanos-world::AM_Mannequin_Melee_Stab_Attack")
+	melee:SetDamageSettings(0.3, 0.3)
+	melee:SetCooldown(Knife_Cooldown_ms / 1000)
+	melee:SetBaseDamage(Knife_Base_Damage)
+
+	return melee
+end
+
+VZ_EVENT_SUBSCRIBE("Events", "UseKnife", function(ply)
+    if ply:IsValid() then
+        local char = ply:GetControlledCharacter()
+        if char then
+            if not char:GetValue("PlayerDown") then
+                if char:GetValue("CanUseKnife") then
+
+                    local charInvID = GetCharacterInventory(char)
+                    if charInvID then
+                        local Inv = PlayersCharactersWeapons[charInvID]
+
+                        for i, v in ipairs(Inv.weapons) do
+                            if (v.slot == Inv.selected_slot and v.weapon) then
+                                if v.weapon:IsValid() then
+                                    v.ammo_bag = v.weapon:GetAmmoBag()
+                                    v.ammo_clip = v.weapon:GetAmmoClip()
+
+                                    v.destroying = true
+                                    v.weapon:Destroy()
+                                end
+                                v.weapon = nil
+                                break
+                            end
+                        end
+                    end
+
+                    local knife = SpawnKnife()
+
+                    char:PickUp(knife)
+
+                    knife:PullUse()
+
+                    char:SetValue("CanUseKnife", false, true)
+
+                    Timer.SetTimeout(function()
+                        if knife:IsValid() then
+                            if char:IsValid() then
+                                knife:Destroy()
+
+                                local charInvID = GetCharacterInventory(char)
+                                if charInvID then
+                                    local Inv = PlayersCharactersWeapons[charInvID]
+
+                                    EquipSlot(char, Inv.selected_slot)
+                                end
+                            end
+                        end
+                    end, Knife_Switch_ms)
+
+                    Timer.SetTimeout(function()
+                        if char:IsValid() then
+                            char:SetValue("CanUseKnife", true, true)
+                        end
+                    end, Knife_Cooldown_ms)
+                end
+            end
+        end
+    end
+end)
+
+function AttachFlashLightToCurWeapon(char)
+    local picked_thing = char:GetPicked()
+    if picked_thing then
+        if NanosUtils.IsA(picked_thing, Weapon) then
+            local flashlight = Light(
+                Vector(0, 0, 0),
+                Rotator(0, 0, 0),
+                Color(1, 1, 1),
+                LightType.Spot,
+                table.unpack(FLight_Config)
+            )
+            flashlight:AttachTo(picked_thing, AttachmentRule.SnapToTarget, "muzzle", 0)
+            flashlight:SetTextureLightProfile(FLight_Profile)
+            picked_thing:SetValue("FlashLightID", flashlight:GetID(), false)
+        end
+    end
+end
+
+function DetachFlashLightFromWeapon(weapon)
+    local FLID = weapon:GetValue("FlashLightID")
+    if FLID then
+        for k2, v2 in pairs(Light.GetPairs()) do
+            if v2:GetID() == FLID then
+                v2:Destroy()
+                weapon:SetValue("FlashLightID", nil, false)
+                break
+            end
         end
     end
 end

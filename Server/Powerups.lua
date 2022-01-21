@@ -31,11 +31,15 @@ function GetPowerupsOnMapCopy()
     return tbl
 end
 
+function DestroyPowerup(v)
+    v.SM_Powerup:Destroy()
+    v.PS_Powerup:Destroy()
+    Timer.ClearTimeout(v.DestroyTimeout)
+end
+
 function DestroyPowerups()
     for k, v in pairs(POWERUPS_PICKUPS) do
-        v.SM_Powerup:Destroy()
-        v.PS_Powerup:Destroy()
-        Timer.ClearTimeout(v.DestroyTimeout)
+        DestroyPowerup(v)
     end
     POWERUPS_PICKUPS = {}
     POWERUPS_IDS = 0
@@ -46,7 +50,7 @@ function DestroyPowerups()
     Events.BroadcastRemote("RemoveGUIPowerups")
 end
 
-function PowerupGrabbed(powerup_name, by_char, at_loc)
+function PowerupGrabbed(powerup_name, by_char)
     local ply = by_char:GetPlayer()
     Events.CallRemote("PowerupGrabSound", ply)
     if powerup_name == "carpenter" then
@@ -137,10 +141,9 @@ Timer.SetInterval(function()
                 local char_loc = v2:GetLocation()
                 if powerup_loc:DistanceSquared(char_loc) <= Powerup_Grab_Distance_Squared then
                     if v.SM_Powerup:IsValid() then
-                        v.SM_Powerup:Destroy()
-                        v.PS_Powerup:Destroy()
-                        Timer.ClearTimeout(v.DestroyTimeout)
-                        PowerupGrabbed(v.powerup_name, v2, powerup_loc)
+                        Events.Call("VZ_PowerupGrabbed", v2, v.SM_Powerup:GetValue("GrabPowerup"), v.powerup_name)
+                        DestroyPowerup(v)
+                        PowerupGrabbed(v.powerup_name, v2)
                     end
                     POWERUPS_PICKUPS[k] = nil
                 end
@@ -153,6 +156,9 @@ function ZombieDie_SpawnRandomPowerup(zombie)
     local random_perc = math.random(100)
     if random_perc <= Powerup_Spawn_Percentage then
         local loc = zombie:GetLocation()
+        if zombie:GetValue("GroundAnim") then
+            loc = loc + Vector(0, 0, 237)
+        end
         local random_powerup_name = Powerups_Names[math.random(table_count(Powerups_Names))]
         local random_powerup_config = Powerups_Config[random_powerup_name]
         local SM_Powerup = StaticMesh(
@@ -186,4 +192,30 @@ function ZombieDie_SpawnRandomPowerup(zombie)
             end, Powerup_Delete_after_ms)
         })
     end
+end
+
+function GetPowerupPickupFromPowerupID(P_ID)
+    for k, v in pairs(POWERUPS_PICKUPS) do
+        if v.SM_Powerup:GetValue("GrabPowerup") == P_ID then
+            return k, v
+        end
+    end
+end
+
+if ZDEV_IsModeEnabled("ZDEV_COMMANDS") then
+    VZ_EVENT_SUBSCRIBE("Server", "Chat", function(text, ply)
+        local char = ply:GetControlledCharacter()
+        if char then
+            if text then
+                local split_txt = split_str(text, " ")
+                if (split_txt and split_txt[1] and split_txt[2]) then
+                    if split_txt[1] == "/givepwrup" then
+                        if Powerups_Config[split_txt[2]] then
+                            PowerupGrabbed(split_txt[2], char)
+                        end
+                    end
+                end
+            end
+        end
+    end)
 end

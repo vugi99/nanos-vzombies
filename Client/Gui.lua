@@ -3,8 +3,14 @@
 -- Render
 -- Group 1 : Buy something text
 -- Group 2 : Health text
+-- Group 3 : How to play text
+-- Group 4 : Zombies Remaining Text
+-- Group 5 : ZDEV_MODE
+-- Group 10-? : Player names
 
-for i = 1, 2 do
+Input.Register("How to play", "H")
+
+for i = 1, 5 do
     Render.ClearItems(i)
 end
 
@@ -14,6 +20,17 @@ ROUND_NB = 0
 
 local HealthText = Render.AddText(2, "", Vector2D(math.floor(Render.GetViewportSize().X * 0.95), 50), 0, 16, Color.GREEN, 0, true, true, false, Vector2D(0, 0), Color.WHITE, false, Color.WHITE)
 
+local HTP_Showed = false
+local HTP_Text = Render.AddText(3, "How to play (" .. Input.GetMappedKey("How to play") .. ")", Vector2D(math.floor(Render.GetViewportSize().X * 0.5), math.floor(Render.GetViewportSize().Y * 0.5)), 0, 25, Color.WHITE, 0, true, true, false, Vector2D(0, 0), Color.WHITE, false, Color.WHITE)
+Timer.SetTimeout(function()
+    Render.ClearItems(3)
+    HTP_Text = nil
+end, How_To_Play_Text_Destroy_ms)
+
+if ZDEV_CONFIG.ENABLED then
+    Render.AddText(5, "VZ DEV MODE", Vector2D(math.floor(Render.GetViewportSize().X * 0.5), 10), 0, 16, Color.RED, 0, true, true, false, Vector2D(0, 0), Color.WHITE, false, Color.WHITE)
+end
+
 local PlayersMoney = {}
 
 local Powerups_On_GUI = {}
@@ -22,6 +39,11 @@ CurPerks = {}
 
 local RequestedTabData = false
 local Tab_Open = false
+
+Remaining_Zombies_RenderItem = nil
+if Remaining_Zombies_Text then
+    Remaining_Zombies_RenderItem = Render.AddText(4, "Remaining Zombies : 0", Vector2D(135, math.floor(Render.GetViewportSize().Y * 0.04)), 0, 14, Color.WHITE, 0, true, true, false, Vector2D(0, 0), Color.WHITE, false, Color.WHITE)
+end
 
 function IsSelfCharacter(char)
     local local_player = Client.GetLocalPlayer()
@@ -46,15 +68,15 @@ end
 
 function NeedToUpdateAmmoText(char, weapon)
     if IsSelfCharacter(char) then
-        if not NanosUtils.IsA(weapon, Grenade) then
+        if (not NanosUtils.IsA(weapon, Grenade) and not NanosUtils.IsA(weapon, Melee)) then
             GUI:CallEvent("SetAmmoText", tostring(weapon:GetAmmoClip()), tostring(weapon:GetAmmoBag()))
         end
     end
 end
-Character.Subscribe("Fire", NeedToUpdateAmmoText)
-Character.Subscribe("Reload", NeedToUpdateAmmoText)
-Character.Subscribe("PickUp", NeedToUpdateAmmoText)
-Character.Subscribe("Drop", function(char)
+VZ_EVENT_SUBSCRIBE("Character", "Fire", NeedToUpdateAmmoText)
+VZ_EVENT_SUBSCRIBE("Character", "Reload", NeedToUpdateAmmoText)
+VZ_EVENT_SUBSCRIBE("Character", "PickUp", NeedToUpdateAmmoText)
+VZ_EVENT_SUBSCRIBE("Character", "Drop", function(char)
     local local_player = Client.GetLocalPlayer()
     local local_char = local_player:GetControlledCharacter()
     if local_char then
@@ -63,7 +85,7 @@ Character.Subscribe("Drop", function(char)
         end
     end
 end)
-Events.Subscribe("UpdateAmmoText", function()
+VZ_EVENT_SUBSCRIBE("Events", "UpdateAmmoText", function()
     local local_player = Client.GetLocalPlayer()
     local local_char = local_player:GetControlledCharacter()
     if local_char then
@@ -76,7 +98,11 @@ end)
 
 function AddPlayerMoney(ply, money)
     if ply then -- Ghost player appear if i don't do that ?
-        GUI:CallEvent("AddPlayerMoney", tostring(money))
+        local is_self = false
+        if (Client.GetLocalPlayer() and ply == Client.GetLocalPlayer()) then
+            is_self = true
+        end
+        GUI:CallEvent("AddPlayerMoney", tostring(money), is_self)
         table.insert(PlayersMoney, {ply = ply, money = money})
     end
 end
@@ -131,7 +157,8 @@ function BuildPlayersMoney()
     end
 end
 
-Player.Subscribe("ValueChange", function(ply, key, value)
+
+function PlyMoneyChangeCheck(ply, key, value)
     if key == "ZMoney" then
         local found
         for i, v in ipairs(PlayersMoney) do
@@ -155,9 +182,11 @@ Player.Subscribe("ValueChange", function(ply, key, value)
             end
         end
     end
-end)
+end
+VZ_EVENT_SUBSCRIBE("Player", "ValueChange", PlyMoneyChangeCheck)
+VZ_EVENT_SUBSCRIBE("VZBot", "ValueChange", PlyMoneyChangeCheck)
 
-Player.Subscribe("Destroy", function(ply)
+VZ_EVENT_SUBSCRIBE("Player", "Destroy", function(ply)
     RemovePlayerMoney(ply)
 end)
 
@@ -180,9 +209,22 @@ function SetRoundNumber(nb)
         NewWave_Sound.volume
     )
     ROUND_NB = nb
+    local NewDRP_Config = {}
+    if DRP_Enabled then
+        for k, v in pairs(DRP_CONFIG) do
+            if k ~= large_image then
+                NewDRP_Config[k] = v:gsub("{ROUND_NB}", tostring(ROUND_NB))
+                local map_name = Client.GetMap()
+                NewDRP_Config[k] = NewDRP_Config[k]:gsub("{MAP_NAME}", split_str(map_name, ":")[2])
+            else
+                NewDRP_Config[k] = v
+            end
+        end
+        Client.SetDiscordActivity(NewDRP_Config.state, NewDRP_Config.details, NewDRP_Config.large_image, NewDRP_Config.large_text)
+    end
 end
 
-Events.Subscribe("SetClientRoundNumber", function(nb)
+VZ_EVENT_SUBSCRIBE("Events", "SetClientRoundNumber", function(nb)
     SetRoundNumber(nb)
 end)
 
@@ -211,8 +253,7 @@ function BuyText(buy_name, buy_price)
 end
 
 
-
-Character.Subscribe("TakeDamage", function(char, damage, bone, dtype, from_direction, instigator, causer)
+VZ_EVENT_SUBSCRIBE("Character", "TakeDamage", function(char, damage, bone, dtype, from_direction, instigator, causer)
     if IsSelfCharacter(char) then
         local health = char:GetHealth() - damage - 1000
         Render.UpdateItemText(2, HealthText, tostring(health) .. " HP")
@@ -227,13 +268,13 @@ Character.Subscribe("TakeDamage", function(char, damage, bone, dtype, from_direc
     end
 end)
 
-Character.Subscribe("Destroy", function(char)
+VZ_EVENT_SUBSCRIBE("Character", "Destroy", function(char)
     if IsSelfCharacter(char) then
         Render.UpdateItemText(2, "")
     end
 end)
 
-Events.Subscribe("UpdateGUIHealth", function()
+VZ_EVENT_SUBSCRIBE("Events", "UpdateGUIHealth", function()
     local ply = Client.GetLocalPlayer()
     local char = ply:GetControlledCharacter()
     if char then
@@ -246,7 +287,7 @@ Events.Subscribe("UpdateGUIHealth", function()
     end
 end)
 
-Player.Subscribe("Possess", function(ply, char)
+VZ_EVENT_SUBSCRIBE("Player", "Possess", function(ply, char)
     if ply == Client.GetLocalPlayer() then
         local health = char:GetHealth()
         Render.UpdateItemText(2, HealthText, tostring(PlayerHealth) .. " HP")
@@ -261,7 +302,7 @@ function GUIStopRevive()
     GUI:CallEvent("StopRevive")
 end
 
-Events.Subscribe("PowerupGrabbed", function(powerup_name)
+VZ_EVENT_SUBSCRIBE("Events", "PowerupGrabbed", function(powerup_name)
     PowerupSound(Powerups_Config[powerup_name].sound)
     if (Powerups_Config[powerup_name].icon and not Powerups_On_GUI[powerup_name]) then
         GUI:CallEvent("AddPowerup", Powerups_Config[powerup_name].icon)
@@ -269,14 +310,14 @@ Events.Subscribe("PowerupGrabbed", function(powerup_name)
     end
 end)
 
-Events.Subscribe("DurationPowerupRemoved", function(powerup_name)
+VZ_EVENT_SUBSCRIBE("Events", "DurationPowerupRemoved", function(powerup_name)
     if Powerups_Config[powerup_name].icon then
         GUI:CallEvent("RemovePowerup", Powerups_Config[powerup_name].icon)
         Powerups_On_GUI[powerup_name] = nil
     end
 end)
 
-Events.Subscribe("RemoveGUIPowerups", function()
+VZ_EVENT_SUBSCRIBE("Events", "RemoveGUIPowerups", function()
     for k, v in pairs(Powerups_Config) do
         if v.icon then
             GUI:CallEvent("RemovePowerup", v.icon)
@@ -289,7 +330,7 @@ function GUINewPerk(perk_name)
     GUI:CallEvent("AddPerk", PERKS_CONFIG[perk_name].icon)
 end
 
-Character.Subscribe("ValueChange", function(char, key, value)
+VZ_EVENT_SUBSCRIBE("Character", "ValueChange", function(char, key, value)
     if IsSelfCharacter(char) then
         if key == "OwnedPerks" then
             for k, v in pairs(value) do
@@ -312,40 +353,30 @@ Character.Subscribe("ValueChange", function(char, key, value)
     end
 end)
 
-Character.Subscribe("Destroy", function(char)
+VZ_EVENT_SUBSCRIBE("Character", "Destroy", function(char)
     if IsSelfCharacter(char) then
         CurPerks = {}
         GUI:CallEvent("ResetPerks")
     end
 end)
 
-if ZDEV_MODE then
-    Client.SetHighlightColor(Color(10, 2.5, 0, 2), 0)
-
-    Character.Subscribe("Spawn", function(character)
-        character:SetHighlightEnabled(true, 0)
-    end)
-end
-
-
 Input.Register("Scoreboard", "Tab")
 
-Input.Bind("Scoreboard", InputEvent.Pressed, function()
+VZ_BIND("Scoreboard", InputEvent.Pressed, function()
     if (not RequestedTabData and not Tab_Open) then
         RequestedTabData = true
         Events.CallRemote("RequestTabData")
     end
 end)
 
-
-Input.Bind("Scoreboard", InputEvent.Released, function()
+VZ_BIND("Scoreboard", InputEvent.Released, function()
     if Tab_Open then
         GUI:CallEvent("HideTab")
         Tab_Open = false
     end
 end)
 
-Events.Subscribe("TabData", function(tab_data)
+VZ_EVENT_SUBSCRIBE("Events", "TabData", function(tab_data)
     Tab_Open = true
     GUI:CallEvent("ShowTab", JSON.stringify(tab_data))
     RequestedTabData = false
@@ -355,7 +386,7 @@ function UpdateGrenadesNB(nb)
     GUI:CallEvent("SetGrenadesNB", nb)
 end
 
-Character.Subscribe("ValueChange", function(char, key, value)
+VZ_EVENT_SUBSCRIBE("Character", "ValueChange", function(char, key, value)
     if IsSelfCharacter(char) then
         if key == "ZGrenadesNB" then
             UpdateGrenadesNB(value)
@@ -363,8 +394,123 @@ Character.Subscribe("ValueChange", function(char, key, value)
     end
 end)
 
-Character.Subscribe("Destroy", function(char)
+VZ_EVENT_SUBSCRIBE("Character", "Destroy", function(char)
     if IsSelfCharacter(char) then
         UpdateGrenadesNB(0)
+    end
+end)
+
+
+Input.Bind("How to play", InputEvent.Pressed, function()
+    HTP_Showed = not HTP_Showed
+    Client.SetMouseEnabled(HTP_Showed)
+    Client.SetInputEnabled(not HTP_Showed)
+    if HTP_Showed then
+        GUI:CallEvent("ShowHTPFrame")
+        GUI:BringToFront()
+        GUI:SetFocus()
+    else
+        GUI:CallEvent("HideHTPFrame")
+    end
+end)
+
+VZ_EVENT_SUBSCRIBE("Events", "SetClientRemainingZombies", function(remaining)
+    if Remaining_Zombies_RenderItem then
+        Render.UpdateItemText(4, Remaining_Zombies_RenderItem, "Remaining Zombies : " .. tostring(remaining))
+    end
+end)
+
+
+local groups_texts = {}
+
+function Calculate_Head_Text_Vector(char_loc)
+    local project = Render.Project(char_loc + Vector(0, 0, 97))
+    if (project and project ~= Vector2D(-1, -1)) then
+        return project
+    end
+end
+
+VZ_EVENT_SUBSCRIBE("Client", "Tick", function(ds)
+    if Player_Names_On_Heads then
+        local self_char = Client.GetLocalPlayer():GetControlledCharacter()
+        local self_loc
+        if self_char then
+            self_loc = self_char:GetLocation()
+        elseif Spectating_Player then
+            local specing_char = Spectating_Player:GetControlledCharacter()
+            if specing_char then
+                self_loc = specing_char:GetLocation()
+            end
+        else
+            self_loc = Client.GetLocalPlayer():GetCameraLocation()
+        end
+        for k, v in pairs(groups_texts) do
+            local remove_group = true
+            if v.char:IsValid() then
+                local char_loc = v.char:GetLocation()
+                local dist_sq = self_loc:DistanceSquared(char_loc)
+                if dist_sq <= Player_Name_Displayed_at_dist_sq then
+                    local Vector_head_text = Calculate_Head_Text_Vector(char_loc)
+                    if Vector_head_text then
+                        remove_group = false
+                        Render.UpdateItemPosition(v.group_id, v.item_id, Vector_head_text)
+                    end
+                end
+            end
+            if remove_group then
+                Render.ClearItems(v.group_id)
+                groups_texts[k] = nil
+            end
+        end
+        for k, v in pairs(Character.GetPairs()) do
+            local ply = v:GetPlayer()
+            if ply then
+                if ply ~= Client.GetLocalPlayer() then
+                    local is_already_on_screen = false
+                    for k2, v2 in pairs(groups_texts) do
+                        if v2.char == v then
+                            is_already_on_screen = true
+                            break
+                        end
+                    end
+                    if not is_already_on_screen then
+                        local char_loc = v:GetLocation()
+                        local dist_sq = self_loc:DistanceSquared(char_loc)
+                        if dist_sq <= Player_Name_Displayed_at_dist_sq then
+                            local Vector_head_text = Calculate_Head_Text_Vector(char_loc)
+                            if Vector_head_text then
+                                local head_text_last_count = table_last_count(groups_texts)
+                                groups_texts[head_text_last_count + 1] = {
+                                    char = v,
+                                    group_id = head_text_last_count + 10,
+                                    item_id = Render.AddText(
+                                        head_text_last_count + 10,
+                                        ply:GetAccountName(),
+                                        Vector_head_text,
+                                        FontType.Roboto,
+                                        16,
+                                        Color.AZURE,
+                                        0,
+                                        true,
+                                        true,
+                                        false,
+                                        Vector2D(0, 0),
+                                        Color.WHITE,
+                                        true,
+                                        Color.BLACK
+                                    ),
+                                }
+                            end
+                        end
+                    end
+                end
+            end
+        end
+    end
+end)
+
+VZ_EVENT_SUBSCRIBE("Package", "Unload", function()
+    for k, v in pairs(groups_texts) do
+        Render.ClearItems(v.group_id)
     end
 end)
