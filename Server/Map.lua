@@ -874,6 +874,7 @@ end
 
 if MAP_LIGHT_ZONES then
     for i, v in ipairs(MAP_LIGHT_ZONES) do
+        --print(ZDEV_IsModeEnabled("ZDEV_DEBUG_TRIGGERS"))
         local trigger = Trigger(v.location, v.rotation, v.scale * 31.5, TriggerType.Box, ZDEV_IsModeEnabled("ZDEV_DEBUG_TRIGGERS"), Color.RED)
 
         VZ_ENT_EVENT_SUBSCRIBE(trigger, "BeginOverlap", function(self, triggered_by)

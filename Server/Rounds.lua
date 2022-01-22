@@ -209,7 +209,7 @@ if ZDEV_IsModeEnabled("ZDEV_COMMANDS") then
             if split_txt[1] == "round_nb" then
                 ROUND_NB = tonumber(split_txt[2]) - 1
                 print("ROUND_NB set to", ROUND_NB + 1)
-                
+
                 REMAINING_ZOMBIES_TO_SPAWN = 0
                 for k, v in pairs(GetZombiesCharsCopy()) do
                     v:SetHealth(0)

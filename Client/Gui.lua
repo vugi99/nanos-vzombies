@@ -6,11 +6,13 @@
 -- Group 3 : How to play text
 -- Group 4 : Zombies Remaining Text
 -- Group 5 : ZDEV_MODE
+-- Group 6 : Waiting For Slot text
+-- Group 7 : Spectating : player text
 -- Group 10-? : Player names
 
 Input.Register("How to play", "H")
 
-for i = 1, 5 do
+for i = 1, 7 do
     Render.ClearItems(i)
 end
 
@@ -514,3 +516,41 @@ VZ_EVENT_SUBSCRIBE("Package", "Unload", function()
         Render.ClearItems(v.group_id)
     end
 end)
+
+if ZDEV_IsModeEnabled("ZDEV_DEBUG_HIGHLIGHT_ZOMBIES") then
+    local highlight_color = Color(10, 2.5, 0)
+    Client.SetHighlightColor(highlight_color, 0, HighlightMode.Always)
+
+    VZ_EVENT_SUBSCRIBE("Character", "ValueChange", function(char, key, value)
+        if key == "ZombieType" then
+            if value then
+                char:SetHighlightEnabled(true, 0)
+            end
+        end
+    end)
+
+    for k, v in pairs(Character.GetPairs()) do
+        if v:GetValue("ZombieType") then
+            v:SetHighlightEnabled(true, 0)
+        end
+    end
+end
+
+function HandlePlayerWaitingValue(value)
+    --print("HandlePlayerWaitingValue PlayerWaiting", value)
+    if value then
+        Render.AddText(6, "Game full, Waiting for free slot", Vector2D(135, math.floor(Render.GetViewportSize().Y * 0.06)), 0, 14, Color.ORANGE, 0, true, true, false, Vector2D(0, 0), Color.WHITE, false, Color.WHITE)
+    else
+        Render.ClearItems(6)
+    end
+end
+
+VZ_EVENT_SUBSCRIBE("Player", "ValueChange", function(ply, key, value)
+    if ply == Client.GetLocalPlayer() then
+        if key == "PlayerWaiting" then
+            HandlePlayerWaitingValue(value)
+        end
+    end
+end)
+HandlePlayerWaitingValue(Client.GetLocalPlayer():GetValue("PlayerWaiting"))
+

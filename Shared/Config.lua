@@ -7,6 +7,7 @@ ZDEV_CONFIG = {
         ZDEV_GODMODE = true,
         ZDEV_INFINITE_GRENADES = true,
         ZDEV_DEBUG_TRIGGERS = true,
+        ZDEV_DEBUG_HIGHLIGHT_ZOMBIES = true,
     }
 }
 

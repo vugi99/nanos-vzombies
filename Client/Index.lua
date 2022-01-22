@@ -35,9 +35,3 @@ Events.Subscribe("LoadMapConfig", function(MAP_CONFIG)
     Package.Require("Spec.lua")
     Package.Require("cl_Bots.lua")
 end)
-
-if Client.GetLocalPlayer() then
-    Package.Subscribe("Load", function()
-        Events.CallRemote("VZPlayerJoinedAfterReload")
-    end)
-end

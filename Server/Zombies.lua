@@ -208,6 +208,7 @@ function ZombieSwitchToPlayerTarget(zombie)
         end, Zombies_Can_Damage_After_ms), false)
         local zloc = zombie:GetLocation()
         zombie:SetValue("LastLocation", {zloc.X, zloc.Y, zloc.Z}, false)
+        --print("StuckNB Set 0 ZombieSwitchToPlayerTarget")
         zombie:SetValue("StuckNB", 0, false)
         ZombieRefreshTarget(zombie)
     end
@@ -334,6 +335,7 @@ function ZombieAttack(zombie)
                         zombie:SetValue("PunchCoolDownTimer", nil, false)
                         local zloc = zombie:GetLocation()
                         zombie:SetValue("LastLocation", {zloc.X, zloc.Y, zloc.Z}, false)
+                        --print("StuckNB Set 0 PunchCoolDownTimer finished")
                         zombie:SetValue("StuckNB", 0, false)
                     end
                 end, Zombies_Damage_Cooldown_ms), false)
@@ -395,12 +397,15 @@ VZ_EVENT_SUBSCRIBE("Character", "MoveCompleted", function(zombie, succeeded)
                 ReachTarget_PrePlayerTargetFailed(zombie)
             end
         elseif target_type == "player" then
-            --print("MoveCompleted", "player", succeeded)
+            --print("MoveCompleted", "player", succeeded, zombie:GetValue("CanDamageTimeout"))
             if (succeeded and not zombie:GetValue("CanDamageTimeout")) then
                 ZombieAttack(zombie)
             else
                 zombie:SetValue("Target", nil, false)
-                zombie:SetValue("StuckNB", nil, false)
+                --print("StuckNB Set 0 MoveCompleted false or CanDamageTimeout target player")
+                if succeeded then
+                    zombie:SetValue("StuckNB", 0, false)
+                end
             end
         end
     end
@@ -586,10 +591,13 @@ Timer.SetInterval(function()
                     if not v:IsInRagdollMode() then
                         local stuck_nb = v:GetValue("StuckNB")
                         local last_loc = v:GetValue("LastLocation")
+                        --print("StuckNB check start", stuck_nb)
                         if (stuck_nb and last_loc) then
                             last_loc = Vector(last_loc[1], last_loc[2], last_loc[3])
                             local loc = v:GetLocation()
+                            --print(last_loc:DistanceSquared(loc))
                             if last_loc:DistanceSquared(loc) <= Zombies_Stuck_DistanceSq then
+                                --print("StuckNB Add 1")
                                 stuck_nb = stuck_nb + 1
                                 v:SetValue("StuckNB", stuck_nb, false)
                                 if stuck_nb >= Zombies_Stuck_Respawn_After_x_Stuck then
@@ -598,7 +606,8 @@ Timer.SetInterval(function()
                                     --print("Zombie Respawn, stuck")
                                 end
                             else
-                                v:SetValue("StuckNB", nil, false)
+                                --print("StuckNB Set 0 because far")
+                                v:SetValue("StuckNB", 0, false)
                             end
                             v:SetValue("LastLocation", {loc.X, loc.Y, loc.Z}, false)
                         end
@@ -664,6 +673,7 @@ VZ_EVENT_SUBSCRIBE("Character", "RagdollModeChanged", function(zombie, old_state
                                 local zloc = zombie:GetLocation()
 
                                 zombie:SetValue("LastLocation", {zloc.X, zloc.Y, zloc.Z}, false)
+                                --print("StuckNB Set 0 getup")
                                 zombie:SetValue("StuckNB", 0, false)
                             end
                         end

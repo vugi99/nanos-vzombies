@@ -2,6 +2,8 @@
 
 Spectating_Player = nil
 
+Spectating_Render_ItemID = nil
+
 function GetResetPlyID(old_ply_id, prev_ply)
     local selected_ply_id
     local selected_ply
@@ -46,16 +48,35 @@ function GetNewPlayerToSpec(old_ply_id, prev_ply)
     return new_ply
 end
 
+function SpectatePlayer(to_spec)
+    if to_spec then
+        Client.GetLocalPlayer():Spectate(to_spec)
+        Spectating_Player = to_spec
+
+        local text = "Spectating : " .. to_spec:GetAccountName()
+
+        if Spectating_Render_ItemID then
+            Render.UpdateItemText(7, Spectating_Render_ItemID, text)
+        else
+            Spectating_Render_ItemID = Render.AddText(7, text, Vector2D(math.floor(Render.GetViewportSize().X * 0.5), 30), 0, 14, Color.WHITE, 0, true, true, false, Vector2D(0, 0), Color.WHITE, false, Color.WHITE)
+        end
+    end
+end
+
+function StopSpectate()
+    Client.GetLocalPlayer():ResetCamera()
+    Spectating_Player = nil
+    Render.ClearItems(7)
+    Spectating_Render_ItemID = nil
+end
+
 VZ_EVENT_SUBSCRIBE("Player", "Possess", function(ply, char)
     --print("Player Possess")
     if ply == Client.GetLocalPlayer() then
-        Spectating_Player = nil
+        StopSpectate()
     elseif (not Spectating_Player and not Client.GetLocalPlayer():GetControlledCharacter()) then
         local new_spec = GetNewPlayerToSpec()
-        if new_spec then
-            Client.GetLocalPlayer():Spectate(new_spec)
-            Spectating_Player = new_spec
-        end
+        SpectatePlayer(new_spec)
     end
 end)
 
@@ -64,18 +85,13 @@ VZ_EVENT_SUBSCRIBE("Player", "UnPossess", function(ply, char)
     if ply == Client.GetLocalPlayer() then
         local new_spec = GetNewPlayerToSpec()
         --print("new_spec, unpossess", new_spec)
-        if new_spec then
-            Client.GetLocalPlayer():Spectate(new_spec)
-            Spectating_Player = new_spec
-        end
+        SpectatePlayer(new_spec)
     elseif ply == Spectating_Player then
         local new_spec = GetNewPlayerToSpec()
         if new_spec then
-            Client.GetLocalPlayer():Spectate(new_spec)
-            Spectating_Player = new_spec
+            SpectatePlayer(new_spec)
         else
-            Client.GetLocalPlayer():ResetCamera()
-            Spectating_Player = nil
+            StopSpectate()
         end
     end
 end)
@@ -85,11 +101,9 @@ VZ_EVENT_SUBSCRIBE("Player", "Destroy", function(ply)
     if ply == Spectating_Player then
         local new_spec = GetNewPlayerToSpec()
         if new_spec then
-            Client.GetLocalPlayer():Spectate(new_spec)
-            Spectating_Player = new_spec
+            SpectatePlayer(new_spec)
         else
-            Client.GetLocalPlayer():ResetCamera()
-            Spectating_Player = nil
+            StopSpectate()
         end
     end
 end)
@@ -98,10 +112,7 @@ end)
 if not Client.GetLocalPlayer():GetControlledCharacter() then
     local new_spec = GetNewPlayerToSpec()
     --print("new_spec", new_spec)
-    if new_spec then
-        Client.GetLocalPlayer():Spectate(new_spec)
-        Spectating_Player = new_spec
-    end
+    SpectatePlayer(new_spec)
 end
 
 
@@ -111,19 +122,13 @@ Input.Register("SpectateNext", "Right")
 VZ_BIND("SpectatePrev", InputEvent.Pressed, function()
     if Spectating_Player then
         local new_spec = GetNewPlayerToSpec(Spectating_Player:GetID(), true)
-        if new_spec then
-            Client.GetLocalPlayer():Spectate(new_spec)
-            Spectating_Player = new_spec
-        end
+        SpectatePlayer(new_spec)
     end
 end)
 
 VZ_BIND("SpectateNext", InputEvent.Pressed, function()
     if Spectating_Player then
         local new_spec = GetNewPlayerToSpec(Spectating_Player:GetID())
-        if new_spec then
-            Client.GetLocalPlayer():Spectate(new_spec)
-            Spectating_Player = new_spec
-        end
+        SpectatePlayer(new_spec)
     end
 end)

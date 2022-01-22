@@ -278,7 +278,7 @@ VZ_EVENT_SUBSCRIBE("Character", "TakeDamage", function(char, damage, bone, type,
     end
 end)
 
-function HandlePlayerJoin(ply, bot)
+function HandlePlayerJoin(ply, bot, waittostart)
     print("Player Joined", ply:GetAccountName())
     if not bot then
         Events.CallRemote("LoadMapConfig", ply, MAP_CONFIG_TO_SEND)
@@ -292,7 +292,11 @@ function HandlePlayerJoin(ply, bot)
         if PLAYING_PLAYERS_NB < MAX_PLAYERS then
             ZPlayingPlayerInit(ply)
             if ROUND_NB == 0 then
-                StartRound()
+                if not WaitingNewRound_Timer then
+                    if not waittostart then
+                        StartRound()
+                    end
+                end
             end
         else
             local found_bot
@@ -318,6 +322,7 @@ function HandlePlayerJoin(ply, bot)
                 end
             else
                 table.insert(WAITING_PLAYERS, ply)
+                ply:SetValue("PlayerWaiting", true, true)
             end
         end
     else
@@ -325,7 +330,16 @@ function HandlePlayerJoin(ply, bot)
     end
 end
 VZ_EVENT_SUBSCRIBE("Player", "Spawn", HandlePlayerJoin)
-VZ_EVENT_SUBSCRIBE("Events", "VZPlayerJoinedAfterReload", HandlePlayerJoin)
+VZ_EVENT_SUBSCRIBE("Events", "VZOMBIES_GAMEMODE_LOADED", function()
+    local OneJoined
+    for k, v in pairs(Player.GetPairs()) do
+        HandlePlayerJoin(v, false, true)
+        OneJoined = true
+    end
+    if OneJoined then
+        StartRound()
+    end
+end)
 
 VZ_EVENT_SUBSCRIBE("Player", "Destroy", function(ply)
     print("Player Left", ply:GetAccountName())
@@ -358,6 +372,7 @@ VZ_EVENT_SUBSCRIBE("Player", "Destroy", function(ply)
             local wply = WAITING_PLAYERS[1]
             ZPlayingPlayerInit(wply)
             table.remove(WAITING_PLAYERS, 1)
+            wply:SetValue("PlayerWaiting", nil, true)
             player_was_waiting = true
         end
         if GetPlayersWOBotsAliveNB() == 0 then
