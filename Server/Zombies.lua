@@ -166,9 +166,14 @@ function ZombieRefreshTarget(zombie)
                         nearest_ply_char:GetID(),
                         false
                     )
-                    
-                    zombie:Follow(nearest_ply_char, Zombies_Acceptance_Radius, true, true, Zombies_Route_Update_ms / 1000)
-                    UpdateZombieLookAt(zombie)
+
+
+                    if nearest_dist_sq < Zombies_Damage_At_Distance_sq then
+                        ZombieAttack(zombie)
+                    else
+                        zombie:Follow(nearest_ply_char, Zombies_Acceptance_Radius, true, true, Zombies_Route_Update_ms / 1000)
+                        UpdateZombieLookAt(zombie)
+                    end
 
                     -- OLD tempfollow
                     --Package.Call("tempfollow", "FollowCharacter", zombie, nearest_ply_char, Zombies_Acceptance_Radius, 100)
@@ -296,9 +301,54 @@ function ReachTarget_PrePlayerTargetFailed(zombie)
     end, 1)
 end
 
+function ZombieAttack(zombie)
+    local charid = zombie:GetValue("Target")
+    if charid then
+        local plychar = GetCharacterFromId(charid)
+        if plychar then
+            local random_z_attack_anim = RandomZombieAttackAnim()
+            zombie:PlayAnimation(random_z_attack_anim[1], AnimationSlotType.FullBody, false)
+            zombie:SetValue("Target", nil, false)
+            zombie:SetValue("StuckNB", nil, false)
+
+            if not ZDEV_IsModeEnabled("ZDEV_GODMODE") then
+                Timer.SetTimeout(function()
+                    if zombie:IsValid() then
+                        if zombie:GetHealth() > 0 then
+                            if plychar:IsValid() then
+                                if not plychar:GetValue("PlayerDown") then
+                                    local plychar_loc = plychar:GetLocation()
+                                    local z_loc = zombie:GetLocation()
+                                    --print(plychar_loc:DistanceSquared(z_loc))
+                                    if plychar_loc:DistanceSquared(z_loc) <= Zombies_Damage_At_Distance_sq then
+                                        plychar:ApplyDamage(Zombies_Damage_Amount, "", DamageType.Punch)
+                                    end
+                                end
+                            end
+                        end
+                    end
+                end, random_z_attack_anim[2])
+
+                zombie:SetValue("PunchCoolDownTimer", Timer.SetTimeout(function()
+                    if zombie:IsValid() then
+                        zombie:SetValue("PunchCoolDownTimer", nil, false)
+                        local zloc = zombie:GetLocation()
+                        zombie:SetValue("LastLocation", {zloc.X, zloc.Y, zloc.Z}, false)
+                        zombie:SetValue("StuckNB", 0, false)
+                    end
+                end, Zombies_Damage_Cooldown_ms), false)
+            else
+                zombie:SetValue("PunchCoolDownTimer", true, false)
+            end
+
+            ZombieAttackSound(zombie)
+        end
+    end
+end
+
 VZ_EVENT_SUBSCRIBE("Character", "MoveCompleted", function(zombie, succeeded)
-    --print("MoveCompleted")
     if zombie:IsValid() then
+        --print("Zombie MoveCompleted", succeeded)
         local target_type = zombie:GetValue("Target_type")
         if target_type == "barricade" then
             if succeeded then
@@ -347,48 +397,7 @@ VZ_EVENT_SUBSCRIBE("Character", "MoveCompleted", function(zombie, succeeded)
         elseif target_type == "player" then
             --print("MoveCompleted", "player", succeeded)
             if (succeeded and not zombie:GetValue("CanDamageTimeout")) then
-                local charid = zombie:GetValue("Target")
-                if charid then
-                    local plychar = GetCharacterFromId(charid)
-                    if plychar then
-                        local random_z_attack_anim = RandomZombieAttackAnim()
-                        zombie:PlayAnimation(random_z_attack_anim[1], AnimationSlotType.FullBody, false)
-                        zombie:SetValue("Target", nil, false)
-                        zombie:SetValue("StuckNB", nil, false)
-
-                        if not ZDEV_IsModeEnabled("ZDEV_GODMODE") then
-                            Timer.SetTimeout(function()
-                                if zombie:IsValid() then
-                                    if zombie:GetHealth() > 0 then
-                                        if plychar:IsValid() then
-                                            if not plychar:GetValue("PlayerDown") then
-                                                local plychar_loc = plychar:GetLocation()
-                                                local z_loc = zombie:GetLocation()
-                                                --print(plychar_loc:DistanceSquared(z_loc))
-                                                if plychar_loc:DistanceSquared(z_loc) <= Zombies_Damage_At_Distance_sq then
-                                                    plychar:ApplyDamage(Zombies_Damage_Amount, "", DamageType.Punch)
-                                                end
-                                            end
-                                        end
-                                    end
-                                end
-                            end, random_z_attack_anim[2])
-                        
-                            zombie:SetValue("PunchCoolDownTimer", Timer.SetTimeout(function()
-                                if zombie:IsValid() then
-                                    zombie:SetValue("PunchCoolDownTimer", nil, false)
-                                    local zloc = zombie:GetLocation()
-                                    zombie:SetValue("LastLocation", {zloc.X, zloc.Y, zloc.Z}, false)
-                                    zombie:SetValue("StuckNB", 0, false)
-                                end
-                            end, Zombies_Damage_Cooldown_ms), false)
-                        else
-                            zombie:SetValue("PunchCoolDownTimer", true, false)
-                        end
-
-                        ZombieAttackSound(zombie)
-                    end
-                end
+                ZombieAttack(zombie)
             else
                 zombie:SetValue("Target", nil, false)
                 zombie:SetValue("StuckNB", nil, false)
@@ -401,11 +410,13 @@ VZ_EVENT_SUBSCRIBE("Character", "Death", function(char, last_damage_taken, last_
     if char:GetValue("Zombie") == true then
         if causer then
             if causer:IsValid() then
-                local instig_char = causer:GetHandler()
-                if instig_char then
-                    local bot = instig_char:GetPlayer()
-                    if (bot and bot.BOT) then
-                        instigator = bot
+                if not NanosUtils.IsA(causer, Character) then
+                    local instig_char = causer:GetHandler()
+                    if instig_char then
+                        local bot = instig_char:GetPlayer()
+                        if (bot and bot.BOT) then
+                            instigator = bot
+                        end
                     end
                 end
             end
@@ -472,11 +483,13 @@ VZ_EVENT_SUBSCRIBE("Character", "TakeDamage", function(char, damage, bone, dtype
     if (char:GetValue("Zombie") == true and damage > 0) then
         if causer then
             if causer:IsValid() then
-                local instig_char = causer:GetHandler()
-                if instig_char then
-                    local bot = instig_char:GetPlayer()
-                    if (bot and bot.BOT) then
-                        instigator = bot
+                if not NanosUtils.IsA(causer, Character) then
+                    local instig_char = causer:GetHandler()
+                    if instig_char then
+                        local bot = instig_char:GetPlayer()
+                        if (bot and bot.BOT) then
+                            instigator = bot
+                        end
                     end
                 end
             end

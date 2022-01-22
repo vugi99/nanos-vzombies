@@ -102,5 +102,7 @@ Package.Export("SetENV_Value", SetENV_Value)
 function ZDEV_IsModeEnabled(mode)
     if ZDEV_CONFIG.ENABLED then
         return ZDEV_CONFIG.DEV_CHEAT_MODES[mode]
+    else
+        return false
     end
 end

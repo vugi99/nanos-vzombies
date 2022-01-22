@@ -965,6 +965,21 @@ Mapvote_tbl = {
             path = "zm-kino-der-toten::zm_kino_der_toten",
             UI_name = "Kino Der Toten",
             image = "../../../../../../../Server/Assets/zm-kino-der-toten/zm_kino_der_toten/zm_kino_der_toten/zm_kino_der_toten.jpg",
+        },
+        zm_nacht_der_untoten = {
+            path = "zm-nacht-der-untoten::nacht_der_untoten",
+            UI_name = "Nacht Der Untoten",
+            image = "../../../../../../../Server/Assets/zm-nacht-der-untoten/nacht_der_untoten/nacht_der_untoten/nacht_der_untoten.jpg",
+        },
+        zm_spiral = {
+            path = "zm-spiral::zm-spiral",
+            UI_name = "Spiral",
+            image = "../../../../../../../Server/Assets/zm-spiral/zm-spiral/zm-spiral.jpg",
+        },
+        zm_cheese_cube = {
+            path = "zm-cheese-cube::zm-cheese-cube",
+            UI_name = "Cheese Cube",
+            image = "../../../../../../../Server/Assets/zm-cheese-cube/zm-cheese-cube/zm-cheese-cube.jpg",
         },]]--
     }
 }
