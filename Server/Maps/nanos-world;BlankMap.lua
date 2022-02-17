@@ -46,8 +46,21 @@ table.insert(MAP_WEAPONS, {
     rotation = Rotator(0.000000, 0.000000, 0.000000),
     price = 500,
     weapon_name = "AK47",
-    max_ammo = 400,
-    decal_rotation = Rotator(0.000000, -89.999992, 0.000000)
+    max_ammo = 400
+})
+table.insert(MAP_WEAPONS, {
+    location = Vector(-88.000, 1799.000, 110.000),
+    rotation = Rotator(0.000000, 0.000000, 0.000000),
+    price = 500,
+    weapon_name = "DesertEagle",
+    max_ammo = 200
+})
+table.insert(MAP_WEAPONS, {
+    location = Vector(-88.000, 2002.000, 110.000),
+    rotation = Rotator(0.000000, 179.999420, 0.000000),
+    price = 500,
+    weapon_name = "GE3",
+    max_ammo = 400
 })
 
 
@@ -101,55 +114,55 @@ table.insert(MAP_ROOMS[1], {
 
 MAP_PACK_A_PUNCH = {
     location = Vector(2182.000, 1590.000, 1.000),
-    rotation = Rotator(0.000000, 89.999992, 0.000000),
+    rotation = Rotator(0.000000, 89.999985, 0.000000),
     weapon_location = Vector(2119.000, 1562.000, 84.000),
-    weapon_rotation = Rotator(0.000000, 89.999992, 0.000000)
+    weapon_rotation = Rotator(0.000000, 89.999985, 0.000000)
 }
 
 
 MAP_POWER = {
     location = Vector(2197.000, 990.000, 1.000),
-    rotation = Rotator(0.000000, 89.999992, 0.000000),
+    rotation = Rotator(0.000000, 89.999985, 0.000000),
     handle_location = Vector(2178.000, 990.000, 118.000),
-    handle_rotation = Rotator(0.000000, 89.999985, 89.999985)
+    handle_rotation = Rotator(0.000000, 89.999977, 89.999992)
 }
 
 
 MAP_MYSTERY_BOXES = {}
 table.insert(MAP_MYSTERY_BOXES, {
     location = Vector(435.000, 2069.000, 1.000),
-    rotation = Rotator(0.000000, 89.999992, 0.000000)
+    rotation = Rotator(0.000000, 89.999985, 0.000000)
 })
 table.insert(MAP_MYSTERY_BOXES, {
     location = Vector(435.000, 2780.000, 1.000),
-    rotation = Rotator(0.000000, 89.999992, 0.000000)
+    rotation = Rotator(0.000000, 89.999985, 0.000000)
 })
 table.insert(MAP_MYSTERY_BOXES, {
     location = Vector(435.000, 1379.000, 1.000),
-    rotation = Rotator(0.000000, 89.999992, 0.000000)
+    rotation = Rotator(0.000000, 89.999985, 0.000000)
 })
 
 
 MAP_PERKS = {}
 MAP_PERKS.juggernog = {
     location = Vector(2165.000, 3255.000, 1.000),
-    rotation = Rotator(0.000000, 89.999992, 0.000000)
+    rotation = Rotator(0.000000, 89.999985, 0.000000)
 }
 MAP_PERKS.quick_revive = {
     location = Vector(2151.000, 3613.000, 1.000),
-    rotation = Rotator(0.000000, 89.999992, 0.000000)
+    rotation = Rotator(0.000000, 89.999985, 0.000000)
 }
 MAP_PERKS.doubletap = {
     location = Vector(2178.000, 2903.000, 1.000),
-    rotation = Rotator(0.000000, 89.999992, 0.000000)
+    rotation = Rotator(0.000000, 89.999985, 0.000000)
 }
 MAP_PERKS.three_gun = {
     location = Vector(2128.000, 3965.000, 1.000),
-    rotation = Rotator(0.000000, 89.999992, 0.000000)
+    rotation = Rotator(0.000000, 89.999985, 0.000000)
 }
 MAP_PERKS.stamin_up = {
     location = Vector(2140.000, 4346.000, 1.000),
-    rotation = Rotator(0.000000, 89.999992, 0.000000)
+    rotation = Rotator(0.000000, 89.999985, 0.000000)
 }
 
 
@@ -162,11 +175,11 @@ MAP_Z_LIMITS = {
 MAP_WUNDERFIZZ = {}
 table.insert(MAP_WUNDERFIZZ, {
     location = Vector(2480.000, 2529.000, 0.000),
-    rotation = Rotator(0.000000, 89.999992, 0.000000)
+    rotation = Rotator(0.000000, 89.999985, 0.000000)
 })
 table.insert(MAP_WUNDERFIZZ, {
     location = Vector(2480.000, 2050.000, 0.000),
-    rotation = Rotator(0.000000, 89.999992, 0.000000)
+    rotation = Rotator(0.000000, 89.999985, 0.000000)
 })
 
 
@@ -286,48 +299,72 @@ MAP_SETTINGS = {
 }
 
 
+MAP_STATIC_MESHES = {}
+table.insert(MAP_STATIC_MESHES, {
+    location = Vector(-80.000, 1900.000, 149.000),
+    rotation = Rotator(0.000000, 0.000000, 0.000000),
+    scale = Vector(2.000, 2.000, 3.000),
+    model = "nanos-world::SM_Cube"
+})
+
+
 -- Zombie Spawns
+table.insert(MAP_ROOMS[1][2].z_spawns, {
+    location = Vector(1551.000, -2133.000, 1.000),
+    rotation = Rotator(0.000000, 89.999748, 0.000000),
+    ground_anim = false
+})
 table.insert(MAP_ROOMS[1][1].z_spawns, {
     location = Vector(1926.000, -2157.000, 1.000),
-    rotation = Rotator(0.000000, 89.999680, 0.000000)
+    rotation = Rotator(0.000000, 89.999680, 0.000000),
+    ground_anim = true
 })
 table.insert(MAP_ROOMS[2][1].z_spawns, {
     location = Vector(4075.000, -1284.000, 1.000),
-    rotation = Rotator(0.000000, 89.999702, 0.000000)
+    rotation = Rotator(0.000000, 89.999680, 0.000000),
+    ground_anim = true
 })
 table.insert(MAP_ROOMS[3][1].z_spawns, {
     location = Vector(6150.000, -1284.000, 1.000),
-    rotation = Rotator(0.000000, 89.999702, 0.000000)
+    rotation = Rotator(0.000000, 89.999680, 0.000000),
+    ground_anim = true
 })
 table.insert(MAP_ROOMS[1][3].z_spawns, {
     location = Vector(1249.000, -1958.000, 1.000),
-    rotation = Rotator(0.000000, 89.999748, 0.000000)
+    rotation = Rotator(0.000000, 89.999748, 0.000000),
+    ground_anim = true
 })
 table.insert(MAP_ROOMS[1], {
     type = "ground",
     location = Vector(2567.000, 607.000, 0.000),
-    rotation = Rotator(0.000000, 179.999405, 0.000000)
+    rotation = Rotator(0.000000, 179.999374, 0.000000),
+    ground_anim = true
 })
 table.insert(MAP_ROOMS[1][1].z_spawns, {
     location = Vector(2209.000, -2157.000, 1.000),
-    rotation = Rotator(0.000000, 89.999680, 0.000000)
+    rotation = Rotator(0.000000, 89.999680, 0.000000),
+    ground_anim = true
 })
 table.insert(MAP_ROOMS[1][1].z_spawns, {
     location = Vector(2447.000, -2157.000, 1.000),
-    rotation = Rotator(0.000000, 89.999680, 0.000000)
+    rotation = Rotator(0.000000, 89.999680, 0.000000),
+    ground_anim = true
+})
+table.insert(MAP_ROOMS[1], {
+    type = "ground",
+    location = Vector(2600.000, 1286.000, 0.000),
+    rotation = Rotator(0.000000, 179.999374, 0.000000),
+    ground_anim = false
 })
 table.insert(MAP_ROOMS[1][2].z_spawns, {
     location = Vector(1628.000, -1123.000, 1.000),
-    rotation = Rotator(0.000000, 89.999962, 0.000000)
+    rotation = Rotator(0.000000, 89.999954, 0.000000),
+    ground_anim = true
 })
 
 
 
 
 Package.Subscribe("Load", function()
-	Events.Call("VZOMBIES_MAP_CONFIG", MAP_ROOMS, PLAYER_SPAWNS, MAP_DOORS, MAP_WEAPONS, MAP_PACK_A_PUNCH, MAP_POWER, MAP_MYSTERY_BOXES, MAP_PERKS, MAP_Z_LIMITS, MAP_WUNDERFIZZ, MAP_INTERACT_TRIGGERS, MAP_TELEPORTERS, MAP_LIGHT_ZONES, MAP_SETTINGS)
-end)
-
-Events.Subscribe("CustomInteractTest", function(ply, InteractThing)
-    print("CustomInteractTest")
+	Events.Call("VZOMBIES_MAP_CONFIG", MAP_ROOMS, PLAYER_SPAWNS, MAP_DOORS, MAP_WEAPONS, MAP_PACK_A_PUNCH, MAP_POWER, MAP_MYSTERY_BOXES, MAP_PERKS, MAP_Z_LIMITS, MAP_WUNDERFIZZ, MAP_INTERACT_TRIGGERS, MAP_TELEPORTERS, MAP_LIGHT_ZONES, MAP_SETTINGS, MAP_STATIC_MESHES)
 end)

@@ -2,8 +2,6 @@
 
 Spectating_Player = nil
 
-Spectating_Render_ItemID = nil
-
 function GetResetPlyID(old_ply_id, prev_ply)
     local selected_ply_id
     local selected_ply
@@ -48,26 +46,34 @@ function GetNewPlayerToSpec(old_ply_id, prev_ply)
     return new_ply
 end
 
+function IsSpectatingPlayerCharacter(char)
+    if Spectating_Player then
+        local spec_char = Spectating_Player:GetControlledCharacter()
+        if spec_char == char then
+            return true
+        end
+    end
+end
+
 function SpectatePlayer(to_spec)
     if to_spec then
         Client.GetLocalPlayer():Spectate(to_spec)
         Spectating_Player = to_spec
 
-        local text = "Spectating : " .. to_spec:GetAccountName()
-
-        if Spectating_Render_ItemID then
-            Render.UpdateItemText(7, Spectating_Render_ItemID, text)
-        else
-            Spectating_Render_ItemID = Render.AddText(7, text, Vector2D(math.floor(Render.GetViewportSize().X * 0.5), 30), 0, 14, Color.WHITE, 0, true, true, false, Vector2D(0, 0), Color.WHITE, false, Color.WHITE)
+        local char = Spectating_Player:GetControlledCharacter()
+        local picked = char:GetPicked()
+        if picked then
+            NeedToUpdateAmmoText(char, picked)
         end
+
+        One_Time_Updates_Canvas:Repaint()
     end
 end
 
 function StopSpectate()
     Client.GetLocalPlayer():ResetCamera()
     Spectating_Player = nil
-    Render.ClearItems(7)
-    Spectating_Render_ItemID = nil
+    One_Time_Updates_Canvas:Repaint()
 end
 
 VZ_EVENT_SUBSCRIBE("Player", "Possess", function(ply, char)

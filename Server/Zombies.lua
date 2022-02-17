@@ -44,76 +44,136 @@ function Calculate_Zombie_Health()
 end
 
 function SpawnZombie(ZombieType)
-    local random_spawn = SPAWNS_UNLOCKED[math.random(table_count(SPAWNS_UNLOCKED))]
+    local players_alive = GetPlayersAlive()
+    if table_count(players_alive) > 0 then
+        local random_player = players_alive[math.random(table_count(players_alive))]
+        local loc = random_player:GetControlledCharacter():GetLocation()
 
-    local random_spawn_target = GetSpawnTargetFromZSpawnID(random_spawn.zspawnid)
+        local Percentages_Count = table_count(Zombies_Nearest_SmartSpawns_Percentage)
 
-    local zombie = Character(
-        random_spawn.location - Vector(0, 0, 140),
-        random_spawn.rotation,
-        Zombies_Models[math.random(table_count(Zombies_Models))],
-        CollisionType.Normal,
-        true,
-        Calculate_Zombie_Health(),
-        VZ_RandomSound(RANDOM_SOUNDS.zombie_death)
-    )
-    --zombie:SetGravityEnabled(false)
-    zombie:SetFlyingMode(true)
-
-    if ZombieType == "walk" then
-        zombie:SetSpeedMultiplier(Slow_Zombies_SpeedMultiplier)
-    elseif ZombieType == "run" then
-        zombie:SetSpeedMultiplier(Running_Zombies_SpeedMultiplier)
-        zombie:SetGaitMode(GaitMode.Sprinting)
-    end
-
-    zombie:SetCapsuleSize(Zombies_Collision_Radius, 96)
-
-    zombie:SetValue("Zombie", true, false)
-    zombie:SetValue("ZombieType", ZombieType, true)
-
-    zombie:SetValue("GroundAnim", true, false)
-    zombie:PlayAnimation("vzombies-assets::FreehangClimb", AnimationSlotType.FullBody, false, 0, 0)
-
-    local players_sound = GetPlayersInRadius(random_spawn.location, RANDOM_SOUNDS.spawn_dirt_sound.falloff_distance)
-    for k, v in pairs(players_sound) do
-        Events.CallRemote("ZombieGroundDirt", v, VZ_RandomSound(RANDOM_SOUNDS.spawn_dirt_sound), random_spawn.location)
-    end
-
-    Timer.SetTimeout(function()
-        if zombie:IsValid() then
-            if zombie:GetHealth() > 0 then
-                ZombieOutGround(zombie, random_spawn, random_spawn_target)
+        local nearest_spawns = {}
+        for k, v in pairs(SPAWNS_UNLOCKED) do
+            local dist_sq = loc:DistanceSquared(v.location)
+            if table_count(nearest_spawns) < Percentages_Count then
+                table.insert(nearest_spawns, {v, dist_sq})
+            elseif nearest_spawns[Percentages_Count][2] > dist_sq then
+                for i2, v2 in ipairs(nearest_spawns) do
+                    if v2[2] > dist_sq then
+                        nearest_spawns[i2] = {v, dist_sq}
+                        break
+                    end
+                end
             end
         end
-    end, 6100)
 
-    table.insert(ZOMBIES_CHARACTERS, zombie)
+        local selected_spawn
+
+        local random_percentage_to = 100
+        if table_count(nearest_spawns) < Percentages_Count then
+            random_percentage_to = 0
+            for i = 1, table_count(nearest_spawns) do
+                random_percentage_to = random_percentage_to + Zombies_Nearest_SmartSpawns_Percentage[i]
+            end
+        end
+
+        local random_percentage = math.random(random_percentage_to)
+        local cur_percentage = 0
+        for i, v in ipairs(Zombies_Nearest_SmartSpawns_Percentage) do
+            cur_percentage = cur_percentage + v
+            if cur_percentage >= random_percentage then
+                --print("Selected spawn " .. tostring(i))
+                selected_spawn = nearest_spawns[i][1]
+                break
+            end
+        end
+
+        if selected_spawn then
+            local selected_spawn_target = GetSpawnTargetFromZSpawnID(selected_spawn.zspawnid)
+
+            local is_ground_anim_disabled = false
+            if (selected_spawn.ground_anim == false or selected_spawn_target.ground_anim == false) then
+                is_ground_anim_disabled = true
+            end
+
+            local spawn_location = selected_spawn.location + Vector(0, 0, 100)
+            if (not is_ground_anim_disabled) then
+                spawn_location = selected_spawn.location - Vector(0, 0, 140)
+            end
+            local zombie = Character(
+                spawn_location,
+                selected_spawn.rotation,
+                Zombies_Models[math.random(table_count(Zombies_Models))],
+                CollisionType.Normal,
+                true,
+                Calculate_Zombie_Health(),
+                VZ_RandomSound(RANDOM_SOUNDS.zombie_death)
+            )
+
+            if ZombieType == "walk" then
+                zombie:SetSpeedMultiplier(Slow_Zombies_SpeedMultiplier)
+            elseif ZombieType == "run" then
+                zombie:SetSpeedMultiplier(Running_Zombies_SpeedMultiplier)
+                zombie:SetGaitMode(GaitMode.Sprinting)
+            end
+
+            zombie:SetCapsuleSize(Zombies_Collision_Radius, 96)
+
+            zombie:SetValue("Zombie", true, false)
+            zombie:SetValue("ZombieType", ZombieType, true)
+
+            if (not is_ground_anim_disabled) then
+                zombie:SetFlyingMode(true)
+                zombie:SetValue("GroundAnim", true, false)
+                zombie:PlayAnimation("vzombies-assets::FreehangClimb", AnimationSlotType.FullBody, false, 0, 0)
+
+                local players_sound = GetPlayersInRadius(selected_spawn.location, RANDOM_SOUNDS.spawn_dirt_sound.falloff_distance)
+                for k, v in pairs(players_sound) do
+                    Events.CallRemote("ZombieGroundDirt", v, VZ_RandomSound(RANDOM_SOUNDS.spawn_dirt_sound), selected_spawn.location)
+                end
+
+                Timer.SetTimeout(function()
+                    if zombie:IsValid() then
+                        if zombie:GetHealth() > 0 then
+                            ZombieOutGround(zombie, selected_spawn, selected_spawn_target, true)
+                        end
+                    end
+                end, 6100)
+            else
+                ZombieOutGround(zombie, selected_spawn, selected_spawn_target, false)
+            end
+
+            table.insert(ZOMBIES_CHARACTERS, zombie)
+        else
+            Package.Error("VZombies : Can't select a zombie spawn")
+        end
+    end
 end
 
-function ZombieOutGround(zombie, random_spawn, random_spawn_target)
-    zombie:SetValue("GroundAnim", nil, false)
-    zombie:StopAnimation("vzombies-assets::FreehangClimb")
-    zombie:SetLocation(random_spawn.location + Vector(0, 0, 97))
-    --zombie:SetGravityEnabled(true)
-    zombie:SetFlyingMode(false)
+function ZombieOutGround(zombie, selected_spawn, selected_spawn_target, after_ground_anim)
+    if after_ground_anim then
+        zombie:SetValue("GroundAnim", nil, false)
+        zombie:StopAnimation("vzombies-assets::FreehangClimb")
+        zombie:SetLocation(selected_spawn.location + Vector(0, 0, 97))
+        --zombie:SetGravityEnabled(true)
+        zombie:SetFlyingMode(false)
+    end
 
-    if random_spawn_target.type == "ground" then
+    if selected_spawn_target.type == "ground" then
         ZombieSwitchToPlayerTarget(zombie)
-    elseif random_spawn_target.type == "barricade" then
+    elseif selected_spawn_target.type == "barricade" then
         zombie:SetValue("Target_type", "barricade", false)
-        local i, b = GetBarricadeFromZSpawnID(random_spawn_target.zspawnid)
+        local i, b = GetBarricadeFromZSpawnID(selected_spawn_target.zspawnid)
         zombie:SetValue("Target", i, false)
 
-        zombie:MoveTo(random_spawn_target.z_move_to_b_target_location, Zombies_Acceptance_Radius)
-        zombie:LookAt(random_spawn_target.barricade_location)
-    elseif random_spawn_target.type == "vault" then
+        zombie:MoveTo(selected_spawn_target.z_move_to_b_target_location, Zombies_Acceptance_Radius)
+        zombie:LookAt(selected_spawn_target.barricade_location)
+    elseif selected_spawn_target.type == "vault" then
         zombie:SetValue("Target_type", "vault", false)
-        zombie:SetValue("Target", random_spawn_target.zspawnid, false)
+        zombie:SetValue("Target", selected_spawn_target.zspawnid, false)
 
-        local target_loc = random_spawn_target.z_target_location_1
+        local target_loc = selected_spawn_target.z_target_location_1
         if zombie:GetValue("ZombieType") == "walk" then
-            target_loc = random_spawn_target.z_target_location_2
+            target_loc = selected_spawn_target.z_target_location_2
         end
         zombie:MoveTo(target_loc, Zombies_Acceptance_Radius)
         zombie:LookAt(target_loc + Vector(0, 0, 180))
@@ -348,7 +408,7 @@ function ZombieAttack(zombie)
     end
 end
 
-VZ_EVENT_SUBSCRIBE("Character", "MoveCompleted", function(zombie, succeeded)
+function ZMoveCompleted(zombie, succeeded)
     if zombie:IsValid() then
         --print("Zombie MoveCompleted", succeeded)
         local target_type = zombie:GetValue("Target_type")
@@ -409,7 +469,8 @@ VZ_EVENT_SUBSCRIBE("Character", "MoveCompleted", function(zombie, succeeded)
             end
         end
     end
-end)
+end
+VZ_EVENT_SUBSCRIBE("Character", "MoveCompleted", ZMoveCompleted)
 
 VZ_EVENT_SUBSCRIBE("Character", "Death", function(char, last_damage_taken, last_bone_damage, damage_type_reason, hit_from_direction, instigator, causer)
     if char:GetValue("Zombie") == true then
@@ -675,6 +736,8 @@ VZ_EVENT_SUBSCRIBE("Character", "RagdollModeChanged", function(zombie, old_state
                                 zombie:SetValue("LastLocation", {zloc.X, zloc.Y, zloc.Z}, false)
                                 --print("StuckNB Set 0 getup")
                                 zombie:SetValue("StuckNB", 0, false)
+
+                                --print("Zombie Get up")
                             end
                         end
                     end, Zombies_Ragdoll_Get_Up_Timeout_ms)
@@ -685,3 +748,53 @@ VZ_EVENT_SUBSCRIBE("Character", "RagdollModeChanged", function(zombie, old_state
         end
     end
 end)
+
+Timer.SetInterval(function()
+    for k, v in pairs(ZOMBIES_CHARACTERS) do
+        if v:IsValid() then
+            if not v:IsInRagdollMode() then
+                if not v:GetValue("PunchCoolDownTimer") then
+                    local target_type = v:GetValue("Target_type")
+                    if target_type then
+                        if target_type == "player" then
+                            local charid = v:GetValue("Target")
+                            if charid then
+                                local char = GetCharacterFromId(charid)
+                                if (char and not char:GetValue("PlayerDown")) then
+                                    local zloc = v:GetLocation()
+                                    local targetloc = char:GetLocation()
+                                    if zloc:DistanceSquared(targetloc) < Zombies_Damage_At_Distance_sq then
+                                        --print("Zombie StopMovement, distance : " .. tostring(zloc:Distance(targetloc)))
+                                        v:StopMovement()
+                                        ZMoveCompleted(v, true)
+                                    end
+                                end
+                            end
+                        end
+                    end
+                end
+            end
+        end
+    end
+end, Zombies_Check_Can_Damage_Interval_ms)
+
+function GetNearestZombie(loc)
+    local nearest_z
+    local nearest_dist_sq
+    for k, v in pairs(ZOMBIES_CHARACTERS) do
+        if v:IsValid() then
+            if v:GetHealth() > 0 then
+                if not v:IsInRagdollMode() then
+                    local zloc = v:GetLocation()
+                    local dist_sq = loc:DistanceSquared(zloc)
+                    if (not nearest_dist_sq or dist_sq < nearest_dist_sq) then
+                        nearest_dist_sq = dist_sq
+                        nearest_z = v
+                    end
+                end
+            end
+        end
+    end
+
+    return nearest_z, nearest_dist_sq
+end

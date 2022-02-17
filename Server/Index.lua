@@ -25,7 +25,7 @@ local function split_str(str, sep)
 end
 
 local Config_Data = {
-    "MAP_ROOMS", "PLAYER_SPAWNS", "MAP_DOORS", "MAP_WEAPONS", "MAP_PACK_A_PUNCH", "MAP_POWER", "MAP_MYSTERY_BOXES", "MAP_PERKS", "MAP_Z_LIMITS", "MAP_WUNDERFIZZ", "MAP_INTERACT_TRIGGERS", "MAP_TELEPORTERS", "MAP_LIGHT_ZONES", "MAP_SETTINGS"
+    "MAP_ROOMS", "PLAYER_SPAWNS", "MAP_DOORS", "MAP_WEAPONS", "MAP_PACK_A_PUNCH", "MAP_POWER", "MAP_MYSTERY_BOXES", "MAP_PERKS", "MAP_Z_LIMITS", "MAP_WUNDERFIZZ", "MAP_INTERACT_TRIGGERS", "MAP_TELEPORTERS", "MAP_LIGHT_ZONES", "MAP_SETTINGS", "MAP_STATIC_MESHES"
 }
 
 Events.Subscribe("VZOMBIES_MAP_CONFIG", function(...)
@@ -86,3 +86,7 @@ if not MAP_CONFIG_LOADED then
 else
     Package.Log("VZombies : HotReload")
 end
+
+Package.Subscribe("Load", function()
+    print("VZombies " .. Package.GetVersion() .. " Loaded")
+end)

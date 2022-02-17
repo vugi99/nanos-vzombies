@@ -21,10 +21,12 @@ VZ_BIND("Grenade", InputEvent.Pressed, function()
     local char = ply:GetControlledCharacter()
     if char then
         if not char:GetValue("PlayerDown") then
-            local grenades = char:GetValue("ZGrenadesNB")
-            if (grenades and grenades > 0) then
-                if (not char:GetPicked() or not NanosUtils.IsA(char:GetPicked(), Grenade)) then
-                    Events.CallRemote("PickupGrenade")
+            if not char:IsInRagdollMode() then
+                local grenades = char:GetValue("ZGrenadesNB")
+                if (grenades and grenades > 0) then
+                    if (not char:GetPicked() or not NanosUtils.IsA(char:GetPicked(), Grenade)) then
+                        Events.CallRemote("PickupGrenade")
+                    end
                 end
             end
         end
@@ -53,4 +55,10 @@ VZ_BIND("Knife", InputEvent.Pressed, function()
             end
         end
     end
+end)
+
+Input.Register("Lock Aim", "L")
+
+VZ_BIND("Lock Aim", InputEvent.Pressed, function()
+    Events.CallRemote("ToggleLockAim")
 end)

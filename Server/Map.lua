@@ -926,3 +926,15 @@ if MAP_LIGHT_ZONES then
         end)
     end
 end
+
+if MAP_STATIC_MESHES then
+    for i, v in ipairs(MAP_STATIC_MESHES) do
+        local SM = StaticMesh(
+            v.location,
+            v.rotation,
+            v.model
+        )
+        SM:SetScale(v.scale)
+        SM:SetValue("MapSMID", i, false)
+    end
+end

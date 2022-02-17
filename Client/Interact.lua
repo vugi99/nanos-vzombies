@@ -20,14 +20,15 @@ VZ_EVENT_SUBSCRIBE("Character", "Highlight", function(char, Highlight, ent)
                 elseif (InteractType == "MapWeapon" and InteractThing == m_weap_id) then
                     InteractType = nil
                     InteractThing = nil
-                    Render.ClearItems(1)
+                    One_Time_Update_Data.InteractText = nil
+                    One_Time_Updates_Canvas:Repaint()
                 end
             end
         end
     end
 end)
 
-function InteractCheck(interact_type, Interact_Check_Interval_ms, CheckFunc)
+function InteractCheck(interact_type, loop_params, Interact_Check_Interval_ms, CheckFunc)
     Timer.SetInterval(function()
         if (InteractType == nil or InteractType == interact_type) then
             local local_player = Client.GetLocalPlayer()
@@ -36,51 +37,41 @@ function InteractCheck(interact_type, Interact_Check_Interval_ms, CheckFunc)
             local found
             if local_char then
                 local local_char_location = local_char:GetLocation()
-                found = CheckFunc(local_player, local_char, local_char_location)
+                if loop_params then
+                    for k, v in pairs(loop_params.LoopFunc()) do
+                        if (not loop_params.check_is_valid or v:IsValid()) then
+                            found = CheckFunc(local_player, local_char, local_char_location, v)
+                            if found then
+                                break
+                            end
+                        end
+                    end
+                else
+                    found = CheckFunc(local_player, local_char, local_char_location)
+                end
             end
             if not found then
                 if InteractType == interact_type then
                     InteractType = nil
                     InteractThing = nil
-                    Render.ClearItems(1)
+                    One_Time_Update_Data.InteractText = nil
+                    One_Time_Updates_Canvas:Repaint()
                 end
             end
         end
     end, Interact_Check_Interval_ms)
 end
 
-InteractCheck("MapDoor", Doors_Interact_Check_Interval_ms, function(local_player, local_char, local_char_location)
-    local found
-
-    --[[for k, v in pairs(StaticMesh.GetPairs()) do
-        if v:IsValid() then
-            local door_id = v:GetValue("DoorID")
-            if door_id then
-                local distance_sq = local_char_location:DistanceSquared(v:GetLocation())
-                if distance_sq <= Doors_Interact_Check_Distance_Squared_Max then
-                    InteractType = "MapDoor"
-                    found = true
-
-                    local power_needed = false
-                    if not POWER_ON then
-                        for i3, v3 in ipairs(MAP_DOORS[door_id].required_rooms) do
-                            if v3 == -1 then
-                                power_needed = true
-                                break
-                            end
-                        end
-                    end
-                    if not power_needed then
-                        BuyText("Door", tostring(MAP_DOORS[door_id].price))
-                        InteractThing = door_id
-                    else
-                        InteractText("Missing Power")
-                        InteractThing = "NoPower"
-                    end
-                end
-            end
+function InteractAction(CheckNoPower, event_name, check_valid)
+    if (not CheckNoPower or InteractThing ~= "NoPower") then
+        if (not check_valid or InteractThing:IsValid()) then
+            Events.CallRemote(event_name, InteractThing)
         end
-    end]]--
+    end
+end
+
+InteractCheck("MapDoor", nil, Doors_Interact_Check_Interval_ms, function(local_player, local_char, local_char_location)
+    local found
 
     local Fwd = local_char:GetRotation():GetForwardVector()
     local trace = Client.Trace(local_char_location, local_char_location + Fwd * Doors_Interact_Check_Trace_Distance_Max, CollisionChannel.WorldStatic, true, true, false, {}, ZDEV_IsModeEnabled("ZDEV_DEBUG_TRACES"))
@@ -115,33 +106,25 @@ InteractCheck("MapDoor", Doors_Interact_Check_Interval_ms, function(local_player
     return found
 end)
 
-InteractCheck("MapBarricade", Barricades_Interact_Check_Interval_ms, function(local_player, local_char, local_char_location)
-    local found
-
-    for k, v in pairs(StaticMesh.GetPairs()) do
-        if v:IsValid() then
-            local zspawn_id = v:GetValue("BarricadeSpawnID")
-            if zspawn_id then
-                if v:GetValue("BarricadeLife") < 5 then
-                    local distance_sq = local_char_location:DistanceSquared(v:GetLocation())
-                    if distance_sq <= Barricades_Interact_Check_Distance_Squared_Max then
-                        if InteractThing ~= v then
-                            if RepairBarricadeInterval then
-                                Timer.ClearInterval(RepairBarricadeInterval)
-                                RepairBarricadeInterval = nil
-                            end
-                            InteractText("Hold to Repair Barricade")
-                            InteractType = "MapBarricade"
-                            InteractThing = v
-                        end
-                        found = true
+InteractCheck("MapBarricade", {LoopFunc = StaticMesh.GetPairs, check_is_valid = true}, Barricades_Interact_Check_Interval_ms, function(local_player, local_char, local_char_location, v)
+    local zspawn_id = v:GetValue("BarricadeSpawnID")
+    if zspawn_id then
+        if v:GetValue("BarricadeLife") < 5 then
+            local distance_sq = local_char_location:DistanceSquared(v:GetLocation())
+            if distance_sq <= Barricades_Interact_Check_Distance_Squared_Max then
+                if InteractThing ~= v then
+                    if RepairBarricadeInterval then
+                        Timer.ClearInterval(RepairBarricadeInterval)
+                        RepairBarricadeInterval = nil
                     end
+                    InteractText("Hold to Repair Barricade")
+                    InteractType = "MapBarricade"
+                    InteractThing = v
                 end
+                return true
             end
         end
     end
-
-    return found
 end)
 
 function RepairBarricadeIFunc()
@@ -161,186 +144,132 @@ function RepairBarricadeIFunc()
     end
 end
 
-InteractCheck("RevivePlayer", DownPlayer_Interact_Check_Interval_ms, function(local_player, local_char, local_char_location)
-    local found
-
-    for k, v in pairs(Character.GetPairs()) do
-        if (v:IsValid() and not IsSelfCharacter(v)) then
-            local RevivingPlayer = v:GetValue("RevivingPlayer")
-            if (v:GetValue("PlayerDown") and (not RevivingPlayer or RevivingPlayer == local_char:GetID())) then
-                local distance_sq = local_char_location:DistanceSquared(v:GetLocation())
-                if distance_sq <= DownPlayer_Interact_Check_Distance_Squared_Max then
-                    if not RevivingPlayerData then
-                        InteractText("Hold to Revive Player")
-                        InteractType = "RevivePlayer"
-                        InteractThing = v
-                    end
-                    found = true
-                end
-            end
-        end
-    end
-
-    return found
-end)
-
-InteractCheck("MapMBOX", MBOX_Interact_Check_Interval_ms, function(local_player, local_char, local_char_location)
-    local found
-
-    for k, v in pairs(StaticMesh.GetPairs()) do
-        if v:IsValid() then
-            local can_buy_mbox = v:GetValue("CanBuyMysteryBox")
-            if can_buy_mbox then
-                local distance_sq = local_char_location:DistanceSquared(v:GetLocation())
-                if distance_sq <= MBOX_Interact_Check_Distance_Squared_Max then
-                    InteractType = "MapMBOX"
-                    BuyText("Mystery Box", tostring(Mystery_box_price))
+InteractCheck("RevivePlayer", {LoopFunc = Character.GetPairs, check_is_valid = true}, DownPlayer_Interact_Check_Interval_ms, function(local_player, local_char, local_char_location, v)
+    if not IsSelfCharacter(v) then
+        local RevivingPlayer = v:GetValue("RevivingPlayer")
+        if (v:GetValue("PlayerDown") and (not RevivingPlayer or RevivingPlayer == local_char:GetID())) then
+            local distance_sq = local_char_location:DistanceSquared(v:GetLocation())
+            if distance_sq <= DownPlayer_Interact_Check_Distance_Squared_Max then
+                if not RevivingPlayerData then
+                    InteractText("Hold to Revive Player")
+                    InteractType = "RevivePlayer"
                     InteractThing = v
-                    found = true
                 end
+                return true
             end
         end
     end
-
-    return found
 end)
 
-InteractCheck("MapPower", POWER_Interact_Check_Interval_ms, function(local_player, local_char, local_char_location)
-    local found
+InteractCheck("MapMBOX", {LoopFunc = StaticMesh.GetPairs, check_is_valid = true}, MBOX_Interact_Check_Interval_ms, function(local_player, local_char, local_char_location, v)
+    local can_buy_mbox = v:GetValue("CanBuyMysteryBox")
+    if can_buy_mbox then
+        local distance_sq = local_char_location:DistanceSquared(v:GetLocation())
+        if distance_sq <= MBOX_Interact_Check_Distance_Squared_Max then
+            InteractType = "MapMBOX"
+            BuyText("Mystery Box", tostring(Mystery_box_price))
+            InteractThing = v
+            return true
+        end
+    end
+end)
 
+InteractCheck("MapPower", {LoopFunc = StaticMesh.GetPairs, check_is_valid = true}, POWER_Interact_Check_Interval_ms, function(local_player, local_char, local_char_location, v)
     if not POWER_ON then
-        for k, v in pairs(StaticMesh.GetPairs()) do
-            if v:IsValid() then
-                local is_Map_Power = v:GetValue("MapPower")
-                if is_Map_Power then
-                    local distance_sq = local_char_location:DistanceSquared(v:GetLocation())
-                    if distance_sq <= POWER_Interact_Check_Distance_Squared_Max then
-                        InteractType = "MapPower"
-                        InteractText("Turn Power ON")
-                        InteractThing = v
-                        found = true
-                    end
-                end
+        local is_Map_Power = v:GetValue("MapPower")
+        if is_Map_Power then
+            local distance_sq = local_char_location:DistanceSquared(v:GetLocation())
+            if distance_sq <= POWER_Interact_Check_Distance_Squared_Max then
+                InteractType = "MapPower"
+                InteractText("Turn Power ON")
+                InteractThing = v
+                return true
             end
         end
     end
-
-    return found
 end)
 
-InteractCheck("MapPerk", Perk_Interact_Check_Interval_ms, function(local_player, local_char, local_char_location)
-    local found
-
-    for k, v in pairs(StaticMesh.GetPairs()) do
-        if v:IsValid() then
-            local perk = v:GetValue("MapPerk")
-            if (perk and not CurPerks[perk]) then
-                local distance_sq = local_char_location:DistanceSquared(v:GetLocation())
-                if distance_sq <= Perk_Interact_Check_Distance_Squared_Max then
-                    InteractType = "MapPerk"
-                    if POWER_ON then
-                        InteractThing = v
-                        BuyText(perk .. " Perk", tostring(PERKS_CONFIG[perk].price))
-                    else
-                        InteractThing = "NoPower"
-                        InteractText("Missing Power")
-                    end
-                    found = true
-                end
+InteractCheck("MapPerk", {LoopFunc = StaticMesh.GetPairs, check_is_valid = true}, Perk_Interact_Check_Interval_ms, function(local_player, local_char, local_char_location, v)
+    local perk = v:GetValue("MapPerk")
+    if (perk and not CurPerks[perk]) then
+        local distance_sq = local_char_location:DistanceSquared(v:GetLocation())
+        if distance_sq <= Perk_Interact_Check_Distance_Squared_Max then
+            InteractType = "MapPerk"
+            if POWER_ON then
+                InteractThing = v
+                BuyText(perk .. " Perk", tostring(PERKS_CONFIG[perk].price))
+            else
+                InteractThing = "NoPower"
+                InteractText("Missing Power")
             end
+            return true
         end
     end
-
-    return found
 end)
 
-InteractCheck("MapPAP", PAP_Interact_Check_Interval_ms, function(local_player, local_char, local_char_location)
-    local found
-
-    for k, v in pairs(StaticMesh.GetPairs()) do
-        if v:IsValid() then
-            local can_buy_pap = v:GetValue("CanBuyPackAPunch")
-            if can_buy_pap then
-                local distance_sq = local_char_location:DistanceSquared(v:GetLocation())
-                if distance_sq <= PAP_Interact_Check_Distance_Squared_Max then
-                    InteractType = "MapPAP"
-                    if POWER_ON then
-                        InteractThing = v
-                        BuyText("Weapon Upgrade", tostring(Pack_a_punch_price))
-                    else
-                        InteractThing = "NoPower"
-                        InteractText("Missing Power")
-                    end
-                    found = true
-                end
+InteractCheck("MapPAP", {LoopFunc = StaticMesh.GetPairs, check_is_valid = true}, PAP_Interact_Check_Interval_ms, function(local_player, local_char, local_char_location, v)
+    local can_buy_pap = v:GetValue("CanBuyPackAPunch")
+    if can_buy_pap then
+        local distance_sq = local_char_location:DistanceSquared(v:GetLocation())
+        if distance_sq <= PAP_Interact_Check_Distance_Squared_Max then
+            InteractType = "MapPAP"
+            if POWER_ON then
+                InteractThing = v
+                BuyText("Weapon Upgrade", tostring(Pack_a_punch_price))
+            else
+                InteractThing = "NoPower"
+                InteractText("Missing Power")
             end
+            return true
         end
     end
-
-    return found
 end)
 
-InteractCheck("MapWunder", Wunderfizz_Interact_Check_Interval_ms, function(local_player, local_char, local_char_location)
-    local found
-
+InteractCheck("MapWunder", {LoopFunc = StaticMesh.GetPairs, check_is_valid = true}, Wunderfizz_Interact_Check_Interval_ms, function(local_player, local_char, local_char_location, v)
     if table_count(CurPerks) < table_count(PERKS_CONFIG) then
-        for k, v in pairs(StaticMesh.GetPairs()) do
-            if v:IsValid() then
-                local can_buy_wunder = v:GetValue("CanBuyWunder")
-                if can_buy_wunder then
-                    local distance_sq = local_char_location:DistanceSquared(v:GetLocation())
-                    if distance_sq <= Wunderfizz_Interact_Check_Distance_Squared_Max then
-                        InteractType = "MapWunder"
+        local can_buy_wunder = v:GetValue("CanBuyWunder")
+        if can_buy_wunder then
+            local distance_sq = local_char_location:DistanceSquared(v:GetLocation())
+            if distance_sq <= Wunderfizz_Interact_Check_Distance_Squared_Max then
+                InteractType = "MapWunder"
 
-                        if POWER_ON then
-                            BuyText("Wunderfizz", tostring(Wonderfizz_Price))
-                            InteractThing = v
-                        else
-                            InteractText("Missing Power")
-                            InteractThing = "NoPower"
-                        end
-
-                        found = true
-                    end
+                if POWER_ON then
+                    BuyText("Wunderfizz", tostring(Wonderfizz_Price))
+                    InteractThing = v
+                else
+                    InteractText("Missing Power")
+                    InteractThing = "NoPower"
                 end
+
+                return true
             end
         end
     end
-
-    return found
 end)
 
-InteractCheck("WunderBottle", Wunderfizz_Bottle_Interact_Check_Interval_ms, function(local_player, local_char, local_char_location)
-    local found
-
+InteractCheck("WunderBottle", {LoopFunc = Prop.GetPairs, check_is_valid = true}, Wunderfizz_Bottle_Interact_Check_Interval_ms, function(local_player, local_char, local_char_location, v)
     if table_count(CurPerks) < table_count(PERKS_CONFIG) then
-        for k, v in pairs(Prop.GetPairs()) do
-            if v:IsValid() then
-                local wunder_bottle = v:GetValue("RealBottleData")
-                if wunder_bottle then
-                    if wunder_bottle[1] == local_char:GetID() then
-                        if (not CurPerks or not CurPerks[wunder_bottle[2]]) then
-                            local distance_sq = local_char_location:DistanceSquared(v:GetLocation())
-                            if distance_sq <= Wunderfizz_Bottle_Interact_Check_Distance_Squared_Max then
-                                InteractType = "WunderBottle"
+        local wunder_bottle = v:GetValue("RealBottleData")
+        if wunder_bottle then
+            if wunder_bottle[1] == local_char:GetID() then
+                if (not CurPerks or not CurPerks[wunder_bottle[2]]) then
+                    local distance_sq = local_char_location:DistanceSquared(v:GetLocation())
+                    if distance_sq <= Wunderfizz_Bottle_Interact_Check_Distance_Squared_Max then
+                        InteractType = "WunderBottle"
 
-                                InteractText("Take " .. wunder_bottle[2] .. " Perk")
-                                InteractThing = v
+                        InteractText("Take " .. wunder_bottle[2] .. " Perk")
+                        InteractThing = v
 
-                                found = true
-                            end
-                        end
+                        return true
                     end
                 end
             end
         end
     end
-
-    return found
 end)
 
 if MAP_INTERACT_TRIGGERS then
-    InteractCheck("MapCustom", Custom_Interact_Check_Interval_ms, function(local_player, local_char, local_char_location)
+    InteractCheck("MapCustom", nil, Custom_Interact_Check_Interval_ms, function(local_player, local_char, local_char_location)
         local found
 
         for k, v in pairs(MAP_INTERACT_TRIGGERS) do
@@ -358,38 +287,30 @@ if MAP_INTERACT_TRIGGERS then
 end
 
 if MAP_TELEPORTERS then
-    InteractCheck("MapTeleporter", Teleporters_Interact_Check_Interval_ms, function(local_player, local_char, local_char_location)
-        local found
-
-        for k, v in pairs(StaticMesh.GetPairs()) do
-            if v:IsValid() then
-                local can_teleport = v:GetValue("CanTeleport")
-                if (can_teleport or can_teleport == false) then
-                    local teleporter_ID = v:GetValue("TeleporterID")
-                    if teleporter_ID then
-                        local distance_sq = local_char_location:DistanceSquared(v:GetLocation())
-                        if distance_sq <= MAP_TELEPORTERS[teleporter_ID].distance_sq then
-                            InteractType = "MapTeleporter"
-                            if POWER_ON then
-                                if can_teleport == false then
-                                    InteractThing = "NoPower"
-                                    InteractText("Teleporter in cooldown")
-                                else
-                                    InteractThing = v
-                                    InteractText("Teleport (" .. tostring(MAP_TELEPORTERS[teleporter_ID].price) .. "$)")
-                                end
-                            else
-                                InteractThing = "NoPower"
-                                InteractText("Missing Power")
-                            end
-                            found = true
+    InteractCheck("MapTeleporter", {LoopFunc = StaticMesh.GetPairs, check_is_valid = true}, Teleporters_Interact_Check_Interval_ms, function(local_player, local_char, local_char_location, v)
+        local can_teleport = v:GetValue("CanTeleport")
+        if (can_teleport or can_teleport == false) then
+            local teleporter_ID = v:GetValue("TeleporterID")
+            if teleporter_ID then
+                local distance_sq = local_char_location:DistanceSquared(v:GetLocation())
+                if distance_sq <= MAP_TELEPORTERS[teleporter_ID].distance_sq then
+                    InteractType = "MapTeleporter"
+                    if POWER_ON then
+                        if can_teleport == false then
+                            InteractThing = "NoPower"
+                            InteractText("Teleporter in cooldown")
+                        else
+                            InteractThing = v
+                            InteractText("Teleport (" .. tostring(MAP_TELEPORTERS[teleporter_ID].price) .. "$)")
                         end
+                    else
+                        InteractThing = "NoPower"
+                        InteractText("Missing Power")
                     end
+                    found = true
                 end
             end
         end
-
-        return found
     end)
 end
 
@@ -437,49 +358,42 @@ VZ_BIND("Interact", InputEvent.Pressed, function()
     local char = ply:GetControlledCharacter()
     if char then
         if not char:GetValue("PlayerDown") then
-            if InteractType == "MapDoor" then
-                if InteractThing ~= "NoPower" then
-                    Events.CallRemote("BuyDoor", InteractThing)
-                end
-            elseif InteractType == "MapBarricade" then
-                if RepairBarricadeInterval then
-                    Timer.ClearInterval(RepairBarricadeInterval)
-                    RepairBarricadeInterval = nil
-                end
-                PlayStartRepairBarricade()
-                RepairBarricadeInterval = Timer.SetInterval(RepairBarricadeIFunc, Repair_Barricade_Interval_ms)
-            elseif InteractType == "RevivePlayer" then
-                Events.CallRemote("RevivePlayer", InteractThing)
-            elseif InteractType == "MapMBOX" then
-                Events.CallRemote("BuyMBOX", InteractThing)
-            elseif InteractType == "MapPower" then
-                Events.CallRemote("TurnPowerON", InteractThing)
-            elseif InteractType == "MapPerk" then
-                if InteractThing ~= "NoPower" then
-                    Events.CallRemote("BuyPerk", InteractThing)
-                end
-            elseif InteractType == "MapPAP" then
-                if InteractThing ~= "NoPower" then
-                    Events.CallRemote("UpgradeWeap", InteractThing)
-                end
-            elseif InteractType == "MapWunder" then
-                if InteractThing ~= "NoPower" then
-                    Events.CallRemote("BuyWunderfizz", InteractThing)
-                end
-            elseif InteractType == "WunderBottle" then
-                if InteractThing:IsValid() then
-                    Events.CallRemote("TakeWunderfizzPerk", InteractThing)
-                end
-            elseif InteractType == "MapCustom" then
-                Events.Call(InteractThing.event_name, InteractThing)
-                Events.CallRemote("CustomMapInteract", InteractThing)
-            elseif InteractType == "MapTeleporter" then
-                if InteractThing ~= "NoPower" then
-                    if InteractThing:IsValid() then
-                        if InteractThing:GetValue("CanTeleport") then
-                            Events.CallRemote("BuyTeleport", InteractThing)
+            local tbl_value = switch(InteractType, {
+                MapDoor = {true, "BuyDoor"},
+                MapBarricade = function()
+                    if RepairBarricadeInterval then
+                        Timer.ClearInterval(RepairBarricadeInterval)
+                        RepairBarricadeInterval = nil
+                    end
+                    PlayStartRepairBarricade()
+                    RepairBarricadeInterval = Timer.SetInterval(RepairBarricadeIFunc, Repair_Barricade_Interval_ms)
+                end,
+                RevivePlayer = {false, "RevivePlayer"},
+                MapMBOX = {false, "BuyMBOX"},
+                MapPower = {false, "TurnPowerON"},
+                MapPerk = {true, "BuyPerk"},
+                MapPAP = {true, "UpgradeWeap"},
+                MapWunder = {true, "BuyWunderfizz"},
+                WunderBottle = {false, "TakeWunderfizzPerk", true},
+                MapCustom = function()
+                    Events.Call(InteractThing.event_name, InteractThing)
+                    Events.CallRemote("CustomMapInteract", InteractThing)
+                end,
+                MapTeleporter = function()
+                    if InteractThing ~= "NoPower" then
+                        if InteractThing:IsValid() then
+                            if InteractThing:GetValue("CanTeleport") then
+                                Events.CallRemote("BuyTeleport", InteractThing)
+                            end
                         end
                     end
+                end,
+            })
+            if tbl_value then
+                if type(tbl_value) == "function" then
+                    tbl_value()
+                else
+                    InteractAction(table.unpack(tbl_value))
                 end
             end
         end

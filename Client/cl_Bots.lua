@@ -314,7 +314,7 @@ function GetDoorToOpen(Bot, char, ROOMS_UNLOCKED)
                                 CheapestDoorOpenablePrice = price
                             else
                                 local point_around = Client.GetRandomPointInNavigableRadius(v:GetLocation(), Bots_Reach_Door_Around)
-                                if point_around then
+                                if (point_around and point_around ~= Vector(0, 0, 0)) then
                                     local path2 = Client.FindPathToLocation(char_loc, point_around)
                                     if (path2.IsValid and not path2.IsPartial) then
                                         CheapestDoorOpenable = v
@@ -355,6 +355,69 @@ function GetNearestCharacterThatNeedRevive(char)
     end
 
     return nearest_down_char
+end
+
+function IsZombieGood(v)
+    if v:IsValid() then
+        if v:GetValue("ZombieType") then
+            if v:GetHealth() > 0 then
+                if not v:IsInRagdollMode() then
+                    return true
+                end
+            end
+        end
+    end
+end
+
+function findRotation( x1, y1, x2, y2 )
+    local t = -math.deg(math.atan( x2 - x1, y2 - y1 ))
+    t = t < 0 and t + 360 or t
+    return t - 270
+end
+
+function GetBotMoveLocation(Bot, char)
+
+    local loc = char:GetLocation()
+
+    local zombies_locations = {}
+    for k, v in pairs(Character.GetPairs()) do
+        if IsZombieGood(v) then
+            local zloc = v:GetLocation()
+            if loc:DistanceSquared(zloc) <= Bots_Zombies_Dangerous_Point_Distance_sq then
+                table.insert(zombies_locations, zloc)
+            end
+        end
+    end
+    if zombies_locations[1] then
+        local dangerous_point = CalculateMiddle(table.unpack(zombies_locations))
+        local look_at_point = Rotator(0, findRotation(loc.X, loc.Y, dangerous_point.X, dangerous_point.Y), 0)
+        local look_at_point_fw = look_at_point:GetForwardVector()
+
+        local flee_middle = loc + look_at_point_fw * -1 * Bots_Flee_Zombies_Move_Distance
+        if ZDEV_IsModeEnabled("ZDEV_DEBUG_BOTS_FLEE") then
+            Client.DrawDebugLine(dangerous_point, loc, Color.RED, 3, 1)
+            Client.DrawDebugLine(loc, flee_middle, Color.AZURE, 3, 1)
+            Client.DrawDebugSphere(dangerous_point, 200, 40, Color.RED, 3, 1)
+            Client.DrawDebugSphere(flee_middle, Bots_Flee_Zombies_Move_Radius, 50, Color.AZURE, 3, 1)
+        end
+        for i = 1, Bots_Flee_Point_Retry_Number do
+            local flee_point = Client.GetRandomPointInNavigableRadius(flee_middle, Bots_Flee_Zombies_Move_Radius)
+            if (flee_point and flee_point ~= Vector(0, 0, 0)) then
+                if ZDEV_IsModeEnabled("ZDEV_DEBUG_BOTS_FLEE") then
+                    Client.DrawDebugCylinder(flee_point - Vector(0, 0, 20), flee_point + Vector(0, 0, 180), 35, 30, Color.GREEN, 3, 1)
+                end
+                local path = Client.FindPathToLocation(loc, flee_point)
+                if (path.IsValid and not path.IsPartial) then
+                    if path.Length <= Bots_Flee_Zombies_Move_Distance * 2 + Bots_Flee_Zombies_Move_Radius * 2 then
+                        return flee_point
+                    end
+                end
+            end
+        end
+    end
+
+    local reachable_loc = Client.GetRandomReachablePointInRadius(char:GetLocation(), Bots_Move_Max_Radius)
+    return reachable_loc
 end
 
 
@@ -412,7 +475,7 @@ VZ_EVENT_SUBSCRIBE("Events", "RequestBotAction", function(bot_id, bot_stored, bo
                                     if not Best_Inv_Weapon.pap then
                                         local loc = pack_a_punch:GetLocation()
                                         local point_around = Client.GetRandomPointInNavigableRadius(loc, Bots_Reach_PAP_Around)
-                                        if point_around then
+                                        if (point_around and point_around ~= Vector(0, 0, 0)) then
                                             local path = Client.FindPathToLocation(char:GetLocation(), point_around)
                                             --print(NanosUtils.Dump(path))
                                             if (path.IsValid and not path.IsPartial) then
@@ -433,12 +496,16 @@ VZ_EVENT_SUBSCRIBE("Events", "RequestBotAction", function(bot_id, bot_stored, bo
                         return
                     end
                 elseif v == "MOVE" then
-                    local reachable_loc = Client.GetRandomReachablePointInRadius(char:GetLocation(), Bots_Move_Max_Radius)
-                    Events.CallRemote("BotAction", bot_id, v, reachable_loc)
+                    local reachable_loc = GetBotMoveLocation(Bot, char)
+                    if (reachable_loc and reachable_loc ~= Vector(0, 0, 0)) then
+                        Events.CallRemote("BotAction", bot_id, v, reachable_loc)
+                    else
+                        Package.Error("Bot MOVE didn't find ReachablePoint")
+                    end
                     return
                 elseif v == "REVIVE" then
                     local down_char = GetNearestCharacterThatNeedRevive(char)
-                    if down_char then
+                    if (down_char and One_Time_Update_Data.Zombies_Remaining_Number <= 1) then
                         local loc = down_char:GetLocation()
                         Events.CallRemote("BotAction", bot_id, v, loc, down_char)
                         return
@@ -495,37 +562,25 @@ VZ_EVENT_SUBSCRIBE("VZBot", "ValueChange", function(Bot, key, value)
                                     end
                                 end
 
-                                local Shooting_On = char:GetValue("BOTShootingOn")
-                                local selectNew = true
-                                local shooting_on_in_list
+                                local CanShootOn = char:GetValue("BOTCanShootOn")
+                                CanShootOn = CanShootOn or {}
+                                local same = false
                                 if Shooting_On then
-                                    shooting_on_in_list = false
+                                    local same_count = 0
                                     for i, v in ipairs(can_shoot_on) do
-                                        if v:GetID() == Shooting_On then
-                                            shooting_on_in_list = true
-                                            selectNew = false
-                                            break
+                                        for i2, v2 in ipairs(CanShootOn) do
+                                            if v:GetID() == v2 then
+                                                same_count = same_count + 1
+                                            end
                                         end
+                                    end
+                                    if not (same_count == table_count(CanShootOn) and table_count(can_shoot_on) == table_count(CanShootOn)) then
+                                        same = true
                                     end
                                 end
 
-                                if selectNew then
-                                    local nearest_char
-                                    local nearest_dist_sq
-                                    for i, v in ipairs(can_shoot_on) do
-                                        local loc = v:GetLocation()
-                                        local dist_sq = char_loc:DistanceSquared(loc)
-                                        if (not nearest_dist_sq or nearest_dist_sq > dist_sq) then
-                                            nearest_char = v
-                                            nearest_dist_sq = dist_sq
-                                        end
-                                    end
-
-                                    if nearest_char then
-                                        Events.CallRemote("NewBotTarget", Bot:GetID(), nearest_char)
-                                    elseif shooting_on_in_list == false then
-                                        Events.CallRemote("BotLostTarget", Bot:GetID())
-                                    end
+                                if not same then
+                                    Events.CallRemote("NewBotTargets", Bot:GetID(), can_shoot_on)
                                 end
                             end
                         end

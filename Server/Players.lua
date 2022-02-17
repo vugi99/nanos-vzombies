@@ -17,6 +17,7 @@ function SpawnCharacterForPlayer(ply, spawn_id)
     end
 
     local new_char = Character(PLAYER_SPAWNS[spawn_id].location + Vector(0, 0, 105), PLAYER_SPAWNS[spawn_id].rotation)
+    --local new_char = Character(PLAYER_SPAWNS[spawn_id].location + Vector(0, 0, 105), PLAYER_SPAWNS[spawn_id].rotation, Player_Models.Required_Skeletal_Meshes[1].sk_path)
     if not ply.BOT then
         new_char:SetCameraMode(CAMERA_MODE)
     end
@@ -35,6 +36,8 @@ function SpawnCharacterForPlayer(ply, spawn_id)
     if ply.BOT then
         new_char:SetGaitMode(GaitMode.Sprinting)
     end
+
+    --BuildCharacterModel(new_char)
 
     AddCharacterWeapon(new_char, Player_Start_Weapon.weapon_name, Player_Start_Weapon.ammo)
 end
@@ -95,6 +98,17 @@ function GetPlayersAliveNB()
         end
     end
     return nb
+end
+
+function GetPlayersAlive()
+    local tbl = {}
+    for k, v in pairs(PLAYING_PLAYERS) do
+        local char = v:GetControlledCharacter()
+        if (char and not char:GetValue("PlayerDown")) then
+            table.insert(tbl, v)
+        end
+    end
+    return tbl
 end
 
 function GetPlayersWOBotsAliveNB()
@@ -285,12 +299,20 @@ function HandlePlayerJoin(ply, bot, waittostart)
         if ROUND_NB > 0 then
             Events.CallRemote("SetClientRoundNumber", ply, ROUND_NB)
             SendZombiesRemaining(ply)
+            if Game_Time_On_Screen then
+                Events.CallRemote("UpdateGameTime", ply, math.floor(GAME_TIMER_SECONDS))
+            end
         end
         if POWER_ON then
             Events.CallRemote("SetClientPowerON", ply, true)
         end
         if PLAYING_PLAYERS_NB < MAX_PLAYERS then
-            ZPlayingPlayerInit(ply)
+            if not No_Players then
+                ZPlayingPlayerInit(ply)
+            else
+                table.insert(WAITING_PLAYERS, ply)
+                ply:SetValue("PlayerWaiting", true, true)
+            end
             if ROUND_NB == 0 then
                 if not WaitingNewRound_Timer then
                     if not waittostart then
@@ -301,21 +323,23 @@ function HandlePlayerJoin(ply, bot, waittostart)
         else
             local found_bot
             local game_restart
-            for k, v in pairs(PLAYING_PLAYERS) do
-                if v.BOT then
-                    found_bot = true
-                    local char = v:GetControlledCharacter()
-                    if char then
-                        char:Destroy()
+            if not No_Players then
+                for k, v in pairs(PLAYING_PLAYERS) do
+                    if v.BOT then
+                        found_bot = true
+                        local char = v:GetControlledCharacter()
+                        if char then
+                            char:Destroy()
+                        end
+                        v:Kick()
+                        if GetPlayersAliveNB() == 0 then
+                            game_restart = true
+                        end
+                        break
                     end
-                    v:Kick()
-                    if GetPlayersAliveNB() == 0 then
-                        game_restart = true
-                    end
-                    break
                 end
             end
-            if (game_restart or found_bot) then
+            if ((game_restart or found_bot) and not No_Players) then
                 ZPlayingPlayerInit(ply)
                 if game_restart then
                     RoundFinished(false, true)
@@ -395,6 +419,11 @@ VZ_EVENT_SUBSCRIBE("Player", "Destroy", function(ply)
                 break
             end
         end
+        if No_Players then
+            if table_count(Player.GetAll()) - 1 == 0 then
+                RoundFinished(true, false, ply)
+            end
+        end
     end
     PlayerLeftCheckSyncPlayers(ply)
 end)
@@ -402,7 +431,7 @@ end)
 function RevivePlayer(ply, revive_char)
     local char = ply:GetControlledCharacter()
     if (char and char:IsValid() and not char:GetValue("PlayerDown")) then
-        if revive_char:IsValid() then
+        if (revive_char and revive_char:IsValid()) then
             if revive_char:GetValue("PlayerDown") then
                 if not revive_char:GetValue("RevivingPlayer") then
                     revive_char:SetValue("RevivingPlayer", char:GetID(), true)
@@ -551,4 +580,19 @@ if ZDEV_IsModeEnabled("ZDEV_COMMANDS") then
             end
         end
     end)
+end
+
+function BuildCharacterModel(char)
+    local Random_Global_Mats_Choosen = {}
+    for i, v in ipairs(Player_Models.Global_Random_mats) do
+        table.insert(Random_Global_Mats_Choosen, Player_Models.Global_Random_mats[i][math.random(table_count(v))])
+    end
+
+    for i, v in ipairs(Player_Models.Required_Skeletal_Meshes) do
+        if i > 1 then
+            char:AddSkeletalMeshAttached("requiredsk" .. tostring(i), v.sk_path)
+        elseif v.random_mats then
+            char:SetMaterial(Random_Global_Mats_Choosen[v.random_mats.global_random_mats], v.random_mats.slot)
+        end
+    end
 end

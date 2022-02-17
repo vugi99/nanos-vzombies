@@ -75,6 +75,15 @@ local function GiveInventoryPlayerWeapon(char, charInvID, i, v)
     end
     char:PickUp(weapon)
 
+    local ply = char:GetPlayer()
+    if ply then
+        if not ply.BOT then
+            if ply:GetValue("AimLocked") then
+                char:SetWeaponAimMode(AimMode.ZoomedFar)
+            end
+        end
+    end
+
     local FLZones = char:GetValue("InFlashlightZones")
     if table_count(FLZones) > 0 then
         AttachFlashLightToCurWeapon(char)
@@ -337,41 +346,43 @@ VZ_EVENT_SUBSCRIBE("Events", "PickupGrenade", function(ply)
         local char = ply:GetControlledCharacter()
         if char then
             if not char:GetValue("PlayerDown") then
-                local grenades = char:GetValue("ZGrenadesNB")
-                if (grenades and grenades > 0) then
-                    local grenade = Grenade(
-                        Vector(0, 0, 0),
-                        Rotator(0, 0, 0),
-                        "nanos-world::SM_Grenade_G67",
-                        "nanos-world::P_Grenade_Special",
-                        "nanos-world::A_Explosion_Large"
-                    )
-                    grenade:SetDamage(table.unpack(Grenade_Damage_Config))
-                    grenade:SetTimeToExplode(Grenade_TimeToExplode)
-                    grenade:SetValue("GrenadeOwner", char:GetID(), false)
+                if not char:IsInRagdollMode() then
+                    local grenades = char:GetValue("ZGrenadesNB")
+                    if (grenades and grenades > 0) then
+                        local grenade = Grenade(
+                            Vector(0, 0, 0),
+                            Rotator(0, 0, 0),
+                            "nanos-world::SM_Grenade_G67",
+                            "nanos-world::P_Grenade_Special",
+                            "nanos-world::A_Explosion_Large"
+                        )
+                        grenade:SetDamage(table.unpack(Grenade_Damage_Config))
+                        grenade:SetTimeToExplode(Grenade_TimeToExplode)
+                        grenade:SetValue("GrenadeOwner", char:GetID(), false)
 
-                    local charInvID = GetCharacterInventory(char)
-                    if charInvID then
-                        local Inv = PlayersCharactersWeapons[charInvID]
-                        
-                        for i, v in ipairs(Inv.weapons) do
-                            if (v.slot == Inv.selected_slot and v.weapon) then
-                                if v.weapon:IsValid() then
-                                    v.ammo_bag = v.weapon:GetAmmoBag()
-                                    v.ammo_clip = v.weapon:GetAmmoClip()
+                        local charInvID = GetCharacterInventory(char)
+                        if charInvID then
+                            local Inv = PlayersCharactersWeapons[charInvID]
 
-                                    v.destroying = true
-                                    v.weapon:Destroy()
+                            for i, v in ipairs(Inv.weapons) do
+                                if (v.slot == Inv.selected_slot and v.weapon) then
+                                    if v.weapon:IsValid() then
+                                        v.ammo_bag = v.weapon:GetAmmoBag()
+                                        v.ammo_clip = v.weapon:GetAmmoClip()
+
+                                        v.destroying = true
+                                        v.weapon:Destroy()
+                                    end
+                                    v.weapon = nil
+                                    break
                                 end
-                                v.weapon = nil
-                                break
                             end
                         end
+
+                        char:PickUp(grenade)
+
+                        grenade:PullUse()
                     end
-
-                    char:PickUp(grenade)
-
-                    grenade:PullUse()
                 end
             end
         end
@@ -526,3 +537,29 @@ function DetachFlashLightFromWeapon(weapon)
         end
     end
 end
+
+VZ_EVENT_SUBSCRIBE("Character", "WeaponAimModeChanged", function(char, old_state, new_state)
+    --print("WeaponAimModeChanged", new_state)
+    local ply = char:GetPlayer()
+    if ply then
+        if not ply.BOT then
+            if ply:GetValue("AimLocked") then
+                if new_state == AimMode.None then
+                    char:SetWeaponAimMode(AimMode.ZoomedFar)
+                end
+            end
+        end
+    end
+end)
+
+VZ_EVENT_SUBSCRIBE("Events", "ToggleLockAim", function(ply)
+    ply:SetValue("AimLocked", not ply:GetValue("AimLocked"), false)
+    if ply:GetValue("AimLocked") then
+        local char = ply:GetControlledCharacter()
+        if char then
+            if char:GetWeaponAimMode() == AimMode.None then
+                char:SetWeaponAimMode(AimMode.ZoomedFar)
+            end
+        end
+    end
+end)

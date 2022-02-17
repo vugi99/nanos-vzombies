@@ -106,3 +106,17 @@ function ZDEV_IsModeEnabled(mode)
         return false
     end
 end
+
+function switch(key, tbl)
+    if tbl[key] then
+        return tbl[key]
+    end
+end
+
+function CalculateMiddle(...)
+    local middle = Vector(0, 0, 0)
+    for i, v in ipairs({...}) do
+        middle = middle + v
+    end
+    return middle / table_count({...})
+end

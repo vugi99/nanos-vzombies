@@ -278,6 +278,8 @@ VZ_EVENT_SUBSCRIBE("Events", "BuyTeleport", function(ply, teleporter)
                             local char_to_tp = v:GetControlledCharacter()
                             char_to_tp:SetLocation(MAP_TELEPORTERS[teleporter_ID].teleport_to[i].location + Vector(0, 0, 100))
                             char_to_tp:SetRotation(MAP_TELEPORTERS[teleporter_ID].teleport_to[i].rotation)
+                            v:SetCameraRotation(MAP_TELEPORTERS[teleporter_ID].teleport_to[i].rotation)
+
 
                             Events.CallRemote("PlayerTeleportedSound", v)
                         end
@@ -297,6 +299,7 @@ VZ_EVENT_SUBSCRIBE("Events", "BuyTeleport", function(ply, teleporter)
                                             if char_to_tp then
                                                 char_to_tp:SetLocation(MAP_TELEPORTERS[teleporter_ID].teleport_back[i].location + Vector(0, 0, 100))
                                                 char_to_tp:SetRotation(MAP_TELEPORTERS[teleporter_ID].teleport_back[i].rotation)
+                                                v:SetCameraRotation(MAP_TELEPORTERS[teleporter_ID].teleport_back[i].rotation)
 
                                                 Events.CallRemote("PlayerTeleportedSound", v)
                                             end

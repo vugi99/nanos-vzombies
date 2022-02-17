@@ -8,6 +8,9 @@ ZDEV_CONFIG = {
         ZDEV_INFINITE_GRENADES = true,
         ZDEV_DEBUG_TRIGGERS = true,
         ZDEV_DEBUG_HIGHLIGHT_ZOMBIES = true,
+        ZDEV_DEBUG_BOTS_MOVEMENT = false,
+        ZDEV_DEBUG_BOTS_SHOOT = false,
+        ZDEV_DEBUG_BOTS_FLEE = false,
     }
 }
 
@@ -28,6 +31,11 @@ Remaining_Zombies_Text = true
 Player_Names_On_Heads = true
 Player_Name_Displayed_at_dist_sq = 1440000
 
+Player_To_Revive_image = "package///" .. Package.GetPath() .. "/Client/gui/images/to_revive.png"
+To_Revive_Billboard_Relative_Location = Vector(0, 0, 100)
+
+Game_Time_On_Screen = true
+
 --------------------------------------------------------------------------------------------------------------
 -- Player Config
 
@@ -47,6 +55,142 @@ PlayerSpeedMultiplier = 1.5
 
 PlayerDeadAfterTimerDown_ms = 30000
 ReviveTime_ms = 5000
+
+Player_Models = {
+    Global_Random_mats = {
+        {
+            "vzombies-assets::M_Sci_Fi_Character_Body_1",
+            "vzombies-assets::M_Sci_Fi_Character_Body_2",
+            "vzombies-assets::M_Sci_Fi_Character_Body_3",
+        },
+        {
+            "vzombies-assets::M_Sci_Fi_Character_Details_1",
+            "vzombies-assets::M_Sci_Fi_Character_Details_2",
+            "vzombies-assets::M_Sci_Fi_Character_Details_3",
+        },
+        {
+            "vzombies-assets::M_Sci_Fi_Character_Head_1",
+            "vzombies-assets::M_Sci_Fi_Character_Head_2",
+            "vzombies-assets::M_Sci_Fi_Character_Head_3",
+            "vzombies-assets::M_Sci_Fi_Character_Head_3",
+            "vzombies-assets::M_Sci_Fi_Character_Head_4",
+            "vzombies-assets::M_Sci_Fi_Character_Head_5",
+            "vzombies-assets::M_Sci_Fi_Character_Head_6",
+        },
+    },
+
+    Required_Skeletal_Meshes = {
+        {
+            sk_path = "vzombies-assets::SK_Sci_Fi_Character_08_Body",
+            random_mats = {
+                {
+                    slot = 0,
+                    global_random_mats = 1,
+                },
+            },
+        },
+        {
+            sk_path = "vzombies-assets::SK_Sci_Fi_Character_08_Shoes_Details_01",
+        },
+        {
+            sk_path = "vzombies-assets::SK_Sci_Fi_Character_08_Shoes_Details_02",
+        },
+        {
+            sk_path = "vzombies-assets::SK_Sci_Fi_Character_08_Arms",
+            random_mats = {
+                {
+                    slot = 0,
+                    global_random_mats = 1,
+                },
+            },
+        },
+    },
+
+    Required_Random = {
+        {
+            {
+                sk_path = "vzombies-assets::SK_Sci_Fi_Character_08_Head_01",
+                random_mats = {
+                    {
+                        slot = 0,
+                        global_random_mats = 2,
+                    },
+                },
+            },
+            {
+                sk_path = "vzombies-assets::SK_Sci_Fi_Character_08_Head_02",
+                random_mats = {
+                    {
+                        slot = 0,
+                        global_random_mats = 3,
+                    },
+                },
+                Random_Skeletal_Meshes_On_This_Part = {
+                    {
+                        sk_path = "vzombies-assets::SK_Sci_Fi_Character_08_Head_02_Details",
+                    },
+                }
+            },
+        },
+    },
+
+    Random_Skeletal_Meshes = {
+        {
+            sk_path = "vzombies-assets::SK_Sci_Fi_Character_08_Hat_01",
+            random_mats = {
+                {
+                    slot = 0,
+                    global_random_mats = 2,
+                },
+            },
+        },
+        {
+            sk_path = "vzombies-assets::SK_Sci_Fi_Character_08_Bags_01",
+            random_mats = {
+                {
+                    slot = 0,
+                    global_random_mats = 2,
+                },
+            },
+        },
+        {
+            sk_path = "vzombies-assets::SK_Sci_Fi_Character_08_Bags_02",
+            random_mats = {
+                {
+                    slot = 0,
+                    global_random_mats = 2,
+                },
+            },
+        },
+        {
+            sk_path = "vzombies-assets::SK_Sci_Fi_Character_08_Bags_03",
+            random_mats = {
+                {
+                    slot = 0,
+                    global_random_mats = 2,
+                },
+            },
+        },
+        {
+            sk_path = "vzombies-assets::SK_Sci_Fi_Character_08_Bags_04",
+            random_mats = {
+                {
+                    slot = 0,
+                    global_random_mats = 2,
+                },
+            },
+        },
+        {
+            sk_path = "vzombies-assets::SK_Sci_Fi_Character_08_Bags_Belts",
+            random_mats = {
+                {
+                    slot = 0,
+                    global_random_mats = 2,
+                },
+            },
+        },
+    },
+}
 
 -------------------------------------------------------------------------------------------------------------
 -- Interact Config
@@ -120,6 +264,21 @@ Zombies_Health_Start = {
 }
 Zombies_Health_Multiplier_At_Each_Wave = 1.1
 
+Zombies_Nearest_SmartSpawns_Percentage = {
+    16,
+    15,
+    14,
+    12,
+    10,
+    9,
+    8,
+    6,
+    4,
+    3,
+    2,
+    1
+}
+
 Zombies_Spawn_Cooldown = 60000 -- All the wave zombies will be spawned (if it doesn't reach the limit) after this time
 Zombies_Spawn_Interval_min_time_ms = 500
 
@@ -137,6 +296,7 @@ Zombies_Ragdoll_Get_Up_Timeout_ms = 10000
 
 Zombies_Damage_Amount = 30
 Zombies_Damage_At_Distance_sq = 23000
+Zombies_Check_Can_Damage_Interval_ms = 1500
 Zombies_Damage_Barricade_Cooldown_ms = 3000
 Zombies_Damage_Cooldown_ms = 1350
 Zombies_Can_Damage_After_ms = 1000 -- They can damage after waiting this time after leaving barricade (false reach fix)
@@ -871,6 +1031,7 @@ FLight_Profile = LightProfile.Shattered_05
 -- Bots Config
 
 Bots_Enabled = true
+No_Players = false -- Won't spawn players, bots will play alone
 Bots_Start_Moving_ms = 7500
 Max_Bots = 3
 
@@ -890,12 +1051,19 @@ Bots_Reach_Door_Around = 125
 
 Bots_Ragdoll_Get_Up_Timeout_ms = 10000
 
+Bots_Zombies_Dangerous_Point_Distance_sq = 6250000
+Bots_Flee_Zombies_Move_Distance = 750
+Bots_Flee_Zombies_Move_Radius = 500
+Bots_Flee_Point_Retry_Number = 3
+
+Bots_Smart_Reload_Check_Interval_ms = 2500
+
 Bots_Behavior_Config = {
     "REVIVE",
     "POWER",
     "POWERUPS",
-    "PERKS",
     "WEAPONS",
+    "PERKS",
     "PACKAPUNCH",
     "DOORS",
     "MOVE",
@@ -948,7 +1116,7 @@ DRP_CONFIG = {
     state = "In Round {ROUND_NB}",
     details = "Killing Zombies (Nanos World)",
     large_text = "On {MAP_NAME}",
-    large_image = "avatar",
+    large_image = "avatar2_upscale",
 }
 
 ----------------------------------------------------------------------------------------------------------------------------------
@@ -965,22 +1133,32 @@ Mapvote_tbl = {
         --[[zm_kino_der_toten = {
             path = "zm-kino-der-toten::zm_kino_der_toten",
             UI_name = "Kino Der Toten",
-            image = "../../../../../../../Server/Assets/zm-kino-der-toten/zm_kino_der_toten/zm_kino_der_toten/zm_kino_der_toten.jpg",
+            image = "../../../../../../../Server/Assets/zm-kino-der-toten/zm_kino_der_toten/zm_kino_der_toten/Map.jpg",
         },
         zm_nacht_der_untoten = {
             path = "zm-nacht-der-untoten::nacht_der_untoten",
             UI_name = "Nacht Der Untoten",
-            image = "../../../../../../../Server/Assets/zm-nacht-der-untoten/nacht_der_untoten/nacht_der_untoten/nacht_der_untoten.jpg",
+            image = "../../../../../../../Server/Assets/zm-nacht-der-untoten/nacht_der_untoten/nacht_der_untoten/Map.jpg",
         },
         zm_spiral = {
             path = "zm-spiral::zm-spiral",
             UI_name = "Spiral",
-            image = "../../../../../../../Server/Assets/zm-spiral/zm-spiral/zm-spiral.jpg",
+            image = "../../../../../../../Server/Assets/zm-spiral/zm-spiral/Map.jpg",
         },
         zm_cheese_cube = {
             path = "zm-cheese-cube::zm-cheese-cube",
             UI_name = "Cheese Cube",
-            image = "../../../../../../../Server/Assets/zm-cheese-cube/zm-cheese-cube/zm-cheese-cube.jpg",
+            image = "../../../../../../../Server/Assets/zm-cheese-cube/zm-cheese-cube/Map.jpg",
+        },
+        zm_soul = {
+            path = "zm-soul::ZMsoul",
+            UI_name = "Soul",
+            image = "../../../../../../../Server/Assets/zm-soul/ZMsoul/Map.jpg",
+        },
+        zm_town_bo3 = {
+            path = "zm-town::zm_town_bo3",
+            UI_name = "Town",
+            image = "../../../../../../../Server/Assets/zm-town/zm_town_bo3/Map.jpg",
         },]]--
     }
 }
@@ -990,3 +1168,39 @@ Mapvote_AllowCurrentMap = false
 Mapvote_NotForMaps = {
     "nanos-world::BlankMap"
 }]]--
+
+
+-------------------------------------------------------------------------------------------------------------------------------------
+-- CHALKS CONFIG
+
+Chalks_Images = {
+    AK5C = true,
+    AK47 = true,
+    AK74U = true,
+    AP5 = true,
+    AR4 = true,
+    ASVal = true,
+    AWP = true,
+    ColtPython = true,
+    DesertEagle = true,
+    GE3 = true,
+    GE36 = true,
+    Glock = true,
+    Ithaca37 = true,
+    Lewis = true,
+    M1Garand = true,
+    M1911 = true,
+    Makarov = true,
+    Moss500 = true,
+    P90 = true,
+    Rem870 = true,
+    SA80 = true,
+    SMG11 = true,
+    SPAS12 = true,
+    UMP45 = true,
+}
+
+Chalks_Offset = Vector(10, 0, 13)
+Chalks_Emissive_Color = Color.RED
+Chalks_Emissive_Value = 10
+Chalks_Size = Vector(5, 41.1, 73)

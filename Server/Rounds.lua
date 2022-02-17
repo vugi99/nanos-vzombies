@@ -7,6 +7,7 @@ WAITING_PLAYERS = {}
 
 ROUND_NB = 0
 REMAINING_ZOMBIES_TO_SPAWN = 0
+GAME_TIMER_SECONDS = 0
 
 ZOMBIES_TO_SPAWN_TBL = {}
 
@@ -76,6 +77,8 @@ function RoundFinished(reset_all, restart_game, ply_left)
                 v:Destroy()
             end
         end
+
+        Events.Call("VZ_GameEnded", restart_game)
     end
     if not reset_all then
         local t = WaveInterval_ms
@@ -106,7 +109,7 @@ function RoundFinished(reset_all, restart_game, ply_left)
                 WaitingNewRound_Timer = Timer.SetTimeout(function()
                     WaitingNewRound_Timer = nil
                     WaitingNewWave = false
-                    if PLAYING_PLAYERS_NB > 0 then
+                    if (PLAYING_PLAYERS_NB > 0 or (table_count(Player.GetAll()) > 0 and No_Players)) then
                         StartRound()
                     end
                 end, t)
@@ -136,6 +139,11 @@ function StartRound()
         UnlockRoom(1)
         DestroyMapGrenades()
         CreateMapTeleporters()
+
+        if Game_Time_On_Screen then
+            GAME_TIMER_SECONDS = 0
+            Events.BroadcastRemote("UpdateGameTime", 0)
+        end
 
         if Bots_Enabled then
             local bots_to_spawn = MAX_PLAYERS - PLAYING_PLAYERS_NB
@@ -219,52 +227,11 @@ if ZDEV_IsModeEnabled("ZDEV_COMMANDS") then
     end)
 end
 
---[[function CanAddMapToMapvotetbl(map_path)
-    for i, v in ipairs(Mapvote_NotForMaps) do
-        if v == map_path then
-            return false
+VZ_EVENT_SUBSCRIBE("Server", "Tick", function(ds)
+    if Game_Time_On_Screen then
+        if ROUND_NB > 0 then
+            GAME_TIMER_SECONDS = GAME_TIMER_SECONDS + ds
+            --print(GAME_TIMER_SECONDS)
         end
     end
-
-    local cur_map_path = Server.GetMap()
-    if cur_map_path then
-        if not Mapvote_AllowCurrentMap then
-            if map_path == cur_map_path then
-                return false
-            end
-        end
-    end
-
-    return true
-end
-
-function SplitMapAssetPackAndName(map_path)
-    local splited = split_str(map_path, ":")
-    return splited[1], splited[2]
-end
-
-function GenerateMapvoteTbl()
-    local tbl = {
-        time = Mapvote_Time,
-        maps = {},
-    }
-
-    local map_files = Package.GetFiles("Server/Maps", ".lua")
-    for i, v in ipairs(map_files) do
-        local map_path = v:gsub(";", "::")
-        if CanAddMapToMapvotetbl(map_path) then
-            local map_asset_pack, map_name = SplitMapAssetPackAndName(map_path)
-            tbl.maps[map_name] = {
-                path = map_path,
-                UI_name = map_name,
-                image = "images/missing.png",
-            }
-        end
-    end
-
-    -- TODO : List all dirs in Assets/ , read Assets.toml, find maps, read Map.toml, check if compatible, then add if good
-
-    return tbl
-end
-
-print(NanosUtils.Dump(GenerateMapvoteTbl()))]]--
+end)

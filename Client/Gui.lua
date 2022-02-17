@@ -1,37 +1,154 @@
 
 
--- Render
--- Group 1 : Buy something text
--- Group 2 : Health text
--- Group 3 : How to play text
--- Group 4 : Zombies Remaining Text
--- Group 5 : ZDEV_MODE
--- Group 6 : Waiting For Slot text
--- Group 7 : Spectating : player text
--- Group 10-? : Player names
+
+One_Time_Update_Data = {
+    HTP_Text_Showed = true,
+    Zombies_Remaining_Number = 0,
+    InteractText = nil,
+    HealthText = nil,
+    WaitingPlayer = nil,
+}
+
+-- This canvas will be completly frozen
+Frozen_Canvas = Canvas(
+    true,
+    Color(0, 0, 0, 0),
+    -1,
+    true
+)
+Frozen_Canvas:Subscribe("Update", function(self, width, height)
+    if ZDEV_CONFIG.ENABLED then
+        self:DrawText("VZ DEV MODE", Vector2D(math.floor(Client.GetViewportSize().X * 0.5), 10), 0, 16, Color.RED, 0, true, true, Color(0, 0, 0, 0), Vector2D(), false, Color.WHITE)
+    end
+    self:DrawText("VZombies " .. Package.GetVersion(), Vector2D(60, math.floor(Client.GetViewportSize().Y * 0.99)), 0, 12, Color.WHITE, 0, true, true, Color(0, 0, 0, 0), Vector2D(), false, Color.WHITE)
+end)
+Frozen_Canvas:Repaint()
+
+-- This canvas will be used for one time updates
+One_Time_Updates_Canvas = Canvas(
+    true,
+    Color(0, 0, 0, 0),
+    -1,
+    true
+)
+One_Time_Updates_Canvas:Subscribe("Update", function(self, width, height)
+    if One_Time_Update_Data.HTP_Text_Showed then
+        self:DrawText("How to play (" .. Input.GetMappedKey("How to play") .. ")", Vector2D(math.floor(Client.GetViewportSize().X * 0.5), math.floor(Client.GetViewportSize().Y * 0.5)), 0, 25, Color.WHITE, 0, true, true, Color(0, 0, 0, 0), Vector2D(), false, Color.WHITE)
+    end
+    if Remaining_Zombies_Text then
+        self:DrawText("Remaining Zombies : " .. tostring(One_Time_Update_Data.Zombies_Remaining_Number), Vector2D(135, math.floor(Client.GetViewportSize().Y * 0.04)), 0, 14, Color.WHITE, 0, true, true, Color(0, 0, 0, 0), Vector2D(), false, Color.WHITE)
+    end
+    if One_Time_Update_Data.InteractText then
+        self:DrawText(
+            One_Time_Update_Data.InteractText,
+            (Client.GetViewportSize() / 2) + Vector2D(0, Interact_Text_Y_Offset),
+            0,
+            20,
+            Color.WHITE,
+            0,
+            true,
+            true,
+            Color(0, 0, 0, 0),
+            Vector2D(),
+            false,
+            Color.WHITE
+        )
+    end
+    if One_Time_Update_Data.HealthText then
+        self:DrawText(One_Time_Update_Data.HealthText, Vector2D(math.floor(Client.GetViewportSize().X * 0.95), 50), 0, 16, Color.GREEN, 0, true, true, Color(0, 0, 0, 0), Vector2D(), false, Color.WHITE)
+    end
+    if One_Time_Update_Data.WaitingPlayer then
+        self:DrawText("Game full, Waiting for free slot", Vector2D(135, math.floor(Client.GetViewportSize().Y * 0.06)), 0, 14, Color.ORANGE, 0, true, true, Color(0, 0, 0, 0), Vector2D(), false, Color.WHITE)
+    end
+    if Spectating_Player then
+        local text = "Spectating : " .. Spectating_Player:GetAccountName()
+        self:DrawText(text, Vector2D(math.floor(Client.GetViewportSize().X * 0.5), 30), 0, 14, Color.WHITE, 0, true, true, Color(0, 0, 0, 0), Vector2D(), false, Color.WHITE)
+    end
+end)
+One_Time_Updates_Canvas:Repaint()
+
+Timer.SetTimeout(function()
+    One_Time_Update_Data.HTP_Text_Showed = false
+    One_Time_Updates_Canvas:Repaint()
+end, How_To_Play_Text_Destroy_ms)
+
+GAME_TIMER_SECONDS = 0
+
+Dynamic_Canvas = Canvas(
+    true,
+    Color(0, 0, 0, 0),
+    0,
+    true
+)
+Dynamic_Canvas:Subscribe("Update", function(self, width, height)
+    if Player_Names_On_Heads then
+        local self_char = Client.GetLocalPlayer():GetControlledCharacter()
+        local self_loc
+        if self_char then
+            self_loc = self_char:GetLocation()
+        elseif Spectating_Player then
+            local specing_char = Spectating_Player:GetControlledCharacter()
+            if specing_char then
+                self_loc = specing_char:GetLocation()
+            end
+        else
+            self_loc = Client.GetLocalPlayer():GetCameraLocation()
+        end
+        for k, v in pairs(Character.GetPairs()) do
+            local ply = v:GetPlayer()
+            if ply then
+                if ply ~= Client.GetLocalPlayer() then
+                    local char_loc = v:GetLocation()
+                    local dist_sq = self_loc:DistanceSquared(char_loc)
+                    if dist_sq <= Player_Name_Displayed_at_dist_sq then
+                        local Vector_head_text = Calculate_Head_Text_Vector(char_loc)
+                        if Vector_head_text then
+                            self:DrawText(
+                                ply:GetAccountName(),
+                                Vector_head_text,
+                                FontType.Roboto,
+                                16,
+                                Color.AZURE,
+                                0,
+                                true,
+                                true,
+                                Color(0, 0, 0, 0),
+                                Vector2D(),
+                                true,
+                                Color.BLACK
+                            )
+                        end
+                    end
+                end
+            end
+        end
+    end
+
+    if Game_Time_On_Screen then
+        local time_seconds = math.floor(GAME_TIMER_SECONDS)
+        local minutes = math.floor(time_seconds/60)
+        local seconds = time_seconds - (minutes * 60)
+
+        local minutes_text = tostring(minutes)
+        if minutes < 10 then
+            minutes_text = "0" .. minutes_text
+        end
+        local seconds_text = tostring(seconds)
+        --print(seconds)
+        if seconds < 10 then
+            seconds_text = "0" .. seconds_text
+        end
+        self:DrawText(minutes_text .. ":" .. seconds_text, Vector2D(150, Client.GetViewportSize().Y * 0.97), FontType.Oswald, 15, Color.WHITE, 0, false, true, Color.TRANSPARENT, Vector2D(), false, Color.TRANSPARENT)
+    end
+end)
 
 Input.Register("How to play", "H")
-
-for i = 1, 7 do
-    Render.ClearItems(i)
-end
 
 GUI = WebUI("vzombies GUI", "file:///gui/index.html", true, true, true)
 
 ROUND_NB = 0
 
-local HealthText = Render.AddText(2, "", Vector2D(math.floor(Render.GetViewportSize().X * 0.95), 50), 0, 16, Color.GREEN, 0, true, true, false, Vector2D(0, 0), Color.WHITE, false, Color.WHITE)
-
 local HTP_Showed = false
-local HTP_Text = Render.AddText(3, "How to play (" .. Input.GetMappedKey("How to play") .. ")", Vector2D(math.floor(Render.GetViewportSize().X * 0.5), math.floor(Render.GetViewportSize().Y * 0.5)), 0, 25, Color.WHITE, 0, true, true, false, Vector2D(0, 0), Color.WHITE, false, Color.WHITE)
-Timer.SetTimeout(function()
-    Render.ClearItems(3)
-    HTP_Text = nil
-end, How_To_Play_Text_Destroy_ms)
-
-if ZDEV_CONFIG.ENABLED then
-    Render.AddText(5, "VZ DEV MODE", Vector2D(math.floor(Render.GetViewportSize().X * 0.5), 10), 0, 16, Color.RED, 0, true, true, false, Vector2D(0, 0), Color.WHITE, false, Color.WHITE)
-end
 
 local PlayersMoney = {}
 
@@ -42,10 +159,7 @@ CurPerks = {}
 local RequestedTabData = false
 local Tab_Open = false
 
-Remaining_Zombies_RenderItem = nil
-if Remaining_Zombies_Text then
-    Remaining_Zombies_RenderItem = Render.AddText(4, "Remaining Zombies : 0", Vector2D(135, math.floor(Render.GetViewportSize().Y * 0.04)), 0, 14, Color.WHITE, 0, true, true, false, Vector2D(0, 0), Color.WHITE, false, Color.WHITE)
-end
+Client.SetBloodScreenEnabled(false)
 
 function IsSelfCharacter(char)
     local local_player = Client.GetLocalPlayer()
@@ -69,7 +183,7 @@ function GetPlayersMoneyCopy()
 end
 
 function NeedToUpdateAmmoText(char, weapon)
-    if IsSelfCharacter(char) then
+    if (IsSelfCharacter(char) or IsSpectatingPlayerCharacter(char)) then
         if (not NanosUtils.IsA(weapon, Grenade) and not NanosUtils.IsA(weapon, Melee)) then
             GUI:CallEvent("SetAmmoText", tostring(weapon:GetAmmoClip()), tostring(weapon:GetAmmoBag()))
         end
@@ -82,9 +196,11 @@ VZ_EVENT_SUBSCRIBE("Character", "Drop", function(char)
     local local_player = Client.GetLocalPlayer()
     local local_char = local_player:GetControlledCharacter()
     if local_char then
-        if local_char == char then
+        if (local_char == char) then
             GUI:CallEvent("SetAmmoText", "0", "0")
         end
+    elseif IsSpectatingPlayerCharacter(char) then
+        GUI:CallEvent("SetAmmoText", "0", "0")
     end
 end)
 VZ_EVENT_SUBSCRIBE("Events", "UpdateAmmoText", function()
@@ -231,34 +347,36 @@ VZ_EVENT_SUBSCRIBE("Events", "SetClientRoundNumber", function(nb)
 end)
 
 function InteractText(text)
-    Render.ClearItems(1)
-    Render.AddText(
-        1,
-        text,
-        (Render.GetViewportSize() / 2) + Vector2D(0, Interact_Text_Y_Offset),
-        0,
-        20,
-        Color.WHITE,
-        0,
-        true,
-        true,
-        false,
-        Vector2D(),
-        Color.WHITE,
-        false,
-        Color.WHITE
-    )
+    One_Time_Update_Data.InteractText = text
+    One_Time_Updates_Canvas:Repaint()
 end
 
 function BuyText(buy_name, buy_price)
     InteractText("Buy " .. tostring(buy_name) .. " (" .. tostring(buy_price) .. "$)")
 end
 
+function UpdateHealth(health)
+    if health then
+        One_Time_Update_Data.HealthText = tostring(health) .. " HP"
+        if health <= 0 then
+            Client.SetBloodScreenIntensity(1.1)
+        elseif health <= PlayerHealth then
+            Client.SetBloodScreenIntensity(((health * 0.01) - (PlayerHealth * 0.01)) * -1)
+        else
+            Client.SetBloodScreenIntensity(0.0)
+        end
+    else
+        One_Time_Update_Data.HealthText = nil
+        Client.SetBloodScreenIntensity(0.0)
+    end
+    One_Time_Updates_Canvas:Repaint()
+end
 
 VZ_EVENT_SUBSCRIBE("Character", "TakeDamage", function(char, damage, bone, dtype, from_direction, instigator, causer)
     if IsSelfCharacter(char) then
         local health = char:GetHealth() - damage - 1000
-        Render.UpdateItemText(2, HealthText, tostring(health) .. " HP")
+        UpdateHealth(health)
+        --print("Here")
         if (health <= LowHealth_Trigger_Health and health > 0) then
             if not Playing_LowHealth_Sound then
                 PlayLowHealthLoop()
@@ -272,7 +390,7 @@ end)
 
 VZ_EVENT_SUBSCRIBE("Character", "Destroy", function(char)
     if IsSelfCharacter(char) then
-        Render.UpdateItemText(2, "")
+        UpdateHealth(nil)
     end
 end)
 
@@ -281,7 +399,7 @@ VZ_EVENT_SUBSCRIBE("Events", "UpdateGUIHealth", function()
     local char = ply:GetControlledCharacter()
     if char then
         local health = char:GetHealth() - 1000
-        Render.UpdateItemText(2, HealthText, tostring(health) .. " HP")
+        UpdateHealth(health)
         if (Playing_LowHealth_Sound and health > LowHealth_Trigger_Health) then
             PlayExitLowHealthSound()
             StopLowHealthLoop()
@@ -291,8 +409,7 @@ end)
 
 VZ_EVENT_SUBSCRIBE("Player", "Possess", function(ply, char)
     if ply == Client.GetLocalPlayer() then
-        local health = char:GetHealth()
-        Render.UpdateItemText(2, HealthText, tostring(PlayerHealth) .. " HP")
+        UpdateHealth(PlayerHealth)
     end
 end)
 
@@ -417,105 +534,18 @@ Input.Bind("How to play", InputEvent.Pressed, function()
 end)
 
 VZ_EVENT_SUBSCRIBE("Events", "SetClientRemainingZombies", function(remaining)
-    if Remaining_Zombies_RenderItem then
-        Render.UpdateItemText(4, Remaining_Zombies_RenderItem, "Remaining Zombies : " .. tostring(remaining))
+    if Remaining_Zombies_Text then
+        One_Time_Update_Data.Zombies_Remaining_Number = remaining
+        One_Time_Updates_Canvas:Repaint()
     end
 end)
 
-
-local groups_texts = {}
-
 function Calculate_Head_Text_Vector(char_loc)
-    local project = Render.Project(char_loc + Vector(0, 0, 97))
+    local project = Client.ProjectWorldToScreen(char_loc + Vector(0, 0, 97))
     if (project and project ~= Vector2D(-1, -1)) then
         return project
     end
 end
-
-VZ_EVENT_SUBSCRIBE("Client", "Tick", function(ds)
-    if Player_Names_On_Heads then
-        local self_char = Client.GetLocalPlayer():GetControlledCharacter()
-        local self_loc
-        if self_char then
-            self_loc = self_char:GetLocation()
-        elseif Spectating_Player then
-            local specing_char = Spectating_Player:GetControlledCharacter()
-            if specing_char then
-                self_loc = specing_char:GetLocation()
-            end
-        else
-            self_loc = Client.GetLocalPlayer():GetCameraLocation()
-        end
-        for k, v in pairs(groups_texts) do
-            local remove_group = true
-            if v.char:IsValid() then
-                local char_loc = v.char:GetLocation()
-                local dist_sq = self_loc:DistanceSquared(char_loc)
-                if dist_sq <= Player_Name_Displayed_at_dist_sq then
-                    local Vector_head_text = Calculate_Head_Text_Vector(char_loc)
-                    if Vector_head_text then
-                        remove_group = false
-                        Render.UpdateItemPosition(v.group_id, v.item_id, Vector_head_text)
-                    end
-                end
-            end
-            if remove_group then
-                Render.ClearItems(v.group_id)
-                groups_texts[k] = nil
-            end
-        end
-        for k, v in pairs(Character.GetPairs()) do
-            local ply = v:GetPlayer()
-            if ply then
-                if ply ~= Client.GetLocalPlayer() then
-                    local is_already_on_screen = false
-                    for k2, v2 in pairs(groups_texts) do
-                        if v2.char == v then
-                            is_already_on_screen = true
-                            break
-                        end
-                    end
-                    if not is_already_on_screen then
-                        local char_loc = v:GetLocation()
-                        local dist_sq = self_loc:DistanceSquared(char_loc)
-                        if dist_sq <= Player_Name_Displayed_at_dist_sq then
-                            local Vector_head_text = Calculate_Head_Text_Vector(char_loc)
-                            if Vector_head_text then
-                                local head_text_last_count = table_last_count(groups_texts)
-                                groups_texts[head_text_last_count + 1] = {
-                                    char = v,
-                                    group_id = head_text_last_count + 10,
-                                    item_id = Render.AddText(
-                                        head_text_last_count + 10,
-                                        ply:GetAccountName(),
-                                        Vector_head_text,
-                                        FontType.Roboto,
-                                        16,
-                                        Color.AZURE,
-                                        0,
-                                        true,
-                                        true,
-                                        false,
-                                        Vector2D(0, 0),
-                                        Color.WHITE,
-                                        true,
-                                        Color.BLACK
-                                    ),
-                                }
-                            end
-                        end
-                    end
-                end
-            end
-        end
-    end
-end)
-
-VZ_EVENT_SUBSCRIBE("Package", "Unload", function()
-    for k, v in pairs(groups_texts) do
-        Render.ClearItems(v.group_id)
-    end
-end)
 
 if ZDEV_IsModeEnabled("ZDEV_DEBUG_HIGHLIGHT_ZOMBIES") then
     local highlight_color = Color(10, 2.5, 0)
@@ -538,11 +568,8 @@ end
 
 function HandlePlayerWaitingValue(value)
     --print("HandlePlayerWaitingValue PlayerWaiting", value)
-    if value then
-        Render.AddText(6, "Game full, Waiting for free slot", Vector2D(135, math.floor(Render.GetViewportSize().Y * 0.06)), 0, 14, Color.ORANGE, 0, true, true, false, Vector2D(0, 0), Color.WHITE, false, Color.WHITE)
-    else
-        Render.ClearItems(6)
-    end
+    One_Time_Update_Data.WaitingPlayer = value
+    One_Time_Updates_Canvas:Repaint()
 end
 
 VZ_EVENT_SUBSCRIBE("Player", "ValueChange", function(ply, key, value)
@@ -554,3 +581,41 @@ VZ_EVENT_SUBSCRIBE("Player", "ValueChange", function(ply, key, value)
 end)
 HandlePlayerWaitingValue(Client.GetLocalPlayer():GetValue("PlayerWaiting"))
 
+VZ_EVENT_SUBSCRIBE("Character", "ValueChange", function(char, key, value)
+    if key == "PlayerDown" then
+        if not IsSelfCharacter(char) then
+            if value then
+                local billboard = Billboard(
+                    Vector(0, 0, 0),
+                    "nanos-world::M_NanosTranslucent_Depth",
+                    Vector2D(32, 32),
+                    false
+                )
+                billboard:SetMaterialTextureParameter("Texture", Player_To_Revive_image)
+                billboard:SetMaterialScalarParameter("Opacity", 1)
+                billboard:SetValue("ToReviveBillboard", true)
+
+                billboard:AttachTo(char, AttachmentRule.SnapToTarget, "", 0)
+                billboard:SetRelativeLocation(To_Revive_Billboard_Relative_Location)
+            else
+                for k, v in pairs(char:GetAttachedEntities()) do
+                    if v:GetValue("ToReviveBillboard") then
+                        v:Destroy()
+                        break
+                    end
+                end
+            end
+        end
+    end
+end)
+
+VZ_EVENT_SUBSCRIBE("Events", "UpdateGameTime", function(time_s)
+    GAME_TIMER_SECONDS = time_s
+end)
+
+VZ_EVENT_SUBSCRIBE("Client", "Tick", function(ds)
+    --print(ds)
+    if Game_Time_On_Screen then
+        GAME_TIMER_SECONDS = GAME_TIMER_SECONDS + ds
+    end
+end)

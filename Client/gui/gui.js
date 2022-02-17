@@ -276,59 +276,9 @@ setTimeout(() => {  testFuncs.SetPlayerMoney(1, "666666", "100"); }, 2500);*/
 /*testFuncs.AddPlayerMoney("500")
 testFuncs.SetPlayerMoney(0, "400", "-100")*/
 
-/*testFuncs.ShowTab(
-    [
-        [
-            "Error",
-            "nil",
-            "NON",
-            "NON"
-        ],
-    ]
-);
+/*testFuncs.HideTab();
 
-testFuncs.HideTab();
-
-testFuncs.ShowTab(
-    [
-        [
-            "Volta",
-            "35",
-            "5626526",
-            "30"
-        ],
-        [
-            "Syed",
-            "256",
-            "1243",
-            "999"
-        ],
-        [
-            "Lighter",
-            "223",
-            "123553",
-            "102"
-        ],
-        [
-            "Derpius",
-            "42",
-            "356353",
-            "40"
-        ],
-        [
-            "Timmy",
-            "253",
-            "2453536",
-            "60"
-        ],
-        [
-            "Olivato",
-            "232",
-            "355236",
-            "70"
-        ],
-    ]
-);*/
+testFuncs.ShowTab('[["Volta", "35", "5626526", "30"], ["Syed", "256", "1243", "999"], ["Lighter", "223", "123553", "102"], ["Derpius", "42", "356353", "40"], ["Timmy", "253", "2453536", "60"], ["Olivato", "232", "355236", "70"]]');*/
 
 /*testFuncs.SetGrenadesNB(2);
 testFuncs.SetGrenadesNB(4);*/
