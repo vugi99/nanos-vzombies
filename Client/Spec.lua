@@ -120,21 +120,3 @@ if not Client.GetLocalPlayer():GetControlledCharacter() then
     --print("new_spec", new_spec)
     SpectatePlayer(new_spec)
 end
-
-
-Input.Register("SpectatePrev", "Left")
-Input.Register("SpectateNext", "Right")
-
-VZ_BIND("SpectatePrev", InputEvent.Pressed, function()
-    if Spectating_Player then
-        local new_spec = GetNewPlayerToSpec(Spectating_Player:GetID(), true)
-        SpectatePlayer(new_spec)
-    end
-end)
-
-VZ_BIND("SpectateNext", InputEvent.Pressed, function()
-    if Spectating_Player then
-        local new_spec = GetNewPlayerToSpec(Spectating_Player:GetID())
-        SpectatePlayer(new_spec)
-    end
-end)

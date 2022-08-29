@@ -16,8 +16,7 @@ function SpawnCharacterForPlayer(ply, spawn_id)
         cur_char:Destroy()
     end
 
-    local new_char = Character(PLAYER_SPAWNS[spawn_id].location + Vector(0, 0, 105), PLAYER_SPAWNS[spawn_id].rotation)
-    --local new_char = Character(PLAYER_SPAWNS[spawn_id].location + Vector(0, 0, 105), PLAYER_SPAWNS[spawn_id].rotation, Player_Models.Required_Skeletal_Meshes[1].sk_path)
+    local new_char = Character(PLAYER_SPAWNS[spawn_id].location + Vector(0, 0, 105), PLAYER_SPAWNS[spawn_id].rotation, Player_Model)
     if not ply.BOT then
         new_char:SetCameraMode(CAMERA_MODE)
     end
@@ -37,9 +36,19 @@ function SpawnCharacterForPlayer(ply, spawn_id)
         new_char:SetGaitMode(GaitMode.Sprinting)
     end
 
-    --BuildCharacterModel(new_char)
+    if Player_Model_Random_Color then
+        local character_color = ply:GetValue("CharacterColor")
+        if not character_color then
+            character_color = Color.Random()
+            ply:SetValue("CharacterColor", character_color, false)
+        end
+
+        new_char:SetMaterialColorParameter("Tint", character_color)
+    end
 
     AddCharacterWeapon(new_char, Player_Start_Weapon.weapon_name, Player_Start_Weapon.ammo)
+
+    Events.Call("VZ_PlayerCharacterSpawned", new_char)
 end
 
 function GetPlayersInRadius(loc, radius)
@@ -196,9 +205,9 @@ VZ_EVENT_SUBSCRIBE("Character", "TakeDamage", function(char, damage, bone, type,
             char:SetValue("PlayerDown", true, true)
             Buy(ply, math.floor(ply:GetValue("ZMoney") * Down_MoneyLost / 100))
             char:SetValue("OwnedPerks", {}, true)
-            for k, v in pairs(ZOMBIES_CHARACTERS) do
+            for k, v in pairs(GetMergedEnemiesChars()) do
                 if (v:GetValue("Target_type") == "player" and v:GetValue("Target") == char) then
-                    ZombieRefreshTarget(v)
+                    EnemyRefreshTarget(v)
                 end
             end
 
@@ -236,6 +245,7 @@ VZ_EVENT_SUBSCRIBE("Character", "TakeDamage", function(char, damage, bone, type,
                 end
             end
 
+            -- Remove third weapon from inventory (if the player had three gun)
             local charInvID = GetCharacterInventory(char)
             if charInvID then
                 local Inv = PlayersCharactersWeapons[charInvID]
@@ -255,6 +265,16 @@ VZ_EVENT_SUBSCRIBE("Character", "TakeDamage", function(char, damage, bone, type,
                     EquipSlot(char, 1)
                 end
             end
+
+            -- Remove Speed Reload on equipped weapon (if the player had speed cola)
+            local weap = char:GetPicked()
+            if weap then
+                if not NanosUtils.IsA(weap, Grenade) and not NanosUtils.IsA(weap, Melee) then
+                    weap:ActivateSpeedReload(false)
+                end
+            end
+
+            Events.Call("VZ_CharacterDown", char)
 
             local al_nb = GetPlayersAliveNB()
             if al_nb == 0 then
@@ -294,18 +314,33 @@ end)
 
 function HandlePlayerJoin(ply, bot, waittostart)
     print("Player Joined", ply:GetAccountName())
+    --print(ply:GetIP(), Server.GetIP())
     if not bot then
+
+        -- Send required info to players when they join
+
         Events.CallRemote("LoadMapConfig", ply, MAP_CONFIG_TO_SEND)
         if ROUND_NB > 0 then
             Events.CallRemote("SetClientRoundNumber", ply, ROUND_NB)
-            SendZombiesRemaining(ply)
+            SendEnemiesRemaining(ply)
             if Game_Time_On_Screen then
                 Events.CallRemote("UpdateGameTime", ply, math.floor(GAME_TIMER_SECONDS))
             end
         end
+
         if POWER_ON then
             Events.CallRemote("SetClientPowerON", ply, true)
         end
+
+        if GAME_PAUSED then
+            Events.CallRemote("ClientPauseGame", ply, GAME_PAUSED)
+        end
+
+        if (ply:GetIP() == "127.0.0.1" and Can_Host_Pause_Game) then
+            Events.CallRemote("PlayerCanPause", ply, true)
+        end
+
+        -- Players join handle
         if PLAYING_PLAYERS_NB < MAX_PLAYERS then
             if not No_Players then
                 ZPlayingPlayerInit(ply)
@@ -349,6 +384,8 @@ function HandlePlayerJoin(ply, bot, waittostart)
                 ply:SetValue("PlayerWaiting", true, true)
             end
         end
+
+        Events.Call("VZ_PlayerJoined", ply, waittostart)
     else
         ZPlayingPlayerInit(ply)
     end
@@ -426,6 +463,8 @@ VZ_EVENT_SUBSCRIBE("Player", "Destroy", function(ply)
         end
     end
     PlayerLeftCheckSyncPlayers(ply)
+
+    Events.Call("VZ_PlayerLeft", ply)
 end)
 
 function RevivePlayer(ply, revive_char)
@@ -530,29 +569,15 @@ if ZDEV_IsModeEnabled("ZDEV_COMMANDS") then
     end)
 end
 
-function GiveCharacterPerk(char, perk_name)
-    local ply = char:GetPlayer()
-    local char_perks = char:GetValue("OwnedPerks")
-    char_perks[perk_name] = true
-    char:SetValue("OwnedPerks", char_perks, true)
-    if perk_name == "juggernog" then
-        ClearRegenTimeouts(char)
-        char:SetHealth(1000 + PERKS_CONFIG.juggernog.PlayerHealth)
-        Events.CallRemote("UpdateGUIHealth", ply)
-    elseif perk_name == "stamin_up" then
-        char:SetSpeedMultiplier(PERKS_CONFIG.stamin_up.Speed_Multiplier)
-    end
-end
-
 VZ_EVENT_SUBSCRIBE("Events", "CustomMapInteract", function(ply, InteractThing)
     Events.Call(InteractThing.event_name, ply, InteractThing)
 end)
 
 local last_sent_value = -1
 
-function SendZombiesRemaining(ply)
-    if Remaining_Zombies_Text then
-        local remaining = REMAINING_ZOMBIES_TO_SPAWN + table_count(ZOMBIES_CHARACTERS)
+function SendEnemiesRemaining(ply)
+    if Remaining_Enemies_Text then
+        local remaining = REMAINING_ENEMIES_TO_SPAWN + table_count(ENEMY_CHARACTERS)
         if not ply then
             if last_sent_value ~= remaining then
                 Events.BroadcastRemote("SetClientRemainingZombies", remaining)
@@ -582,17 +607,24 @@ if ZDEV_IsModeEnabled("ZDEV_COMMANDS") then
     end)
 end
 
-function BuildCharacterModel(char)
-    local Random_Global_Mats_Choosen = {}
-    for i, v in ipairs(Player_Models.Global_Random_mats) do
-        table.insert(Random_Global_Mats_Choosen, Player_Models.Global_Random_mats[i][math.random(table_count(v))])
-    end
-
-    for i, v in ipairs(Player_Models.Required_Skeletal_Meshes) do
-        if i > 1 then
-            char:AddSkeletalMeshAttached("requiredsk" .. tostring(i), v.sk_path)
-        elseif v.random_mats then
-            char:SetMaterial(Random_Global_Mats_Choosen[v.random_mats.global_random_mats], v.random_mats.slot)
+VZ_EVENT_SUBSCRIBE("Events", "ServerSuicide", function(ply)
+    if ply:IsValid() then
+        local char = ply:GetControlledCharacter()
+        if char then
+            if not char:GetValue("PlayerDown") then
+                char:ApplyDamage(char:GetHealth() - 1000)
+            end
         end
     end
-end
+end)
+
+VZ_EVENT_SUBSCRIBE("Events", "ServerPing", function(ply, location, entity)
+    if ply:IsValid() then
+        local char = ply:GetControlledCharacter()
+        if char then
+            if not char:GetValue("PlayerDown") then
+                Events.BroadcastRemote("SyncPing", ply:GetValue("CharacterColor"), location, entity)
+            end
+        end
+    end
+end)

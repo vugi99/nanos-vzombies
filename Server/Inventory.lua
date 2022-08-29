@@ -73,6 +73,12 @@ local function GiveInventoryPlayerWeapon(char, charInvID, i, v)
     if v.pap then
         weapon:SetMaterial(Pack_a_punch_weapon_material, Pack_a_punch_weapon_material_index)
     end
+
+    local has_speed_cola = char:GetValue("OwnedPerks").speed_cola
+    if has_speed_cola then
+        weapon:ActivateSpeedReload(true)
+    end
+
     char:PickUp(weapon)
 
     local ply = char:GetPlayer()
@@ -101,6 +107,8 @@ function EquipSlot(char, slot)
         local picked_thing = char:GetPicked()
         if (not picked_thing or (not NanosUtils.IsA(picked_thing, Grenade) and not NanosUtils.IsA(picked_thing, Melee))) then
             if slot ~= Inv.selected_slot then
+                local found_weapon_slot = false
+
                 for i, v in ipairs(Inv.weapons) do
                     if (v.slot == Inv.selected_slot and v.weapon) then
                         if v.weapon:IsValid() then
@@ -114,7 +122,13 @@ function EquipSlot(char, slot)
                             --print("After:", v, PlayersCharactersWeapons[charInvID].weapons[i])
                         end
                         v.weapon = nil
+                        found_weapon_slot = true
                         break
+                    end
+                end
+                if not found_weapon_slot then
+                    if (picked_thing and picked_thing:IsValid()) then
+                        char:Drop()
                     end
                 end
                 for i, v in ipairs(Inv.weapons) do
@@ -125,10 +139,13 @@ function EquipSlot(char, slot)
                 end
                 Inv.selected_slot = slot
             else
+                local weapon_given = false
+
                 for i, v in ipairs(Inv.weapons) do
                     if (v.slot == Inv.selected_slot) then
                         if not v.weapon then
                             GiveInventoryPlayerWeapon(char, charInvID, i, v)
+                            weapon_given = true
                             break
                         elseif v.weapon:IsValid() then
                             v.ammo_bag = v.weapon:GetAmmoBag()
@@ -137,11 +154,18 @@ function EquipSlot(char, slot)
                             v.weapon:Destroy()
 
                             GiveInventoryPlayerWeapon(char, charInvID, i, v)
+                            weapon_given = true
                             break
                         end
                     end
                 end
+                if not weapon_given then
+                    if (picked_thing and picked_thing:IsValid()) then
+                        char:Drop()
+                    end
+                end
             end
+            Events.Call("VZ_EquippedInventorySlot", char, slot)
         else
             --print("EquipSlot Locked Because He has Grenade")
         end
@@ -299,89 +323,50 @@ VZ_EVENT_SUBSCRIBE("Events", "VZ_Switch_Weapon", function(ply)
     end
 end)
 
-VZ_EVENT_SUBSCRIBE("Weapon", "Interact", function(weapon, char)
-    if weapon:IsValid() then
-        local mbox_fake_weapon = weapon:GetValue("MBOXFakeWeapon")
-        if mbox_fake_weapon then
-            return false
-        end
-        local mbox_real_weapon_for_char = weapon:GetValue("MBOXFinalWeaponForCharacterID")
-        if mbox_real_weapon_for_char then
-            if mbox_real_weapon_for_char[1] == char:GetID() then
-                AddCharacterWeapon(char, mbox_real_weapon_for_char[2].weapon_name, mbox_real_weapon_for_char[2].max_ammo, true)
-                OpenedMBOXResetStage2()
-                OpenedMysteryBox_Data = nil
-                SM_MysteryBoxes[Active_MysteryBox_ID].mbox:SetValue("CanBuyMysteryBox", true, true)
-            end
-            return false
-        end
-    end
-end)
-
-function InteractPAPWeapon(weapon, char)
-    if weapon:IsValid() then
-        local pap_weapon_for_char = weapon:GetValue("PAPWeaponForCharacterID")
-        if pap_weapon_for_char then
-            if pap_weapon_for_char[1] == char:GetID() then
-                local max_ammo = GetWeaponNameMaxAmmo(pap_weapon_for_char[2])
-                if max_ammo then
-                    weapon:Destroy()
-                    AddCharacterWeapon(char, pap_weapon_for_char[2], max_ammo, true, nil, true)
-                    Timer.ClearTimeout(PAP_Upgrade_Data.del_timeout)
-                    PAP_Upgrade_Data = nil
-                    MAP_PAP_SM:SetValue("CanBuyPackAPunch", true, true)
-                else
-                    Package.Error("max_ammo not found : Interact pack a punch weapon : " .. tostring(pap_weapon_for_char[2]))
-                end
-            end
-            return false
-        end
-    end
-end
-
-VZ_EVENT_SUBSCRIBE("Weapon", "Interact", InteractPAPWeapon)
-
 VZ_EVENT_SUBSCRIBE("Events", "PickupGrenade", function(ply)
     if ply:IsValid() then
-        local char = ply:GetControlledCharacter()
-        if char then
-            if not char:GetValue("PlayerDown") then
-                if not char:IsInRagdollMode() then
-                    local grenades = char:GetValue("ZGrenadesNB")
-                    if (grenades and grenades > 0) then
-                        local grenade = Grenade(
-                            Vector(0, 0, 0),
-                            Rotator(0, 0, 0),
-                            "nanos-world::SM_Grenade_G67",
-                            "nanos-world::P_Grenade_Special",
-                            "nanos-world::A_Explosion_Large"
-                        )
-                        grenade:SetDamage(table.unpack(Grenade_Damage_Config))
-                        grenade:SetTimeToExplode(Grenade_TimeToExplode)
-                        grenade:SetValue("GrenadeOwner", char:GetID(), false)
+        if not GAME_PAUSED then
+            local char = ply:GetControlledCharacter()
+            if char then
+                if not char:GetValue("PlayerDown") then
+                    if not char:IsInRagdollMode() then
+                        local grenades = char:GetValue("ZGrenadesNB")
+                        if (grenades and grenades > 0) then
+                            local grenade = Grenade(
+                                Vector(0, 0, 0),
+                                Rotator(0, 0, 0),
+                                "nanos-world::SM_Grenade_G67",
+                                "nanos-world::P_Grenade_Special",
+                                "nanos-world::A_Explosion_Large",
+                                CollisionType.IgnoreOnlyPawn
+                            )
+                            grenade:SetDamage(table.unpack(Grenade_Damage_Config))
+                            grenade:SetTimeToExplode(Grenade_TimeToExplode)
+                            grenade:SetValue("GrenadeOwner", char:GetID(), false)
 
-                        local charInvID = GetCharacterInventory(char)
-                        if charInvID then
-                            local Inv = PlayersCharactersWeapons[charInvID]
+                            local charInvID = GetCharacterInventory(char)
+                            if charInvID then
+                                local Inv = PlayersCharactersWeapons[charInvID]
 
-                            for i, v in ipairs(Inv.weapons) do
-                                if (v.slot == Inv.selected_slot and v.weapon) then
-                                    if v.weapon:IsValid() then
-                                        v.ammo_bag = v.weapon:GetAmmoBag()
-                                        v.ammo_clip = v.weapon:GetAmmoClip()
+                                for i, v in ipairs(Inv.weapons) do
+                                    if (v.slot == Inv.selected_slot and v.weapon) then
+                                        if v.weapon:IsValid() then
+                                            v.ammo_bag = v.weapon:GetAmmoBag()
+                                            v.ammo_clip = v.weapon:GetAmmoClip()
 
-                                        v.destroying = true
-                                        v.weapon:Destroy()
+                                            v.destroying = true
+                                            v.weapon:Destroy()
+                                        end
+                                        v.weapon = nil
+                                        break
                                     end
-                                    v.weapon = nil
-                                    break
                                 end
                             end
+
+                            char:PickUp(grenade)
+
+                            grenade:PullUse()
                         end
-
-                        char:PickUp(grenade)
-
-                        grenade:PullUse()
                     end
                 end
             end
@@ -390,43 +375,76 @@ VZ_EVENT_SUBSCRIBE("Events", "PickupGrenade", function(ply)
 end)
 
 VZ_EVENT_SUBSCRIBE("Grenade", "Throw", function(grenade)
-    local char_id = grenade:GetValue("GrenadeOwner")
-    if char_id then
-        local char = GetCharacterFromId(char_id)
-        if char then
-            if not char:GetValue("PlayerDown") then
-                if not ZDEV_IsModeEnabled("ZDEV_INFINITE_GRENADES") then
-                    char:SetValue("ZGrenadesNB", char:GetValue("ZGrenadesNB") - 1, true)
-                end
+    if not grenade:GetValue("GibData") then
+        local char_id = grenade:GetValue("GrenadeOwner")
+        if char_id then
+            local char = GetCharacterFromId(char_id)
+            if char then
+                if (not char:GetValue("PlayerDown") and not GAME_PAUSED) then
+                    if not ZDEV_IsModeEnabled("ZDEV_INFINITE_GRENADES") then
+                        char:SetValue("ZGrenadesNB", char:GetValue("ZGrenadesNB") - 1, true)
+                    end
 
-                local charInvID = GetCharacterInventory(char)
-                if charInvID then
-                    local Inv = PlayersCharactersWeapons[charInvID]
+                    local charInvID = GetCharacterInventory(char)
+                    if charInvID then
+                        local Inv = PlayersCharactersWeapons[charInvID]
 
-                    EquipSlot(char, Inv.selected_slot)
+                        EquipSlot(char, Inv.selected_slot)
+                    end
+                else
+                    grenade:Destroy()
                 end
-            else
-                grenade:Destroy()
             end
         end
+    else
+        -- Unused code because grenade explosion destroys the gib
+        --[[Timer.SetTimeout(function()
+            if grenade:IsValid() then
+                grenade:Destroy()
+            end
+        end, Enemies_Gibs_Destroy_Timeout_ms)]]--
+
+        local char_id = grenade:GetValue("GrenadeOwner")
+        if char_id then
+            local char = GetCharacterFromId(char_id)
+            if char then
+                if not char:GetValue("PlayerDown") then
+                    local charInvID = GetCharacterInventory(char)
+                    if charInvID then
+                        local Inv = PlayersCharactersWeapons[charInvID]
+
+                        EquipSlot(char, Inv.selected_slot)
+                    end
+                end
+            end
+        end
+
+        grenade:SetPickable(true)
     end
 end)
 
 VZ_EVENT_SUBSCRIBE("Events", "ThrowGrenade", function(ply)
     if ply:IsValid() then
-        local char = ply:GetControlledCharacter()
-        if char then
-            local grenade = char:GetPicked()
-            if (grenade and NanosUtils.IsA(grenade, Grenade)) then
-                grenade:ReleaseUse()
+        if not GAME_PAUSED then
+            local char = ply:GetControlledCharacter()
+            if char then
+                local grenade = char:GetPicked()
+                if (grenade and NanosUtils.IsA(grenade, Grenade)) then
+                    grenade:ReleaseUse()
+                end
             end
         end
     end
 end)
 
 
-VZ_EVENT_SUBSCRIBE("Grenade", "Interact", function(grenade)
-    return false
+VZ_EVENT_SUBSCRIBE("Grenade", "Interact", function(grenade, char)
+    if not grenade:GetValue("GibData") then
+        return false
+    else
+        PickupGib(char, grenade:GetValue("GibData"))
+        grenade:Destroy()
+    end
 end)
 
 function DestroyMapGrenades()
@@ -439,7 +457,7 @@ end
 
 function SpawnKnife(location, rotation)
 	local melee = Melee(location or Vector(), rotation or Rotator(), "nanos-world::SM_M9", CollisionType.Normal, true, HandlingMode.SingleHandedMelee)
-	melee:SetAnimationCharacterUse("nanos-world::AM_Mannequin_Melee_Stab_Attack")
+	melee:AddAnimationCharacterUse("nanos-world::AM_Mannequin_Melee_Stab_Attack", 1, AnimationSlotType.UpperBody)
 	melee:SetDamageSettings(0.3, 0.3)
 	melee:SetCooldown(Knife_Cooldown_ms / 1000)
 	melee:SetBaseDamage(Knife_Base_Damage)
@@ -560,6 +578,72 @@ VZ_EVENT_SUBSCRIBE("Events", "ToggleLockAim", function(ply)
             if char:GetWeaponAimMode() == AimMode.None then
                 char:SetWeaponAimMode(AimMode.ZoomedFar)
             end
+        end
+    end
+end)
+
+function PickupGib(char, gib_data)
+    if gib_data then
+        if not char:GetValue("PlayerDown") then
+            if not char:IsInRagdollMode() then
+                local enemy_table = Enemies_Config[gib_data[1]]
+                if enemy_table then
+                    if Enemies_Config[gib_data[1]].Gibs then
+                        if Enemies_Config[gib_data[1]].Gibs[gib_data[2]] then
+                            local gib_grenade = Grenade(
+                                Vector(0, 0, 0),
+                                Rotator(0, 0, 0),
+                                Enemies_Config[gib_data[1]].Gibs[gib_data[2]].asset,
+                                "",
+                                "",
+                                CollisionType.IgnoreOnlyPawn
+                            )
+                            gib_grenade:SetValue("GibData", gib_data, false)
+                            gib_grenade:SetValue("GrenadeOwner", char:GetID(), false)
+                            gib_grenade:SetDamage(0, 0, 0, 0, 0)
+                            gib_grenade:SetTimeToExplode(Enemies_Gibs_Destroy_Timeout_ms / 1000)
+
+                            if gib_data[3] then
+                                SetGibMaterials(gib_data[3], gib_grenade, gib_data[2], enemy_table)
+                            end
+
+                            if gib_data[2] == enemy_table.Gibs_heart_bone then
+                                gib_grenade:SetMaterialScalarParameter("Emissive_value", 0.0)
+                            end
+
+                            local charInvID = GetCharacterInventory(char)
+                            if charInvID then
+                                local Inv = PlayersCharactersWeapons[charInvID]
+
+                                for i, v in ipairs(Inv.weapons) do
+                                    if (v.slot == Inv.selected_slot and v.weapon) then
+                                        if v.weapon:IsValid() then
+                                            v.ammo_bag = v.weapon:GetAmmoBag()
+                                            v.ammo_clip = v.weapon:GetAmmoClip()
+
+                                            v.destroying = true
+                                            v.weapon:Destroy()
+                                        end
+                                        v.weapon = nil
+                                        break
+                                    end
+                                end
+                            end
+
+                            char:PickUp(gib_grenade)
+                        end
+                    end
+                end
+            end
+        end
+    end
+end
+
+VZ_EVENT_SUBSCRIBE("Events", "PickupGib", function(ply, gib_data)
+    if ply:IsValid() then
+        local char = ply:GetControlledCharacter()
+        if char then
+            PickupGib(char, gib_data)
         end
     end
 end)

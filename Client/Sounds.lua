@@ -40,67 +40,67 @@ lowhealth_sound:Stop()
 
 Playing_LowHealth_Sound = false
 
-VZ_EVENT_SUBSCRIBE("Events", "WaveFinished", function()
-    local wave_finished = Sound(
-        Vector(0, 0, 0),
-        WaveFinished_Sound.asset,
-        true,
-        true,
-        SoundType.SFX,
-        WaveFinished_Sound.volume
-    )
-end)
+function PlayVZSound(data_tbl, loc)
+    if data_tbl then
+        if data_tbl.basic_sound_tbl then
+            if data_tbl.basic_sound_tbl.falloff_distance then
+                local _3D_Sound = Sound(
+                    loc,
+                    data_tbl.basic_sound_tbl.asset,
+                    false,
+                    true,
+                    SoundType.SFX,
+                    data_tbl.basic_sound_tbl.volume,
+                    1,
+                    data_tbl.basic_sound_tbl.radius,
+                    data_tbl.basic_sound_tbl.falloff_distance
+                )
+            else
+                local _2D_Sound = Sound(
+                    Vector(0, 0, 0),
+                    data_tbl.basic_sound_tbl.asset,
+                    true,
+                    true,
+                    SoundType.SFX,
+                    data_tbl.basic_sound_tbl.volume
+                )
+            end
+        end
 
-function ZombieAttackSound(zombie_a_path, zombie_loc)
-    local zombie_a_sound = Sound(
-        zombie_loc,
-        zombie_a_path,
-        false,
-        true,
-        SoundType.SFX,
-        RANDOM_SOUNDS.zombie_attack.volume,
-        1,
-        RANDOM_SOUNDS.zombie_attack.radius,
-        RANDOM_SOUNDS.zombie_attack.falloff_distance
-    )
+        if data_tbl.random_sound_tbl then
+            local sound_asset_to_play
+            if data_tbl.random_sound_selected then
+                sound_asset_to_play = data_tbl.random_sound_selected
+            else
+                sound_asset_to_play = VZ_RandomSound(data_tbl.random_sound_tbl)
+            end
+
+            if data_tbl.random_sound_tbl.falloff_distance then
+                local _3D_Sound = Sound(
+                    loc,
+                    sound_asset_to_play,
+                    false,
+                    true,
+                    SoundType.SFX,
+                    data_tbl.random_sound_tbl.volume,
+                    1,
+                    data_tbl.random_sound_tbl.radius,
+                    data_tbl.random_sound_tbl.falloff_distance
+                )
+            else
+                local _2D_Sound = Sound(
+                    Vector(0, 0, 0),
+                    sound_asset_to_play,
+                    true,
+                    true,
+                    SoundType.SFX,
+                    data_tbl.random_sound_tbl.volume
+                )
+            end
+        end
+    end
 end
-VZ_EVENT_SUBSCRIBE("Events", "ZombieAttackSound", ZombieAttackSound)
-
-VZ_EVENT_SUBSCRIBE("Events", "DamageBarricadeSound", function(break_path, destroyed_loc)
-    local break_b_sound = Sound(
-        destroyed_loc,
-        break_path,
-        false,
-        true,
-        SoundType.SFX,
-        RANDOM_SOUNDS.barricade_break.volume,
-        1,
-        RANDOM_SOUNDS.barricade_break.radius,
-        RANDOM_SOUNDS.barricade_break.falloff_distance
-    )
-end)
-
-VZ_EVENT_SUBSCRIBE("Events", "MBOXChangedSound", function()
-    local mbox_changed = Sound(
-        Vector(0, 0, 0),
-        Mbox_Changed_Sound.asset,
-        true,
-        true,
-        SoundType.SFX,
-        Mbox_Changed_Sound.volume
-    )
-end)
-
-VZ_EVENT_SUBSCRIBE("Events", "GameOver", function()
-    local GameOver = Sound(
-        Vector(0, 0, 0),
-        GameOver_Sound.asset,
-        true,
-        true,
-        SoundType.SFX,
-        GameOver_Sound.volume
-    )
-end)
+Events.Subscribe("PlayVZSound", PlayVZSound)
 
 function LastStandExitSound()
     local down_exit = Sound(
@@ -145,65 +145,13 @@ VZ_EVENT_SUBSCRIBE("Character", "ValueChange", function(char, key, value)
 end)
 
 VZ_EVENT_SUBSCRIBE("Events", "OpenMBOXSound", function(loc)
-    local open_mbox = Sound(
-        loc,
-        OpenMBOX_Sound.asset,
-        false,
-        true,
-        SoundType.SFX,
-        OpenMBOX_Sound.volume,
-        1,
-        OpenMBOX_Sound.radius,
-        OpenMBOX_Sound.falloff_distance
-    )
-    local mbox_music = Sound(
-        loc,
-        MBOX_Sound.asset,
-        false,
-        true,
-        SoundType.SFX,
-        MBOX_Sound.volume,
-        1,
-        MBOX_Sound.radius,
-        MBOX_Sound.falloff_distance
-    )
+    PlayVZSound({basic_sound_tbl=OpenMBOX_Sound}, loc)
+    PlayVZSound({basic_sound_tbl=MBOX_Sound}, loc)
 end)
-
-VZ_EVENT_SUBSCRIBE("Events", "PowerupGrabSound", function()
-    local PowerupGrab = Sound(
-        Vector(0, 0, 0),
-        Powerup_Grab_Sound.asset,
-        true,
-        true,
-        SoundType.SFX,
-        Powerup_Grab_Sound.volume
-    )
-end)
-
-function PowerupSound(sound)
-    local psound = Sound(
-        Vector(0, 0, 0),
-        sound.asset,
-        true,
-        true,
-        SoundType.SFX,
-        sound.volume
-    )
-end
 
 VZ_EVENT_SUBSCRIBE("StaticMesh", "ValueChange", function(SM, key, value)
     if key == "GrabPowerup" then
-        local p_spawn_dound = Sound(
-            SM:GetLocation(),
-            Powerup_Spawn_Sound.asset,
-            false,
-            true,
-            SoundType.SFX,
-            Powerup_Spawn_Sound.volume,
-            1,
-            Powerup_Spawn_Sound.radius,
-            Powerup_Spawn_Sound.falloff_distance
-        )
+        PlayVZSound({basic_sound_tbl=Powerup_Spawn_Sound}, SM:GetLocation())
         Powerups_Loops_Sounds[value] = Sound(
             SM:GetLocation(),
             Powerup_Loop_Sound.asset,
@@ -232,79 +180,9 @@ VZ_EVENT_SUBSCRIBE("StaticMesh", "Destroy", function(SM)
 end)
 
 VZ_EVENT_SUBSCRIBE("Events", "PowerONSound", function()
-    local pow_sound = Sound(
-        Vector(0, 0, 0),
-        PowerOn_Sound.asset,
-        true,
-        true,
-        SoundType.SFX,
-        PowerOn_Sound.volume
-    )
-    local pow3D_sound = Sound(
-        MAP_POWER.location + Vector(0, 0, 100),
-        PowerOn3D_Sound.asset,
-        false,
-        true,
-        SoundType.SFX,
-        PowerOn3D_Sound.volume,
-        1,
-        PowerOn3D_Sound.radius,
-        PowerOn3D_Sound.falloff_distance
-    )
+    PlayVZSound({basic_sound_tbl=PowerOn_Sound})
+    PlayVZSound({basic_sound_tbl=PowerOn3D_Sound}, MAP_POWER.location + Vector(0, 0, 100))
     POWER_ON = true
-end)
-
-function NewPerkSound()
-    local npsound = Sound(
-        Vector(0, 0, 0),
-        NewPerk_Sound.asset,
-        true,
-        true,
-        SoundType.SFX,
-        NewPerk_Sound.volume
-    )
-end
-
-VZ_EVENT_SUBSCRIBE("Events", "PAPUpgradeSound", function()
-    local pap_up = Sound(
-        MAP_PACK_A_PUNCH.location,
-        PAP_Upgrade_Sound.asset,
-        false,
-        true,
-        SoundType.SFX,
-        PAP_Upgrade_Sound.volume,
-        1,
-        PAP_Upgrade_Sound.radius,
-        PAP_Upgrade_Sound.falloff_distance
-    )
-end)
-
-VZ_EVENT_SUBSCRIBE("Events", "PAPReadySound", function()
-    local pap_ready = Sound(
-        MAP_PACK_A_PUNCH.location,
-        PAP_Ready_Sound.asset,
-        false,
-        true,
-        SoundType.SFX,
-        PAP_Ready_Sound.volume,
-        1,
-        PAP_Ready_Sound.radius,
-        PAP_Ready_Sound.falloff_distance
-    )
-end)
-
-VZ_EVENT_SUBSCRIBE("Events", "RepairBarricadeSound", function(slam_path, repaired_loc)
-    local slam_b_sound = Sound(
-        repaired_loc,
-        slam_path,
-        false,
-        true,
-        SoundType.SFX,
-        RANDOM_SOUNDS.barricade_slam.volume,
-        1,
-        RANDOM_SOUNDS.barricade_slam.radius,
-        RANDOM_SOUNDS.barricade_slam.falloff_distance
-    )
 end)
 
 local Z_Behind_Interval
@@ -321,25 +199,27 @@ function CreateZBehindInterval()
             local nearest_zombie_dist_sq
             for k, v in pairs(Character.GetPairs()) do
                 if v:IsValid() then
-                    if not v:GetPlayer() then
-                        if v:GetHealth() > 0 then
-                            local zombie_velocity = v:GetVelocity()
-                            if (zombie_velocity.X ~= 0 or zombie_velocity.Y ~= 0) then
-                                local zombie_loc = v:GetLocation()
-                                local dist_sq = char_loc:DistanceSquared(zombie_loc)
-                                if dist_sq <= Zombie_Behind_Sound_Trigger_Config.max_distance_sq then
-                                    local dist_z = zombie_loc.Z - char_loc.Z
-                                    if dist_z < 0 then
-                                        dist_z = dist_z * -1
-                                    end
-                                    if dist_z <= Zombie_Behind_Sound_Trigger_Config.max_z_dist then
-                                        local zombie_rot = v:GetRotation()
-                                        local relrot = RelRot1(char_rot.Yaw, zombie_rot.Yaw)
-                                        --print(relrot)
-                                        if (relrot > Zombie_Behind_Sound_Trigger_Config.Rel_Rot_Between[1] and relrot < Zombie_Behind_Sound_Trigger_Config.Rel_Rot_Between[2]) then
-                                            if (not nearest_zombie_for_sound or nearest_zombie_dist_sq > dist_sq) then
-                                                nearest_zombie_for_sound = v
-                                                nearest_zombie_dist_sq = dist_sq
+                    if v:GetValue("EnemyName") then
+                        if not v:GetPlayer() then
+                            if v:GetHealth() > 0 then
+                                local zombie_velocity = v:GetVelocity()
+                                if (zombie_velocity.X ~= 0 or zombie_velocity.Y ~= 0) then
+                                    local zombie_loc = v:GetLocation()
+                                    local dist_sq = char_loc:DistanceSquared(zombie_loc)
+                                    if dist_sq <= Zombie_Behind_Sound_Trigger_Config.max_distance_sq then
+                                        local dist_z = zombie_loc.Z - char_loc.Z
+                                        if dist_z < 0 then
+                                            dist_z = dist_z * -1
+                                        end
+                                        if dist_z <= Zombie_Behind_Sound_Trigger_Config.max_z_dist then
+                                            local zombie_rot = v:GetRotation()
+                                            local relrot = RelRot1(char_rot.Yaw, zombie_rot.Yaw)
+                                            --print(relrot)
+                                            if (relrot > Zombie_Behind_Sound_Trigger_Config.Rel_Rot_Between[1] and relrot < Zombie_Behind_Sound_Trigger_Config.Rel_Rot_Between[2]) then
+                                                if (not nearest_zombie_for_sound or nearest_zombie_dist_sq > dist_sq) then
+                                                    nearest_zombie_for_sound = v
+                                                    nearest_zombie_dist_sq = dist_sq
+                                                end
                                             end
                                         end
                                     end
@@ -352,24 +232,27 @@ function CreateZBehindInterval()
 
             if nearest_zombie_for_sound then
                 local zombie_loc = nearest_zombie_for_sound:GetLocation()
-                local z_behind_sound = Sound(
-                    zombie_loc,
-                    VZ_RandomSound(RANDOM_SOUNDS.zombie_behind),
-                    false,
-                    true,
-                    SoundType.SFX,
-                    RANDOM_SOUNDS.zombie_behind.volume,
-                    1,
-                    RANDOM_SOUNDS.zombie_behind.radius,
-                    RANDOM_SOUNDS.zombie_behind.falloff_distance
-                )
-                z_behind_sound:AttachTo(nearest_zombie_for_sound)
+                local enemy_table = GetEnemyTable(nearest_zombie_for_sound)
+                if enemy_table.Behind_Sounds then
+                    local z_behind_sound = Sound(
+                        zombie_loc,
+                        VZ_RandomSound(enemy_table.Behind_Sounds),
+                        false,
+                        true,
+                        SoundType.SFX,
+                        enemy_table.Behind_Sounds.volume,
+                        1,
+                        enemy_table.Behind_Sounds.radius,
+                        enemy_table.Behind_Sounds.falloff_distance
+                    )
+                    z_behind_sound:AttachTo(nearest_zombie_for_sound)
 
-                Timer.ClearInterval(Z_Behind_Interval)
-                Z_Behind_Interval = nil
-                Timer.SetTimeout(function()
-                    CreateZBehindInterval()
-                end, Zombie_Behind_Sound_Trigger_Config.Cooldown_ms)
+                    Timer.ClearInterval(Z_Behind_Interval)
+                    Z_Behind_Interval = nil
+                    Timer.SetTimeout(function()
+                        CreateZBehindInterval()
+                    end, Zombie_Behind_Sound_Trigger_Config.Cooldown_ms)
+                end
             end
         end
     end, Zombie_Behind_Sound_Trigger_Config.Interval_ms)
@@ -392,15 +275,10 @@ function CreateZAmbInterval()
                         if v:GetHealth() > 0 then
                             local zombie_velocity = v:GetVelocity()
                             if (zombie_velocity.X ~= 0 or zombie_velocity.Y ~= 0) then
-                                local zombie_type = v:GetValue("ZombieType")
-                                if zombie_type then
+                                local enemy_type = v:GetValue("EnemyType")
+                                if enemy_type then
 
-                                    local Random_Sounds_tbl
-                                    if zombie_type == "walk" then
-                                        Random_Sounds_tbl = RANDOM_SOUNDS.zombie_soft
-                                    elseif zombie_type == "run" then
-                                        Random_Sounds_tbl = RANDOM_SOUNDS.zombie_sprint
-                                    end
+                                    local Random_Sounds_tbl = GetEnemyTable(v).Types[enemy_type].Ambient_Sounds
 
                                     if Random_Sounds_tbl then
                                         local zombie_loc = v:GetLocation()
@@ -447,33 +325,21 @@ VZ_EVENT_SUBSCRIBE("Character", "Death", function(char, last_damage_taken, last_
     if not char:GetPlayer() then
         local attached_actors = char:GetAttachedEntities()
         for k, v in pairs(attached_actors) do
-            v:Destroy()
+            if NanosUtils.IsA(v, Sound) then
+                v:Destroy()
+            end
         end
     end
 end)
 
 function PlayLowHealthLoop()
-    local lowhealth_enter = Sound(
-        Vector(0, 0, 0),
-        LowHealth_Enter_Sound.asset,
-        true,
-        true,
-        SoundType.SFX,
-        LowHealth_Enter_Sound.volume
-    )
+    PlayVZSound({basic_sound_tbl=LowHealth_Enter_Sound})
     lowhealth_sound:Play(0)
     Playing_LowHealth_Sound = true
 end
 
 function PlayExitLowHealthSound()
-    local lowhealth_exit = Sound(
-        Vector(0, 0, 0),
-        LowHealth_Exit_Sound.asset,
-        true,
-        true,
-        SoundType.SFX,
-        LowHealth_Exit_Sound.volume
-    )
+    PlayVZSound({basic_sound_tbl=LowHealth_Exit_Sound})
 end
 
 function StopLowHealthLoop()
@@ -482,14 +348,7 @@ function StopLowHealthLoop()
 end
 
 function PlayPlayerHurtSound()
-    local ply_hurt_sound = Sound(
-        Vector(0, 0, 0),
-        VZ_RandomSound(RANDOM_SOUNDS.zombie_hit_player),
-        true,
-        true,
-        SoundType.SFX,
-        RANDOM_SOUNDS.zombie_hit_player.volume
-    )
+    PlayVZSound({random_sound_tbl=RANDOM_SOUNDS.zombie_hit_player})
 end
 
 Timer.SetInterval(function()
@@ -582,32 +441,8 @@ Timer.SetInterval(function()
     end
 end, 15000)
 
-VZ_EVENT_SUBSCRIBE("Events", "PlayWunderLeaveSound", function(at_loc)
-    local wunder_leave_sound = Sound(
-        at_loc,
-        Wunderfizz_leave_Sound.asset,
-        false,
-        true,
-        SoundType.SFX,
-        Wunderfizz_leave_Sound.volume,
-        1,
-        Wunderfizz_leave_Sound.radius,
-        Wunderfizz_leave_Sound.falloff_distance
-    )
-end)
-
 function WunderStopSound(loc)
-    local wunder_stop_sound = Sound(
-        loc,
-        Wunderfizz_stop_Sound.asset,
-        false,
-        true,
-        SoundType.SFX,
-        Wunderfizz_stop_Sound.volume,
-        1,
-        Wunderfizz_stop_Sound.radius,
-        Wunderfizz_stop_Sound.falloff_distance
-    )
+    PlayVZSound({basic_sound_tbl=Wunderfizz_stop_Sound}, loc)
 end
 
 VZ_EVENT_SUBSCRIBE("StaticMesh", "ValueChange", function(sm, key, value)
@@ -669,55 +504,17 @@ VZ_EVENT_SUBSCRIBE("Prop", "ValueChange", function(prop, key, value)
 
             WunderStopSound(prop:GetLocation())
 
-            local wunder_impact_sound = Sound(
-                prop:GetLocation(),
-                VZ_RandomSound(RANDOM_SOUNDS.wunderfizz_impact),
-                false,
-                true,
-                SoundType.SFX,
-                RANDOM_SOUNDS.wunderfizz_impact.volume,
-                1,
-                RANDOM_SOUNDS.wunderfizz_impact.radius,
-                RANDOM_SOUNDS.wunderfizz_impact.falloff_distance
-            )
+            PlayVZSound({random_sound_tbl=RANDOM_SOUNDS.wunderfizz_impact}, prop:GetLocation())
         end
     end
 end)
 
 function PlayStartRepairBarricade()
-    local start_repair_b = Sound(
-        Vector(0, 0, 0),
-        Barricade_Start_Repair.asset,
-        true,
-        true,
-        SoundType.SFX,
-        Barricade_Start_Repair.volume
-    )
+    PlayVZSound({basic_sound_tbl=Barricade_Start_Repair})
 end
 
-VZ_EVENT_SUBSCRIBE("Events", "PlayerTeleportedSound", function()
-    local teleport_sound = Sound(
-        Vector(0, 0, 0),
-        Player_Teleport_Sound.asset,
-        true,
-        true,
-        SoundType.SFX,
-        Player_Teleport_Sound.volume
-    )
-end)
-
 VZ_EVENT_SUBSCRIBE("Events", "ZombieGroundDirt", function(sound_path, loc)
-    local zombie_g_dirt_sound = Sound(
-        loc,
-        sound_path,
-        false,
-        true,
-        SoundType.SFX,
-        RANDOM_SOUNDS.spawn_dirt_sound.volume,
-        1,
-        RANDOM_SOUNDS.spawn_dirt_sound.radius,
-        RANDOM_SOUNDS.spawn_dirt_sound.falloff_distance
-    )
+    PlayVZSound({random_sound_tbl=RANDOM_SOUNDS.spawn_dirt_sound, random_sound_selected=sound_path}, loc)
 
     local zombie_g_dirt_particle = Particle(
         loc,
@@ -726,21 +523,11 @@ VZ_EVENT_SUBSCRIBE("Events", "ZombieGroundDirt", function(sound_path, loc)
         true,
         true
     )
-    zombie_g_dirt_particle:SetScale(Zombies_Ground_Dirt_Scale)
+    zombie_g_dirt_particle:SetScale(Enemies_Ground_Dirt_Scale)
 end)
 
 VZ_EVENT_SUBSCRIBE("Events", "JokerZombieSound", function(char)
     if char:IsValid() then
-        local death_sound = Sound(
-            char:GetLocation(),
-            VZ_RandomSound(RANDOM_SOUNDS.zombie_death),
-            false,
-            true,
-            SoundType.SFX,
-            RANDOM_SOUNDS.zombie_death.volume,
-            1,
-            RANDOM_SOUNDS.zombie_death.radius,
-            RANDOM_SOUNDS.zombie_death.falloff_distance
-        )
+        PlayVZSound({random_sound_tbl=RANDOM_SOUNDS.zombie_death}, char:GetLocation())
     end
 end)

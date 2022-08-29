@@ -174,13 +174,15 @@ function GetBotFromNanosBotID(bot_id)
 end
 
 function RequestBotAction(bot, wo_ply)
-    local ply = GetRandomPlayer()
-    if wo_ply then
-        ply = GetRandomPlayerWOOne(wo_ply)
-    end
-    if ply then
-        bot:SetValue("RequestedActionFromPlayer", ply:GetID(), false)
-        Events.CallRemote("RequestBotAction", ply, bot.ID, bot.Stored, GetPlayerInventoryTable(bot), ROOMS_UNLOCKED)
+    if (bot:GetControlledCharacter() and not bot:GetControlledCharacter():GetValue("BotStayHere") and not bot:GetControlledCharacter():GetValue("BotFollowing")) then
+        local ply = GetRandomPlayer()
+        if wo_ply then
+            ply = GetRandomPlayerWOOne(wo_ply)
+        end
+        if ply then
+            bot:SetValue("RequestedActionFromPlayer", ply:GetID(), false)
+            Events.CallRemote("RequestBotAction", ply, bot.ID, bot.Stored, GetPlayerInventoryTable(bot), ROOMS_UNLOCKED)
+        end
     end
 end
 
@@ -217,12 +219,24 @@ VZ_EVENT_SUBSCRIBE("Events", "BotAction", function(ply, bot_id, action, to_reach
                             if ZDEV_IsModeEnabled("ZDEV_DEBUG_BOTS_MOVEMENT") then
                                 print("BotAction", bot_id, action, to_reach)
                             end
-                            char:SetValue("DoingAction", {action, target}, false)
-                            local acceptance_r = Bots_Acceptance_Radius
-                            char:MoveTo(to_reach, acceptance_r)
-                            if (not char:GetValue("BOTShootingOn")) then
-                                char:SetWeaponAimMode(AimMode.None)
-                                char:LookAt(to_reach + Vector(0, 0, 100))
+                            if action ~= "FAILED" then
+                                char:SetValue("DoingAction", {action, target, to_reach}, false)
+                                local acceptance_r = Bots_Acceptance_Radius
+                                char:MoveTo(to_reach, acceptance_r)
+                                if (not char:GetValue("BOTShootingOn")) then
+                                    char:SetWeaponAimMode(AimMode.None)
+                                    char:LookAt(to_reach + Vector(0, 0, 100))
+                                end
+                            else
+                                Timer.SetTimeout(function()
+                                    if char:IsValid() then
+                                        if not char:GetValue("PlayerDown") then
+                                            if not char:IsInRagdollMode() then
+                                                RequestBotAction(Bot)
+                                            end
+                                        end
+                                    end
+                                end, 300)
                             end
                         end
                     end
@@ -251,6 +265,17 @@ VZ_EVENT_SUBSCRIBE("Character", "MoveCompleted", function(char, success)
     if (bot and bot.BOT) then
         local action = char:GetValue("DoingAction")
         if action then
+
+            if action[3] then
+                local dist_sq = char:GetLocation():DistanceSquared(action[3])
+
+                --print(math.sqrt(dist_sq))
+
+                if dist_sq > Bots_Reach_Acceptance_Radius_sq then
+                    success = false
+                end
+            end
+
             if ZDEV_IsModeEnabled("ZDEV_DEBUG_BOTS_MOVEMENT") then
                 print("BOT", bot.ID, "MoveCompleted", success, action[1])
             end
@@ -320,10 +345,15 @@ VZ_EVENT_SUBSCRIBE("Character", "MoveCompleted", function(char, success)
                     RequestBotAction(bot)
                 end
             elseif (char:IsValid() and not char:GetValue("PlayerDown") and not char:IsInRagdollMode()) then
+                if char:GetValue("BotFollowing") then
+                    char:SetValue("BotFollowing", nil, false)
+                end
                 RequestBotAction(bot)
             end
 
-            char:SetValue("DoingAction", nil, false)
+            if not char:GetValue("BotFollowing") then
+                char:SetValue("DoingAction", nil, false)
+            end
         end
     end
 end)
@@ -393,9 +423,19 @@ function BOTShootIntervalFunc(char)
                             if shooting_on_char:IsValid() then
                                 if shooting_on_char:GetHealth() > 0 then
                                     local loc = shooting_on_char:GetLocation()
+
+                                    local Aim_Offset = Vector(0, 0, 0)
+                                    local enemy_name = shooting_on_char:GetValue("EnemyName")
+                                    local enemy_type = shooting_on_char:GetValue("EnemyType")
+                                    if (enemy_name and enemy_type) then
+                                        if Enemies_Config[enemy_name].Types[enemy_type].Bot_Aim_Offset then
+                                            Aim_Offset = Enemies_Config[enemy_name].Types[enemy_type].Bot_Aim_Offset
+                                        end
+                                    end
+
                                     local dist = char:GetLocation():Distance(loc)
                                     local rand_x, rand_y, rand_z = (math.random() - 0.5) * 2, (math.random() - 0.5) * 2, (math.random() - 0.5) * 2
-                                    local inaccurate_loc = Vector(loc.X, loc.Y, loc.Z)
+                                    local inaccurate_loc = Vector(loc.X, loc.Y, loc.Z) + Aim_Offset
                                     inaccurate_loc.X = inaccurate_loc.X + Bots_Shoot_Inaccuracy_Each_Distance_Unit * dist * rand_x
                                     inaccurate_loc.Y = inaccurate_loc.Y + Bots_Shoot_Inaccuracy_Each_Distance_Unit * dist * rand_y
                                     inaccurate_loc.Z = inaccurate_loc.Z + Bots_Shoot_Inaccuracy_Each_Distance_Unit * dist * rand_z
@@ -565,24 +605,26 @@ VZ_EVENT_SUBSCRIBE("Character", "RagdollModeChanged", function(char, old_state, 
     end
 end)
 
-Timer.SetInterval(function()
-    for k, v in pairs(Character.GetPairs()) do
-        if v:IsValid() then
-            local ply = v:GetPlayer()
-            if (ply and ply.BOT) then
-                if (not v:IsInRagdollMode() and not v:GetValue("PlayerDown")) then
-                    if not v:GetValue("BOTReloading") then
-                        if not v:GetValue("BOTShootInterval") then
-                            local weapon = v:GetPicked()
-                            if weapon then
-                                if weapon:GetAmmoClip() < weapon:GetAmmoToReload() then
-                                    local nearest_z, nearest_dist_sq = GetNearestZombie(v:GetLocation())
-                                    if (not nearest_z or nearest_dist_sq > Bots_Target_MaxDistance3D_Sq + 500*500) then
-                                        weapon:Reload()
-                                        v:SetValue("BOTReloading", true, false)
+if Bots_Enabled then
+    Timer.SetInterval(function()
+        for k, v in pairs(Character.GetPairs()) do
+            if v:IsValid() then
+                local ply = v:GetPlayer()
+                if (ply and ply.BOT) then
+                    if (not v:IsInRagdollMode() and not v:GetValue("PlayerDown")) then
+                        if not v:GetValue("BOTReloading") then
+                            if not v:GetValue("BOTShootInterval") then
+                                local weapon = v:GetPicked()
+                                if weapon then
+                                    if weapon:GetAmmoClip() < weapon:GetAmmoToReload() then
+                                        local nearest_z, nearest_dist_sq = GetNearestEnemy(v:GetLocation())
+                                        if (not nearest_z or nearest_dist_sq > Bots_Target_MaxDistance3D_Sq + 500*500) then
+                                            weapon:Reload()
+                                            v:SetValue("BOTReloading", true, false)
 
-                                        if ZDEV_IsModeEnabled("ZDEV_DEBUG_BOTS_SHOOT") then
-                                            print("Bot " .. tostring(ply.ID) .. " Smart Reload")
+                                            if ZDEV_IsModeEnabled("ZDEV_DEBUG_BOTS_SHOOT") then
+                                                print("Bot " .. tostring(ply.ID) .. " Smart Reload")
+                                            end
                                         end
                                     end
                                 end
@@ -592,5 +634,42 @@ Timer.SetInterval(function()
                 end
             end
         end
+    end, Bots_Smart_Reload_Check_Interval_ms)
+end
+
+VZ_EVENT_SUBSCRIBE("Events", "BotOrder", function(ply, char, order, moveto_location)
+    if (char:IsValid() and not char:GetValue("PlayerDown") and not char:IsInRagdollMode()) then
+
+        if char:GetPlayer():GetValue("RequestedActionFromPlayer") then
+            char:GetPlayer():SetValue("RequestedActionFromPlayer", nil, false)
+        end
+        if order == "MoveTo" then
+            char:SetValue("DoingAction", {"MoveToOrder"}, false)
+            char:MoveTo(moveto_location, Bots_Acceptance_Radius)
+            char:SetValue("BotStayHere", nil, false)
+        elseif order == "StayHere" then
+            local cur_stay = char:GetValue("BotStayHere")
+            char:SetValue("BotStayHere", not cur_stay, false)
+            cur_stay = not cur_stay
+            if cur_stay then
+                char:SetValue("DoingAction", nil, false)
+                char:SetValue("BotFollowing", nil, false)
+                char:StopMovement()
+            else
+                RequestBotAction(char:GetPlayer())
+            end
+        elseif order == "Follow" then
+            local bot_following = char:GetValue("BotFollowing")
+            char:SetValue("BotFollowing", not bot_following, false)
+            bot_following = not bot_following
+            if bot_following then
+                char:SetValue("DoingAction", {"FollowOrder", ply:GetControlledCharacter()}, false)
+                char:SetValue("BotStayHere", nil, false)
+                char:Follow(ply:GetControlledCharacter(), Bots_Acceptance_Radius, false, true, Bot_Follow_Order_Update_Rate / 1000)
+            else
+                char:SetValue("DoingAction", nil, false)
+                RequestBotAction(char:GetPlayer())
+            end
+        end
     end
-end, Bots_Smart_Reload_Check_Interval_ms)
+end)

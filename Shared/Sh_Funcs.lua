@@ -24,6 +24,19 @@ function GetCharacterFromId(id)
     end
 end
 
+function clamp(val, minval, maxval, valadded)
+    if val + valadded <= maxval then
+        if val + valadded >= minval then
+            val = val + valadded
+        else
+            val = minval
+        end
+    else
+        val = maxval
+    end
+    return val
+end
+
 function RelRot1(r, r2)
     local val = r2 - r
     if val > 180 then
@@ -42,18 +55,22 @@ function split_str(str,sep)
 end
 
 function VZ_RandomSound(random_sound_tbl)
-    local random_s_id = math.random(random_sound_tbl.random_start, random_sound_tbl.random_to)
-    local random_s_id_str = tostring(random_s_id)
-    if random_sound_tbl.always_digits then
-        if string.len(random_s_id_str) ~= random_sound_tbl.always_digits then
-            local add_x_0 = ""
-            for i = 1, random_sound_tbl.always_digits - string.len(random_s_id_str) do
-                add_x_0 = add_x_0 .. "0"
+    if random_sound_tbl.base_ref then
+        local random_s_id = math.random(random_sound_tbl.random_start, random_sound_tbl.random_to)
+        local random_s_id_str = tostring(random_s_id)
+        if random_sound_tbl.always_digits then
+            if string.len(random_s_id_str) ~= random_sound_tbl.always_digits then
+                local add_x_0 = ""
+                for i = 1, random_sound_tbl.always_digits - string.len(random_s_id_str) do
+                    add_x_0 = add_x_0 .. "0"
+                end
+                random_s_id_str = add_x_0 .. random_s_id_str
             end
-            random_s_id_str = add_x_0 .. random_s_id_str
         end
+        return random_sound_tbl.base_ref .. random_s_id_str
+    elseif random_sound_tbl.unique_sound then
+        return random_sound_tbl.unique_sound
     end
-    return random_sound_tbl.base_ref .. random_s_id_str
 end
 
 if VZ_SUBSCRIBED_EVENTS then
@@ -101,7 +118,7 @@ Package.Export("SetENV_Value", SetENV_Value)
 
 function ZDEV_IsModeEnabled(mode)
     if ZDEV_CONFIG.ENABLED then
-        return ZDEV_CONFIG.DEV_CHEAT_MODES[mode]
+        return ZDEV_CONFIG.DEV_MODES[mode]
     else
         return false
     end
@@ -119,4 +136,83 @@ function CalculateMiddle(...)
         middle = middle + v
     end
     return middle / table_count({...})
+end
+
+function CallENVFunc_NoError(name, ...)
+    if _ENV[name] then
+        return _ENV[name](...)
+    end
+end
+
+function VZ_GetFeatureValue(feature_name, key)
+    return VZ_GLOBAL_FEATURES[feature_name][key]
+end
+
+function VZ_GetGamemodeConfigValue(key)
+    return VZ_GAMEMODES_CONFIG[VZ_SELECTED_GAMEMODE].Config[key]
+end
+
+function ContainsString(str, search_str)
+    local wo_search_str, is_str = str:gsub(search_str, "")
+    if is_str > 0 then
+        return true, wo_search_str
+    end
+    return false, str
+end
+
+function ReplaceLetterInString(str, letter, replace_letter)
+    local str_new = str:gsub(letter, replace_letter)
+    return str_new
+end
+
+function GetEnemyTable(char)
+    local EnemyName = char:GetValue("EnemyName")
+    return Enemies_Config[EnemyName]
+end
+
+function IsEnemyDisabled(EnemyName)
+    if MAP_SETTINGS then
+        if MAP_SETTINGS.disabled_enemies then
+            for i, v in ipairs(MAP_SETTINGS.disabled_enemies) do
+                if v == EnemyName then
+                    return true
+                end
+            end
+        end
+    end
+end
+
+
+if ZDEV_IsModeEnabled("ZDEV_DEBUG_FUNCTION_CALLS") then
+    debug.sethook(function(event)
+        local info = debug.getinfo(2)
+
+        if info.what == "Lua" then
+            if (info.name and info.name ~= "__callback") then
+                --print(info.source)
+
+                local source_contains_slash = ContainsString(info.source, "/")
+                if source_contains_slash then
+
+                    local args_str = ""
+                    for i = 1, info.nparams do
+                        if i == 1 then
+                            args_str = debug.getlocal(info.func, i)
+                        else
+                            args_str = args_str .. ", " .. debug.getlocal(info.func, i)
+                        end
+                    end
+                    if info.isvararg then
+                        if args_str == "" then
+                            args_str = "..."
+                        else
+                            args_str = args_str .. ", ..."
+                        end
+                    end
+
+                    Package.Log("[Function Call]\n " .. info.name .. "(" .. args_str .. ")\n line : " .. tostring(info.linedefined) .. "\n source : " .. tostring(info.source))
+                end
+            end
+        end
+    end, "c")
 end

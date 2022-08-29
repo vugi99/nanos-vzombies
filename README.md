@@ -1,3 +1,3 @@
 # nanos-vzombies
-### Compatible with nanos build >= 8212502
+### Compatible with nanos >= 1.15.1
 # [Wiki](https://github.com/vugi99/nanos-vzombies/wiki)

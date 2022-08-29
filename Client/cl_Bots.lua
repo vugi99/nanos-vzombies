@@ -359,7 +359,7 @@ end
 
 function IsZombieGood(v)
     if v:IsValid() then
-        if v:GetValue("ZombieType") then
+        if v:GetValue("EnemyType") then
             if v:GetHealth() > 0 then
                 if not v:IsInRagdollMode() then
                     return true
@@ -500,7 +500,8 @@ VZ_EVENT_SUBSCRIBE("Events", "RequestBotAction", function(bot_id, bot_stored, bo
                     if (reachable_loc and reachable_loc ~= Vector(0, 0, 0)) then
                         Events.CallRemote("BotAction", bot_id, v, reachable_loc)
                     else
-                        Package.Error("Bot MOVE didn't find ReachablePoint")
+                        Events.CallRemote("BotAction", bot_id, "FAILED")
+                        Package.Warn("Bot MOVE didn't find ReachablePoint")
                     end
                     return
                 elseif v == "REVIVE" then
@@ -531,20 +532,30 @@ VZ_EVENT_SUBSCRIBE("VZBot", "ValueChange", function(Bot, key, value)
                                 local can_shoot_on = {}
 
                                 for k, v in pairs(Character.GetPairs()) do
-                                    if v:GetValue("ZombieType") then
+                                    if v:GetValue("EnemyType") then
                                         if v:GetHealth() > 0 then
                                             local loc = v:GetLocation()
                                             if char_loc:DistanceSquared(loc) <= Bots_Target_MaxDistance3D_Sq then
-                                                local trace = Client.Trace(
+                                                local enemy_name = v:GetValue("EnemyName")
+                                                local enemy_type = v:GetValue("EnemyType")
+
+                                                local Aim_Offset = Vector(0, 0, 0)
+                                                if Enemies_Config[enemy_name].Types[enemy_type].Bot_Aim_Offset then
+                                                    Aim_Offset = Enemies_Config[enemy_name].Types[enemy_type].Bot_Aim_Offset
+                                                end
+
+                                                local trace_mode = TraceMode.ReturnEntity
+                                                if ZDEV_IsModeEnabled("ZDEV_DEBUG_TRACES") then
+                                                    trace_mode = trace_mode | TraceMode.DrawDebug
+                                                end
+
+                                                local trace = Client.TraceLineSingle(
                                                     char_loc + Vector(0, 0, 90),
-                                                    loc,
+                                                    loc + Aim_Offset,
                                                     --CollisionChannel.WorldStatic | CollisionChannel.WorldDynamic | CollisionChannel.Pawn | CollisionChannel.PhysicsBody | CollisionChannel.Vehicle | CollisionChannel.Mesh,
                                                     CollisionChannel.WorldStatic | CollisionChannel.WorldDynamic | CollisionChannel.PhysicsBody | CollisionChannel.Vehicle | CollisionChannel.Mesh,
-                                                    false,
-                                                    true,
-                                                    false,
-                                                    {char},
-                                                    ZDEV_IsModeEnabled("ZDEV_DEBUG_TRACES")
+                                                    trace_mode,
+                                                    {char}
                                                 )
                                                 if trace.Success then
                                                     --if trace.ActorName ~= "StaticMeshActor" then
@@ -561,6 +572,8 @@ VZ_EVENT_SUBSCRIBE("VZBot", "ValueChange", function(Bot, key, value)
                                         end
                                     end
                                 end
+
+                                --print("can_shoot_on", table_count(can_shoot_on))
 
                                 local CanShootOn = char:GetValue("BOTCanShootOn")
                                 CanShootOn = CanShootOn or {}
@@ -596,3 +609,41 @@ VZ_EVENT_SUBSCRIBE("VZBot", "ValueChange", function(Bot, key, value)
         end
     end
 end)
+
+
+function BotOrder(char, order)
+    if (char and char:IsValid()) then
+        if (not char:GetValue("PlayerDown") and not char:IsInRagdollMode()) then
+            local local_char = Client.GetLocalPlayer():GetControlledCharacter()
+            if local_char and not local_char:GetValue("PlayerDown") then
+                if order == "MoveTo" then
+                    local cam_loc = Client.GetLocalPlayer():GetCameraLocation()
+                    local cam_rot = Client.GetLocalPlayer():GetCameraRotation()
+                    local forward_vec = cam_rot:GetForwardVector()
+
+                    local trace_mode = nil
+                    if ZDEV_IsModeEnabled("ZDEV_DEBUG_TRACES") then
+                        trace_mode = trace_mode | TraceMode.DrawDebug
+                    end
+
+                    local trace = Client.TraceLineSingle(
+                        cam_loc,
+                        cam_loc + forward_vec * Bot_MoveTo_Order_Distance_From_Camera,
+                        CollisionChannel.WorldStatic,
+                        trace_mode,
+                        {char}
+                    )
+
+                    if trace.Success then
+                        local path = Client.FindPathToLocation(char:GetLocation(), trace.Location)
+                        if (path.IsValid and not path.IsPartial) then
+                            Events.CallRemote("BotOrder", char, order, trace.Location)
+                        end
+                    end
+                else
+                    Events.CallRemote("BotOrder", char, order)
+                end
+            end
+        end
+    end
+end

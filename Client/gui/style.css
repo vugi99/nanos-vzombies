@@ -38,6 +38,7 @@ body {
     font-size: 50px;
     margin-top: 147px;
     margin-left: 225px;
+    font-weight: unset;
 }
 
 #players_money {
@@ -109,8 +110,10 @@ body {
     font-size: 160px;
     color: darkred;
     position: absolute;
+    margin-bottom: 0;
     left: 85px;
     bottom: 40px;
+    font-weight: unset;
 }
 
 .waves_animation {
@@ -230,4 +233,57 @@ body {
     font-size: 17px;
     margin-left: 12px;
     margin-right: 12px;
+}
+
+#health-bar-container {
+    box-sizing: border-box;
+    top: 50px;
+    right: 50px;
+    width: 200px;
+    height: 30px;
+    padding: 7px;
+    background: rgba(221,221,221,0.5);
+    border-radius: 5px;
+    position: absolute;
+}
+#health-bar {
+    background: #c54;
+    width: 100%;
+    height: 15px;
+    position: relative;
+
+    transition: width .3s linear;
+}
+  
+#hit-health {
+    background: rgba(255,255,255,0.6);
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 0px;
+
+    transition: width .3s linear;
+}
+
+#orders-wheel-container {
+    position: absolute;
+    left: 50%;
+    top: 60%;
+}
+
+
+
+.blooming-menu__item:nth-of-type(1) .blooming-menu__item-btn {
+    background-image: url(images/moveto.svg);
+    background-size: 35%;
+}
+
+.blooming-menu__item:nth-of-type(2) .blooming-menu__item-btn {
+    background-image: url(images/followme.svg);
+}
+
+.blooming-menu__item:nth-of-type(3) .blooming-menu__item-btn {
+    background-image: url(images/stayhere.svg);
+    background-size: 35%;
 }

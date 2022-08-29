@@ -6,12 +6,11 @@ MAP_CONFIG_TO_SEND = MAP_CONFIG_TO_SEND or {}
 
 MAX_PLAYERS = MAX_PLAYERS or 0
 
---Package.RequirePackage("zombgunz")
 Package.RequirePackage("nanos-world-weapons")
---print(NanosUtils.Dump(NanosWorldWeapons))
 
-Package.Require("Sh_Funcs.lua")
 Package.Require("Config.lua")
+Package.Require("Sh_Funcs.lua")
+Package.Require("CustomWeapons.lua")
 
 if ZDEV_CONFIG.ENABLED then
     print("VZombies : DEV MODE ENABLED")
@@ -25,7 +24,7 @@ local function split_str(str, sep)
 end
 
 local Config_Data = {
-    "MAP_ROOMS", "PLAYER_SPAWNS", "MAP_DOORS", "MAP_WEAPONS", "MAP_PACK_A_PUNCH", "MAP_POWER", "MAP_MYSTERY_BOXES", "MAP_PERKS", "MAP_Z_LIMITS", "MAP_WUNDERFIZZ", "MAP_INTERACT_TRIGGERS", "MAP_TELEPORTERS", "MAP_LIGHT_ZONES", "MAP_SETTINGS", "MAP_STATIC_MESHES"
+    "MAP_ROOMS", "PLAYER_SPAWNS", "MAP_DOORS", "MAP_WEAPONS", "MAP_PACK_A_PUNCH", "MAP_POWER", "MAP_MYSTERY_BOXES", "MAP_PERKS", "MAP_Z_LIMITS", "MAP_WUNDERFIZZ", "MAP_INTERACT_TRIGGERS", "MAP_TELEPORTERS", "MAP_LIGHT_ZONES", "MAP_SETTINGS", "MAP_STATIC_MESHES", "HELLHOUND_SPAWNS"
 }
 
 Events.Subscribe("VZOMBIES_MAP_CONFIG", function(...)
@@ -41,6 +40,10 @@ Events.Subscribe("VZOMBIES_MAP_CONFIG", function(...)
 
         MAX_PLAYERS = table_count(PLAYER_SPAWNS)
 
+        if Auto_Set_Server_MaxPlayers then
+            Server.SetMaxPlayers(MAX_PLAYERS, false)
+        end
+
         LoadServerFiles()
 
         print("VZombies : Map Config Loaded")
@@ -54,14 +57,32 @@ function LoadServerFiles()
 
     Package.Require("Compatibility.lua")
     Package.Require("sh_Bots.lua")
+    Package.Require("sh_Gibs.lua")
     Package.Require("Rounds.lua")
     Package.Require("Map.lua")
-    Package.Require("Zombies.lua")
+    Package.Require("Barricades.lua")
+    Package.Require("Enemy.lua")
     Package.Require("Players.lua")
     Package.Require("Money.lua")
     Package.Require("Inventory.lua")
     Package.Require("Powerups.lua")
     Package.Require("Bots.lua")
+
+    for k, v in pairs(VZ_GLOBAL_FEATURES) do
+        if v.script_loaded then
+            Package.Require(k .. ".lua")
+        end
+    end
+
+    if VZ_GAMEMODES_CONFIG[VZ_SELECTED_GAMEMODE].Scripts then
+        if VZ_GAMEMODES_CONFIG[VZ_SELECTED_GAMEMODE].Scripts.Server then
+            for i, v in ipairs(VZ_GAMEMODES_CONFIG[VZ_SELECTED_GAMEMODE].Scripts.Server) do
+                Package.Require(v)
+            end
+        end
+    end
+
+    print("VZombies " .. VZ_SELECTED_GAMEMODE .. " selected")
 
     Events.Call("VZOMBIES_GAMEMODE_LOADED")
 end
@@ -90,3 +111,16 @@ end
 Package.Subscribe("Load", function()
     print("VZombies " .. Package.GetVersion() .. " Loaded")
 end)
+
+if Send_Errors_To_Server then
+    Events.Subscribe("LogErrorFromClient", function(ply, text, logtype)
+        local logtype_name = "Unknown"
+        for k, v in pairs(LogType) do
+            if v == logtype then
+                logtype_name = k
+            end
+        end
+
+        print("Received error log from client", ply:GetID(), ply:GetAccountName(), logtype_name, text)
+    end)
+end

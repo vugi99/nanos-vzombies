@@ -42,13 +42,6 @@ table.insert(MAP_DOORS, {
 
 MAP_WEAPONS = {}
 table.insert(MAP_WEAPONS, {
-    location = Vector(394.000, 812.000, 110.000),
-    rotation = Rotator(0.000000, 0.000000, 0.000000),
-    price = 500,
-    weapon_name = "AK47",
-    max_ammo = 400
-})
-table.insert(MAP_WEAPONS, {
     location = Vector(-88.000, 1799.000, 110.000),
     rotation = Rotator(0.000000, 0.000000, 0.000000),
     price = 500,
@@ -57,9 +50,16 @@ table.insert(MAP_WEAPONS, {
 })
 table.insert(MAP_WEAPONS, {
     location = Vector(-88.000, 2002.000, 110.000),
-    rotation = Rotator(0.000000, 179.999420, 0.000000),
+    rotation = Rotator(0.000000, 179.999435, 0.000000),
     price = 500,
     weapon_name = "GE3",
+    max_ammo = 400
+})
+table.insert(MAP_WEAPONS, {
+    location = Vector(394.000, 812.000, 110.000),
+    rotation = Rotator(0.000000, 0.000000, 0.000000),
+    price = 500,
+    weapon_name = "AK47",
     max_ammo = 400
 })
 
@@ -70,99 +70,103 @@ table.insert(MAP_ROOMS[1], {
     barricade_location = Vector(2051.000, -888.000, 186.000),
     barricade_rotation = Rotator(0.000000, 0.000000, 0.000000),
     z_move_to_b_target_location = Vector(2051.000, -948.000, 1.000),
-    z_reach_rotation = Rotator(0.000000, 89.999992, 0.000000),
+    z_reach_rotation = Rotator(0.000000, 90.000000, -0.000000),
     z_leave_b_tp_location = Vector(2051.000, -828.000, 1.000),
     z_spawns = {},
     type = "barricade",
-    z_leave_b_tp_rotation = Rotator(0.000000, 89.999992, 0.000000),
+    z_leave_b_tp_rotation = Rotator(0.000000, 90.000000, -0.000000),
     z_ground_debris_location = Vector(2051.000, -788.000, 1.000)
 })
 table.insert(MAP_ROOMS[2], {
     barricade_location = Vector(4066.000, -871.000, 185.000),
     barricade_rotation = Rotator(0.000000, 0.000000, 0.000000),
     z_move_to_b_target_location = Vector(4066.000, -931.000, 0.000),
-    z_reach_rotation = Rotator(0.000000, 89.999992, 0.000000),
+    z_reach_rotation = Rotator(0.000000, 90.000000, -0.000000),
     z_leave_b_tp_location = Vector(4066.000, -811.000, 0.000),
     z_spawns = {},
     type = "barricade",
-    z_leave_b_tp_rotation = Rotator(0.000000, 89.999992, 0.000000),
+    z_leave_b_tp_rotation = Rotator(0.000000, 90.000000, -0.000000),
     z_ground_debris_location = Vector(4066.000, -771.000, 0.000)
 })
 table.insert(MAP_ROOMS[3], {
     barricade_location = Vector(6117.000, -871.000, 185.000),
     barricade_rotation = Rotator(0.000000, 0.000000, 0.000000),
     z_move_to_b_target_location = Vector(6117.000, -931.000, 0.000),
-    z_reach_rotation = Rotator(0.000000, 89.999992, 0.000000),
+    z_reach_rotation = Rotator(0.000000, 90.000000, -0.000000),
     z_leave_b_tp_location = Vector(6117.000, -811.000, 0.000),
     z_spawns = {},
     type = "barricade",
-    z_leave_b_tp_rotation = Rotator(0.000000, 89.999992, 0.000000),
+    z_leave_b_tp_rotation = Rotator(0.000000, 90.000000, -0.000000),
     z_ground_debris_location = Vector(6117.000, -771.000, 0.000)
 })
 table.insert(MAP_ROOMS[1], {
     barricade_location = Vector(1625.000, -790.000, 185.000),
     barricade_rotation = Rotator(0.000000, 0.000000, 0.000000),
     z_move_to_b_target_location = Vector(1625.000, -850.000, 0.000),
-    z_reach_rotation = Rotator(0.000000, 89.999992, 0.000000),
+    z_reach_rotation = Rotator(0.000000, 90.000000, -0.000000),
     z_leave_b_tp_location = Vector(1625.000, -730.000, 0.000),
     z_spawns = {},
     type = "barricade",
-    z_leave_b_tp_rotation = Rotator(0.000000, 89.999992, 0.000000),
+    z_leave_b_tp_rotation = Rotator(0.000000, 90.000000, -0.000000),
     z_ground_debris_location = Vector(1625.000, -690.000, 0.000)
 })
 
 
 MAP_PACK_A_PUNCH = {
     location = Vector(2182.000, 1590.000, 1.000),
-    rotation = Rotator(0.000000, 89.999985, 0.000000),
+    rotation = Rotator(0.000000, 89.999992, 0.000000),
     weapon_location = Vector(2119.000, 1562.000, 84.000),
-    weapon_rotation = Rotator(0.000000, 89.999985, 0.000000)
+    weapon_rotation = Rotator(0.000000, 89.999992, -0.000000)
 }
 
 
 MAP_POWER = {
     location = Vector(2197.000, 990.000, 1.000),
-    rotation = Rotator(0.000000, 89.999985, 0.000000),
+    rotation = Rotator(0.000000, 89.999992, 0.000000),
     handle_location = Vector(2178.000, 990.000, 118.000),
-    handle_rotation = Rotator(0.000000, 89.999977, 89.999992)
+    handle_rotation = Rotator(0.000000, 89.999992, 90.000000)
 }
 
 
 MAP_MYSTERY_BOXES = {}
 table.insert(MAP_MYSTERY_BOXES, {
     location = Vector(435.000, 2069.000, 1.000),
-    rotation = Rotator(0.000000, 89.999985, 0.000000)
+    rotation = Rotator(0.000000, 89.999992, 0.000000)
 })
 table.insert(MAP_MYSTERY_BOXES, {
     location = Vector(435.000, 2780.000, 1.000),
-    rotation = Rotator(0.000000, 89.999985, 0.000000)
+    rotation = Rotator(0.000000, 89.999992, 0.000000)
 })
 table.insert(MAP_MYSTERY_BOXES, {
     location = Vector(435.000, 1379.000, 1.000),
-    rotation = Rotator(0.000000, 89.999985, 0.000000)
+    rotation = Rotator(0.000000, 89.999992, 0.000000)
 })
 
 
 MAP_PERKS = {}
 MAP_PERKS.juggernog = {
     location = Vector(2165.000, 3255.000, 1.000),
-    rotation = Rotator(0.000000, 89.999985, 0.000000)
+    rotation = Rotator(0.000000, 89.999992, 0.000000)
 }
 MAP_PERKS.quick_revive = {
     location = Vector(2151.000, 3613.000, 1.000),
-    rotation = Rotator(0.000000, 89.999985, 0.000000)
+    rotation = Rotator(0.000000, 89.999992, 0.000000)
 }
 MAP_PERKS.doubletap = {
     location = Vector(2178.000, 2903.000, 1.000),
-    rotation = Rotator(0.000000, 89.999985, 0.000000)
+    rotation = Rotator(0.000000, 89.999992, 0.000000)
 }
 MAP_PERKS.three_gun = {
     location = Vector(2128.000, 3965.000, 1.000),
-    rotation = Rotator(0.000000, 89.999985, 0.000000)
+    rotation = Rotator(0.000000, 89.999992, 0.000000)
 }
 MAP_PERKS.stamin_up = {
     location = Vector(2140.000, 4346.000, 1.000),
-    rotation = Rotator(0.000000, 89.999985, 0.000000)
+    rotation = Rotator(0.000000, 89.999992, 0.000000)
+}
+MAP_PERKS.speed_cola = {
+    location = Vector(2137.000, 4696.000, 1.000),
+    rotation = Rotator(0.000000, 89.999992, 0.000000)
 }
 
 
@@ -175,11 +179,11 @@ MAP_Z_LIMITS = {
 MAP_WUNDERFIZZ = {}
 table.insert(MAP_WUNDERFIZZ, {
     location = Vector(2480.000, 2529.000, 0.000),
-    rotation = Rotator(0.000000, 89.999985, 0.000000)
+    rotation = Rotator(0.000000, 89.999992, 0.000000)
 })
 table.insert(MAP_WUNDERFIZZ, {
     location = Vector(2480.000, 2050.000, 0.000),
-    rotation = Rotator(0.000000, 89.999985, 0.000000)
+    rotation = Rotator(0.000000, 89.999992, 0.000000)
 })
 
 
@@ -276,13 +280,13 @@ table.insert(MAP_ROOMS[1], {
     type = "vault",
     z_spawns = {},
     z_target_location_1 = Vector(1230.000, -1165.000, 0.000),
-    z_target_rotation_1 = Rotator(0.000000, 89.999992, 0.000000),
+    z_target_rotation_1 = Rotator(0.000000, 90.000000, -0.000000),
     z_leave_location_1 = Vector(1230.000, -685.000, 0.000),
-    z_leave_rotation_1 = Rotator(0.000000, 89.999992, 0.000000),
+    z_leave_rotation_1 = Rotator(0.000000, 90.000000, -0.000000),
     z_target_location_2 = Vector(1230.000, -1130.000, 0.000),
-    z_target_rotation_2 = Rotator(0.000000, 89.999992, 0.000000),
+    z_target_rotation_2 = Rotator(0.000000, 90.000000, -0.000000),
     z_leave_location_2 = Vector(1230.000, -805.000, 0.000),
-    z_leave_rotation_2 = Rotator(0.000000, 89.999992, 0.000000)
+    z_leave_rotation_2 = Rotator(0.000000, 90.000000, -0.000000)
 })
 
 
@@ -295,16 +299,69 @@ table.insert(MAP_LIGHT_ZONES, {
 
 
 MAP_SETTINGS = {
-    spawn_nanos_sky = true
+    spawn_nanos_sky = true,
+    time_overwrite = {nil, nil},
+    Bosses_Enabled = true,
+    Sky_Light_Intensity = -1.0,
+    Sun_Light_Intensity = -1.0,
+    disabled_enemies = {
+    },
 }
 
 
 MAP_STATIC_MESHES = {}
 table.insert(MAP_STATIC_MESHES, {
+    location = Vector(3810.000, -3203.000, 149.000),
+    rotation = Rotator(0.000000, 0.000000, 0.000000),
+    scale = Vector(100.000, 2.000, 3.000),
+    model = "nanos-world::SM_Cube"
+})
+table.insert(MAP_STATIC_MESHES, {
+    location = Vector(-1070.000, 1857.000, 149.000),
+    rotation = Rotator(0.000000, 0.000000, 0.000000),
+    scale = Vector(2.000, 100.000, 3.000),
+    model = "nanos-world::SM_Cube"
+})
+table.insert(MAP_STATIC_MESHES, {
+    location = Vector(3810.000, 6927.000, 149.000),
+    rotation = Rotator(0.000000, 0.000000, 0.000000),
+    scale = Vector(100.000, 2.000, 3.000),
+    model = "nanos-world::SM_Cube"
+})
+table.insert(MAP_STATIC_MESHES, {
+    location = Vector(8860.000, 1857.000, 149.000),
+    rotation = Rotator(0.000000, 0.000000, 0.000000),
+    scale = Vector(2.000, 100.000, 3.000),
+    model = "nanos-world::SM_Cube"
+})
+table.insert(MAP_STATIC_MESHES, {
     location = Vector(-80.000, 1900.000, 149.000),
     rotation = Rotator(0.000000, 0.000000, 0.000000),
     scale = Vector(2.000, 2.000, 3.000),
     model = "nanos-world::SM_Cube"
+})
+
+
+HELLHOUND_SPAWNS = {}
+table.insert(HELLHOUND_SPAWNS, {
+    location = Vector(1330.000, 200.000, 0.000),
+    rotation = Rotator(0.000000, 0.000000, 0.000000),
+    room = 1
+})
+table.insert(HELLHOUND_SPAWNS, {
+    location = Vector(1930.000, 200.000, 0.000),
+    rotation = Rotator(0.000000, 0.000000, 0.000000),
+    room = 1
+})
+table.insert(HELLHOUND_SPAWNS, {
+    location = Vector(1340.000, 2090.000, 0.000),
+    rotation = Rotator(0.000000, 0.000000, 0.000000),
+    room = 1
+})
+table.insert(HELLHOUND_SPAWNS, {
+    location = Vector(1340.000, 3670.000, 0.000),
+    rotation = Rotator(0.000000, 0.000000, 0.000000),
+    room = 1
 })
 
 
@@ -353,7 +410,7 @@ table.insert(MAP_ROOMS[1][1].z_spawns, {
 table.insert(MAP_ROOMS[1], {
     type = "ground",
     location = Vector(2600.000, 1286.000, 0.000),
-    rotation = Rotator(0.000000, 179.999374, 0.000000),
+    rotation = Rotator(0.000000, 179.999390, 0.000000),
     ground_anim = false
 })
 table.insert(MAP_ROOMS[1][2].z_spawns, {
@@ -366,5 +423,5 @@ table.insert(MAP_ROOMS[1][2].z_spawns, {
 
 
 Package.Subscribe("Load", function()
-	Events.Call("VZOMBIES_MAP_CONFIG", MAP_ROOMS, PLAYER_SPAWNS, MAP_DOORS, MAP_WEAPONS, MAP_PACK_A_PUNCH, MAP_POWER, MAP_MYSTERY_BOXES, MAP_PERKS, MAP_Z_LIMITS, MAP_WUNDERFIZZ, MAP_INTERACT_TRIGGERS, MAP_TELEPORTERS, MAP_LIGHT_ZONES, MAP_SETTINGS, MAP_STATIC_MESHES)
+	Events.Call("VZOMBIES_MAP_CONFIG", MAP_ROOMS, PLAYER_SPAWNS, MAP_DOORS, MAP_WEAPONS, MAP_PACK_A_PUNCH, MAP_POWER, MAP_MYSTERY_BOXES, MAP_PERKS, MAP_Z_LIMITS, MAP_WUNDERFIZZ, MAP_INTERACT_TRIGGERS, MAP_TELEPORTERS, MAP_LIGHT_ZONES, MAP_SETTINGS, MAP_STATIC_MESHES, HELLHOUND_SPAWNS)
 end)

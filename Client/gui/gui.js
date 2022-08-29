@@ -127,16 +127,19 @@ Events.Subscribe("StartRevive", function(revive_time) {
     progress.value = "1";
     revive_div.appendChild(progress).className = "revive_progress";
     revive_interval = setInterval(frame, revive_time / 100);
+    let startTime = new Date().getTime();
     function frame() {
+        let endTime = new Date().getTime();
         if (value >= 100) {
             clearInterval(revive_interval);
             revive_interval = false;
             RemoveBarFromDiv();
         } else {
-            value++;
+            value = value + 1 * ((endTime - startTime) / (revive_time / 100));
             progress.value = value;
             // progress.style.width = width + '%';
         }
+        startTime = endTime;
     }
 })
 
@@ -225,6 +228,84 @@ Events.Subscribe("ShowHTPFrame", function() {
 Events.Subscribe("HideHTPFrame", function() {
     htp_frame.classList.add("hidden");
 })
+
+const hBar = document.getElementById("health-bar-container"),
+    bar = document.getElementById("health-bar"),
+    hit = document.getElementById("hit-health");
+
+var CurrentHealth = null;
+
+Events.Subscribe("UpdateGUIHealth", function(max_health, new_health) {
+    if (CurrentHealth == null) {
+        CurrentHealth = max_health;
+    }
+    hBar.classList.remove("hidden");
+
+    if (new_health < 0) {
+        new_health = 0;
+    }
+
+    var barWidth = (new_health / max_health) * 100 + "%";
+    //console.log(barWidth);
+
+    if (CurrentHealth > 0 && CurrentHealth - new_health > 0) {
+        let hitWidth = ((CurrentHealth - new_health) / max_health) * 100 + "%";
+        //console.log(hitWidth);
+    
+        hit.style.width = hitWidth;
+    }
+
+    setTimeout(function(){
+        hit.style.width = "0";
+        bar.style.width = barWidth;
+    }, 300);
+
+    CurrentHealth = new_health;
+})
+
+Events.Subscribe("HideGUIHealth", function() {
+    hBar.classList.add("hidden");
+    CurrentHealth = null;
+})
+
+let Bot_Order_Wheel = null;
+const Bot_Order_Wheel_Container = document.getElementById("orders-wheel-container");
+
+function HideBotOrderWheel() {
+    if (Bot_Order_Wheel) {
+        Bot_Order_Wheel.remove();
+        Bot_Order_Wheel = null;
+    }
+}
+
+Events.Subscribe("HideBotOrderWheel", HideBotOrderWheel)
+
+Events.Subscribe("ShowBotOrderWheel", function(orders) {
+    Bot_Order_Wheel = new BloomingMenu({
+        itemsNum: orders,
+        fatherElement: Bot_Order_Wheel_Container,
+        startAngle: 0,
+        endAngle: 30 * orders,
+    })
+    Bot_Order_Wheel.render()
+    Bot_Order_Wheel.open()
+
+    Bot_Order_Wheel.props.elements.main.remove()
+
+    Bot_Order_Wheel.props.elements.items.forEach(function (item, index) {
+        item.addEventListener('click', function () {
+           //console.log('Item # ' + index + ' was clicked')
+           Events.Call("BotOrderSelect", index);
+           HideBotOrderWheel();
+        })
+    })
+})
+
+//testFuncs.ShowBotOrderWheel(3);
+
+/*setTimeout(() => {  testFuncs.UpdateGUIHealth(100, 80); }, 500);
+setTimeout(() => {  testFuncs.UpdateGUIHealth(100, 20); }, 2000);
+setTimeout(() => {  testFuncs.UpdateGUIHealth(100, 100); }, 4000);*/
 
 
 //testFuncs.ShowHTPFrame()
