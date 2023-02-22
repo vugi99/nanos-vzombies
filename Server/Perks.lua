@@ -47,31 +47,35 @@ function BuyPerk(ply, perk_sm)
         end
     end
 end
-VZ_EVENT_SUBSCRIBE("Events", "BuyPerk", BuyPerk)
+VZ_EVENT_SUBSCRIBE_REMOTE("BuyPerk", BuyPerk)
 
 function GiveCharacterPerk(char, perk_name)
-    local ply = char:GetPlayer()
-    local char_perks = char:GetValue("OwnedPerks")
-    char_perks[perk_name] = true
-    char:SetValue("OwnedPerks", char_perks, true)
-    if perk_name == "juggernog" then
-        ClearRegenTimeouts(char)
-        char:SetHealth(1000 + PERKS_CONFIG.juggernog.PlayerHealth)
-        Events.CallRemote("UpdateGUIHealth", ply)
-    elseif perk_name == "stamin_up" then
-        char:SetSpeedMultiplier(PERKS_CONFIG.stamin_up.Speed_Multiplier)
-    elseif perk_name == "speed_cola" then
-        local weap = char:GetPicked()
-        if weap then
-            if not NanosUtils.IsA(weap, Grenade) and not NanosUtils.IsA(weap, Melee) then
-                weap:ActivateSpeedReload(true)
+    if PERKS_CONFIG[perk_name] then
+        local ply = char:GetPlayer()
+        local char_perks = char:GetValue("OwnedPerks")
+        if not char_perks[perk_name] then
+            char_perks[perk_name] = true
+            char:SetValue("OwnedPerks", char_perks, true)
+            if perk_name == "juggernog" then
+                ClearRegenTimeouts(char)
+                char:SetHealth(1000 + PERKS_CONFIG.juggernog.PlayerHealth)
+                Events.CallRemote("UpdateGUIHealth", ply)
+            elseif perk_name == "stamin_up" then
+                char:SetSpeedMultiplier(PERKS_CONFIG.stamin_up.Speed_Multiplier)
+            elseif perk_name == "speed_cola" then
+                local weap = char:GetPicked()
+                if weap then
+                    if not weap:IsA(Grenade) and not weap:IsA(Melee) then
+                        weap:ActivateSpeedReload(true)
+                    end
+                end
             end
         end
     end
 end
 
 if Prone_Perk_Config.enabled then
-    VZ_EVENT_SUBSCRIBE("Character", "StanceModeChanged", function(char, old_state, new_state)
+    VZ_EVENT_SUBSCRIBE("Character", "StanceModeChange", function(char, old_state, new_state)
         local ply = char:GetPlayer()
         if ply then
             if not char:GetValue("PlayerDown") then
@@ -97,12 +101,12 @@ if Prone_Perk_Config.enabled then
     end)
 end
 
-function Weapon:SetAnimationReload(animation_asset_path, ...)
-    self:SetValue("ReloadAnim", animation_asset_path, false)
-    return self:Super(animation_asset_path, ...)
-end
-
 function Weapon:ActivateSpeedReload(enable)
+    --print(self:GetAnimationReload())
+    if not self:GetAnimationReload() then
+        return
+    end
+
     local timescale = 1
     if enable then
         timescale = PERKS_CONFIG.speed_cola.Reload_Speed_Timescale
@@ -110,5 +114,5 @@ function Weapon:ActivateSpeedReload(enable)
 
     --print("Weapon:ActivateSpeedReload", enable, timescale)
 
-    return self:SetAnimationReload(self:GetValue("ReloadAnim"), timescale)
+    return self:SetAnimationReload(self:GetAnimationReload(), timescale)
 end

@@ -6,6 +6,8 @@ ENEMIES_SPAWN_INTERVAL = 0
 ENEMY_CHARACTERS = {}
 BOSS_CHARACTERS = {}
 
+ENEMY_DEAD_RAGDOLLS = {}
+
 function GetEnemiesCharsCopy()
     local tbl = {}
     for k, v in pairs(ENEMY_CHARACTERS) do
@@ -45,8 +47,13 @@ function DestroyBosses()
     BOSS_CHARACTERS = {}
 end
 
-function RandomEnemyAttackAnim(enemy)
-    return GetEnemyTable(enemy).Attack_Anims[math.random(table_count(GetEnemyTable(enemy).Attack_Anims))]
+function RandomEnemyAttackAnim(enemy, enemy_type)
+    local enemy_table = GetEnemyTable(enemy)
+    local on_tbl = enemy_table.Attack_Anims
+    if (enemy_table.Types[enemy_type].New_Attack_Anims) then
+        on_tbl = enemy_table.Types[enemy_type].New_Attack_Anims
+    end
+    return on_tbl[math.random(table_count(on_tbl))]
 end
 
 function Calculate_Enemy_Health(enemy_table)
@@ -59,10 +66,8 @@ function Calculate_Enemy_Health(enemy_table)
     if ROUND_NB <= hardcoded_health_count then
         return Zombies_Health_Start[ROUND_NB] * return_mult
     else
-        local health = Zombies_Health_Start[hardcoded_health_count]
-        for i = hardcoded_health_count, ROUND_NB - 1 do
-            health = health * Zombies_Health_Multiplier_At_Each_Wave
-        end
+        local health = Zombies_Health_Start[hardcoded_health_count] * Zombies_Health_Multiplier_At_Each_Wave^(ROUND_NB - hardcoded_health_count)
+        --print(health)
         return health * return_mult
     end
 end
@@ -75,7 +80,7 @@ function SpawnEnemy(EnemyName, EnemyType)
 
         local selected_spawn
         if enemy_table.Spawning_Config.type == "zombie_spawns" then
-            selected_spawn = SmartSpawnLogic(SPAWNS_UNLOCKED)
+            selected_spawn = SmartSpawnLogic(SPAWNS_ENABLED)
         elseif enemy_table.Spawning_Config.type == "custom_spawns" then
             selected_spawn = SmartSpawnLogic(GetCustomSpawnsUnlocked(enemy_table))
         end
@@ -92,10 +97,33 @@ function SpawnEnemy(EnemyName, EnemyType)
             if (not is_ground_anim_disabled) then
                 spawn_location = selected_spawn.location - Vector(0, 0, 140)
             end
+            --print("I guess it's from there", VZ_RandomSound(enemy_table.Death_Sounds))
+
+            local random_enemy_model_id = math.random(table_count(enemy_table.Models))
+            local random_enemy_model_asset
+            local enemy_mats = nil
+            if type(enemy_table.Models[random_enemy_model_id]) == "string" then
+                random_enemy_model_asset = enemy_table.Models[random_enemy_model_id]
+            else
+                random_enemy_model_asset = enemy_table.Models[random_enemy_model_id].asset
+                if enemy_table.Models[random_enemy_model_id].materials_slots then
+                    if (enemy_table.Enemy_Materials_Assets and enemy_table.Enemy_Materials_Assets[random_enemy_model_id]) then
+                        local e_mat_assets = enemy_table.Enemy_Materials_Assets[random_enemy_model_id]
+                        enemy_mats = {}
+                        for i, v in ipairs(enemy_table.Models[random_enemy_model_id].materials_slots) do
+                            if not enemy_mats[v] then
+                                enemy_mats[v] = {{i}, e_mat_assets[v][math.random(table_count(e_mat_assets[v]))]}
+                            else
+                                table.insert(enemy_mats[v][1], i)
+                            end
+                        end
+                    end
+                end
+            end
             local enemy = Character(
                 spawn_location,
                 selected_spawn.rotation,
-                enemy_table.Models[math.random(table_count(enemy_table.Models))],
+                random_enemy_model_asset,
                 CollisionType.Normal,
                 true,
                 Calculate_Enemy_Health(enemy_table),
@@ -103,8 +131,19 @@ function SpawnEnemy(EnemyName, EnemyType)
                 ""
             )
 
+            if enemy_mats then
+                --print(NanosUtils.Dump(enemy_mats))
+
+                for k, v in pairs(enemy_mats) do
+                    for i2, v2 in ipairs(v[1]) do
+                        enemy:SetMaterial(v[2], v2-1)
+                    end
+                end
+                enemy:SetValue("EnemyMaterials", enemy_mats, true)
+            end
+
             if ZDEV_IsModeEnabled("ZDEV_DEBUG_ZOMBIES_SPAWNS") then
-                print("Enemy (" .. enemy:GetID() .. ", " .. EnemyType .. ") spawn, in spawn " .. tostring(selected_spawn.zspawnid) .. " (" .. selected_spawn_target.type .. ")")
+                print("Enemy (" .. enemy:GetID() .. ", " .. EnemyName .. ", " .. EnemyType .. ") spawn, in spawn " .. tostring(selected_spawn.zspawnid))
             end
 
             enemy:SetSpeedMultiplier(enemy_table.Types[EnemyType].Speed_Multiplier)
@@ -112,10 +151,17 @@ function SpawnEnemy(EnemyName, EnemyType)
 
             enemy:SetCapsuleSize(enemy_table.Collision_Radius, enemy_table.Collision_Height or 96)
 
+            if enemy_table.Types[EnemyType].Physical_Anim_Settings then
+                for i, v in ipairs(enemy_table.Types[EnemyType].Physical_Anim_Settings) do
+                    enemy:SetPhysicalAnimationSettings(table.unpack(v))
+                end
+            end
+
             enemy:SetValue("Enemy", true, false)
             enemy:SetValue("EnemyName", EnemyName, true)
             enemy:SetValue("EnemyType", EnemyType, true)
             enemy:SetValue("EnemyTypeAtSpawn", EnemyType, false)
+            enemy:SetValue("WeirdPunchNB", 0, false)
 
             if enemy_table.Spawning_Config.type == "zombie_spawns" then
                 if (not is_ground_anim_disabled) then
@@ -192,6 +238,16 @@ function EnemyOutGround(enemy, selected_spawn, selected_spawn_target, after_grou
     end
 end
 
+function RespawnEnemy(enemy)
+    if enemy:IsValid() then
+        if enemy:GetHealth() > 0 then
+            SpawnEnemy(enemy:GetValue("EnemyName"), enemy:GetValue("EnemyTypeAtSpawn"))
+            enemy:SetHealth(0)
+        end
+    end
+end
+Package.Export("RespawnEnemy", RespawnEnemy)
+
 function SmartSpawnLogic(spawns_table)
     if table_count(spawns_table) == 0 then
         return
@@ -262,7 +318,7 @@ function SpawnEnemyIntervalFunc()
                         for k, v in pairs(Enemies_Config) do
                             if v.Boss then
                                 if not IsEnemyDisabled(k) then
-                                    if v.Spawning_Config.minimum_round_to_spawn <= ROUND_NB then
+                                    if (v.Spawning_Config and v.Spawning_Config.minimum_round_to_spawn and v.Spawning_Config.minimum_round_to_spawn <= ROUND_NB) then
                                         local chance_to_spawn = v.Spawning_Config.spawn_chance_per_zombie
                                         if math.random(1000) <= chance_to_spawn then
                                             local boss_type
@@ -423,7 +479,7 @@ function AttackBarricade(enemy, barricade, start)
             --zombie:SetLocation(spawn.z_move_to_b_target_location)
             enemy:SetRotation(spawn.z_leave_b_tp_rotation)
         else
-            local random_z_attack_anim = RandomEnemyAttackAnim(enemy)
+            local random_z_attack_anim = RandomEnemyAttackAnim(enemy, enemy:GetValue("EnemyType"))
             enemy:PlayAnimation(random_z_attack_anim[1], AnimationSlotType.FullBody, false)
             EnemyAttackSound(enemy)
             Timer.SetTimeout(function()
@@ -449,10 +505,9 @@ function AttackBarricade(enemy, barricade, start)
 end
 
 function ReachTarget_PrePlayerTargetFailed(enemy)
-    Package.Warn("vzombies : Reach target (blocker) failed, Respawning zombie, the zombie was there : " .. tostring(enemy:GetLocation()))
+    Console.Warn("vzombies : Reach target (blocker) failed, Respawning zombie, the zombie was there : " .. tostring(enemy:GetLocation()))
     Timer.SetTimeout(function()
-        SpawnEnemy(enemy:GetValue("EnemyName"), enemy:GetValue("EnemyTypeAtSpawn"))
-        enemy:SetHealth(0)
+        RespawnEnemy(enemy)
     end, 1)
 end
 
@@ -460,29 +515,130 @@ function EnemyAttack(enemy)
     local charid = enemy:GetValue("Target")
     if charid then
         local plychar = GetCharacterFromId(charid)
-        if plychar then
-            local random_z_attack_anim = RandomEnemyAttackAnim(enemy)
+        if (plychar and not plychar:GetValue("PlayerDown")) then
+            --print("EnemyAttack", enemy, plychar, plychar:GetValue("BotGotInRagdoll"))
+
+            local random_z_attack_anim = RandomEnemyAttackAnim(enemy, enemy:GetValue("EnemyType"))
             enemy:PlayAnimation(random_z_attack_anim[1], AnimationSlotType.FullBody, false)
             enemy:SetValue("Target", nil, false)
             enemy:SetValue("StuckNB", nil, false)
 
-            if not ZDEV_IsModeEnabled("ZDEV_GODMODE") then
-                Timer.SetTimeout(function()
-                    if enemy:IsValid() then
-                        if enemy:GetHealth() > 0 then
-                            if plychar:IsValid() then
-                                if not plychar:GetValue("PlayerDown") then
-                                    local plychar_loc = plychar:GetLocation()
-                                    local z_loc = enemy:GetLocation()
-                                    --print(plychar_loc:DistanceSquared(z_loc))
-                                    if plychar_loc:DistanceSquared(z_loc) <= GetEnemyTable(enemy).Damage_At_Distance_sq then
-                                        plychar:ApplyDamage(GetEnemyTable(enemy).Damage_Amount, "", DamageType.Punch)
+            --print(plychar:GetLocation():DistanceSquared(enemy:GetLocation()), GetEnemyTable(enemy).Damage_At_Distance_sq * 4)
+            if (plychar:GetLocation():DistanceSquared(enemy:GetLocation()) > GetEnemyTable(enemy).Damage_At_Distance_sq * 4) then
+                local w_p_nb = enemy:GetValue("WeirdPunchNB")
+                --print(w_p_nb)
+
+                if plychar:GetPlayer().BOT then
+                    if plychar:GetValue("BotGotInRagdoll") then
+                        if not enemy:GetValue("AppliedUniqueWeirdPunch") then
+                            enemy:SetValue("AppliedUniqueWeirdPunch", true, false)
+                            plychar:SetValue("WeirdPunchCount", plychar:GetValue("WeirdPunchCount") + 1, false)
+                            --print(plychar:GetValue("WeirdPunchCount"))
+                            if plychar:GetValue("WeirdPunchCount") >= Weird_Attack_On_Bots_Unique_Count_Kill then
+                                local health = plychar:GetHealth()
+                                plychar:ApplyDamage(health - 1000)
+                                plychar:SetValue("WeirdPunchCount", 0, false)
+                            end
+                        end
+                    end
+                end
+
+                if w_p_nb < Enemies_Weird_Punch_Respawn_After_x_Weird - 1 then
+                    enemy:SetValue("WeirdPunchNB", w_p_nb + 1, false)
+                else
+                    RespawnEnemy(enemy)
+                    return
+                end
+            else
+                enemy:SetValue("WeirdPunchNB", 0, false)
+                plychar:SetValue("WeirdPunchCount", 0, false)
+            end
+
+            enemy:RotateTo(Rotator(0, VectorGetLookAt(enemy:GetLocation(), plychar:GetLocation()).Yaw, 0), random_z_attack_anim[2]/1000, 0)
+
+            if not plychar:GetPlayer():GetValue("MM_GodMode") then
+                local enemy_table = GetEnemyTable(enemy)
+                if enemy_table.Damage_Amount then
+                    Timer.SetTimeout(function()
+                        if enemy:IsValid() then
+                            if enemy:GetHealth() > 0 then
+                                for k, v in pairs(PLAYING_PLAYERS) do
+                                    if v:IsValid() then
+                                    local char = v:GetControlledCharacter()
+                                        if (char and char:IsValid()) then
+                                            if not char:GetValue("PlayerDown") then
+                                                local plychar_loc = char:GetLocation()
+                                                local z_loc = enemy:GetLocation()
+                                                --print(plychar_loc:DistanceSquared(z_loc))
+                                                if plychar_loc:DistanceSquared(z_loc) <= enemy_table.Damage_At_Distance_sq then
+                                                    local rel = RelRot1(enemy:GetRotation().Yaw, VectorGetLookAt(enemy:GetLocation(), char:GetLocation()).Yaw)
+                                                    if (rel > -Enemies_Damage_Angle_LookAt and rel < Enemies_Damage_Angle_LookAt) then
+                                                        if enemy_table.Damage_Amount then
+                                                            char:ApplyDamage(enemy_table.Damage_Amount, "", DamageType.Punch)
+                                                        end
+                                                        if enemy_table.Custom_Attack_Behavior then
+                                                            if enemy_table.Custom_Attack_Behavior.type == "grab" then
+                                                                if not char:GetValue("PlayerDown") then
+                                                                    local ply = char:GetPlayer()
+                                                                    if ply then
+                                                                        if not char:GetVehicle() then
+                                                                            enemy:PlayAnimation("vzombies-assets::AS_NAAT_Zombie_Grab_To_Wrestle", AnimationSlotType.FullBody, true, 0.1, 0.1)
+                                                                            if not ply.BOT then
+                                                                                char:SetInputEnabled(false)
+                                                                                char:SetCanAim(false)
+                                                                            end
+                                                                            char:PlayAnimation("vzombies-assets::AS_NAAT_Human_Grab_To_Wrestle", AnimationSlotType.FullBody, true)
+
+                                                                            char:SetValue("PlayerGrabbedBy", enemy, true)
+
+                                                                            local l_at = VectorGetLookAt(char:GetLocation(), enemy:GetLocation())
+                                                                            char:SetRotation(Rotator(0, l_at.Yaw, 0))
+
+                                                                            CheckToStopBotReviveTimer(char, false)
+                                                                            if ply.BOT then
+                                                                                BotResetTarget(ply)
+                                                                                ply:SetValue("BotAimPlayer", nil, true)
+
+                                                                                if char:GetValue("DoingAction") then
+                                                                                    --print("STOP MOVETO BOT")
+                                                                                    char:SetValue("DoingAction", nil, false)
+                                                                                    char:MoveTo(char:GetLocation(), 50)
+                                                                                end
+                                                                            end
+                                                                            Timer.SetTimeout(function()
+                                                                                if enemy:IsValid() then
+                                                                                    enemy:StopAnimation("vzombies-assets::AS_NAAT_Zombie_Grab_To_Wrestle")
+                                                                                end
+                                                                                if (char:IsValid() and not char:GetValue("PlayerDown") and char:GetValue("PlayerGrabbedBy") and char:GetValue("PlayerGrabbedBy") == enemy) then
+                                                                                    char:StopAnimation("vzombies-assets::AS_NAAT_Human_Grab_To_Wrestle")
+                                                                                    if not ply.BOT then
+                                                                                        char:SetInputEnabled(true)
+                                                                                        char:SetCanAim(true)
+                                                                                    else
+                                                                                        RequestBotAction(ply)
+                                                                                        ply:SetValue("BotAimPlayer", GetRandomPlayer():GetID(), true)
+                                                                                    end
+                                                                                    char:SetValue("PlayerGrabbedBy", nil, true)
+                                                                                end
+                                                                            end, enemy_table.Custom_Attack_Behavior.Grab_Time_ms)
+                                                                        else
+                                                                            char:LeaveVehicle()
+                                                                        end
+                                                                    end
+                                                                    break
+                                                                end
+                                                            end
+                                                        end
+                                                    end
+                                                end
+                                            end
+                                        end
                                     end
                                 end
                             end
                         end
-                    end
-                end, random_z_attack_anim[2])
+                    end, random_z_attack_anim[2])
+                end
 
                 enemy:SetValue("PunchCoolDownTimer", Timer.SetTimeout(function()
                     if enemy:IsValid() then
@@ -493,7 +649,7 @@ function EnemyAttack(enemy)
                         enemy:SetValue("StuckNB", 0, false)
                         EnemyRefreshTarget(enemy)
                     end
-                end, GetEnemyTable(enemy).Damage_Cooldown_ms), false)
+                end, random_z_attack_anim[3]), false)
             else
                 enemy:SetValue("PunchCoolDownTimer", true, false)
             end
@@ -558,14 +714,19 @@ function ZMoveCompleted(enemy, succeeded)
         end
     end
 end
-VZ_EVENT_SUBSCRIBE("Character", "MoveCompleted", ZMoveCompleted)
+VZ_EVENT_SUBSCRIBE("Character", "MoveComplete", ZMoveCompleted)
 
 VZ_EVENT_SUBSCRIBE("Character", "Death", function(char, last_damage_taken, last_bone_damage, damage_type_reason, hit_from_direction, instigator, causer)
     if char:GetValue("Enemy") == true then
         if causer then
             if causer:IsValid() then
-                if not NanosUtils.IsA(causer, Character) then
-                    local instig_char = causer:GetHandler()
+                if not causer:IsA(Character) then
+                    local instig_char
+                    if causer:IsA(Vehicle) then
+                        instig_char = causer:GetPassenger(0)
+                    else
+                        instig_char = causer:GetHandler()
+                    end
                     if instig_char then
                         local bot = instig_char:GetPlayer()
                         if (bot and bot.BOT) then
@@ -575,6 +736,7 @@ VZ_EVENT_SUBSCRIBE("Character", "Death", function(char, last_damage_taken, last_
                 end
             end
         end
+
         if char:GetValue("AttackB") then
             Timer.ClearInterval(char:GetValue("AttackBInterval"))
             char:SetValue("AttackBInterval", nil, false)
@@ -591,13 +753,14 @@ VZ_EVENT_SUBSCRIBE("Character", "Death", function(char, last_damage_taken, last_
                 local instig_char = instigator:GetControlledCharacter()
                 if instig_char  then
                     local picked_thing = instig_char:GetPicked()
-                    if (picked_thing and picked_thing:IsValid() and NanosUtils.IsA(picked_thing, Melee)) then
+                    if (picked_thing and picked_thing:IsValid() and picked_thing:IsA(Melee)) then
                         AddMoney(instigator, Player_Zombie_Kill_Knife_Money)
                     else
                         AddMoney(instigator, Player_Zombie_Kill_Money)
                     end
                     instigator:SetValue("ZKills", zkills + 1, false)
                     ZombieDie_SpawnRandomPowerup(char)
+                    KILL_COUNT = KILL_COUNT + 1
                 end
             end
         end
@@ -630,9 +793,30 @@ VZ_EVENT_SUBSCRIBE("Character", "Death", function(char, last_damage_taken, last_
             grenade:Explode()
         end
 
+        table.insert(ENEMY_DEAD_RAGDOLLS, char)
+
         Timer.SetTimeout(function()
-            char:Destroy()
+            if char:IsValid() then
+                for i, v in ipairs(ENEMY_DEAD_RAGDOLLS) do
+                    if v == char then
+                        table.remove(ENEMY_DEAD_RAGDOLLS, i)
+                        break
+                    end
+                end
+                char:Destroy()
+            end
         end, DestroyEnemy_After_death_ms)
+
+        local edr_count = table_count(ENEMY_DEAD_RAGDOLLS)
+        if edr_count > Max_Enemies_Dead_Ragdolls then
+            for i = Max_Enemies_Dead_Ragdolls + 1, edr_count do
+                if ENEMY_DEAD_RAGDOLLS[1]:IsValid() then
+                    ENEMY_DEAD_RAGDOLLS[1]:Destroy()
+                end
+                table.remove(ENEMY_DEAD_RAGDOLLS, 1)
+            end
+        end
+
         if (table_count(ENEMY_CHARACTERS) == 0 and REMAINING_ENEMIES_TO_SPAWN == 0 and not WaitingNewRound_Timer) then
             if In_Hellhound_Round then
                 SpawnPowerup(char:GetLocation(), "max_ammo")
@@ -651,6 +835,7 @@ function RandomEnemyJoker(char)
             if not char:IsInRagdollMode() then
                 local rand1000 = math.random(10000)
                 if rand1000 <= joker_chance then
+                    --print("Joker")
                     char:SetRagdollMode(true)
                     Events.BroadcastRemote("JokerZombieSound", char)
                 end
@@ -660,14 +845,37 @@ function RandomEnemyJoker(char)
 end
 
 
+
+function AttachRepackParticle(char, pap_repack_effect)
+    local repack_particle = Particle(
+        Vector(),
+        Rotator(),
+        PAP_Repack_Config[pap_repack_effect].particle_asset,
+        false,
+        true
+    )
+    repack_particle:AttachTo(char, AttachmentRule.SnapToTarget, "", 0)
+    repack_particle:SetRelativeLocation(PAP_Repack_Config[pap_repack_effect].particle_relative_loc)
+    repack_particle:SetLifeSpan(PAP_Repack_Config[pap_repack_effect].particle_lifespan / 1000)
+    return repack_particle
+end
+
+
 local DoubleDamage_Applied = false
 
 VZ_EVENT_SUBSCRIBE("Character", "TakeDamage", function(char, damage, bone, dtype, from_direction, instigator, causer)
     if (char:GetValue("Enemy") == true and damage > 0) then
+        --print("TakeDamage", char:GetValue("EnemyType"), damage, bone, dtype, from_direction, instigator, causer)
+
         if causer then
             if causer:IsValid() then
-                if not NanosUtils.IsA(causer, Character) then
-                    local instig_char = causer:GetHandler()
+                if not causer:IsA(Character) then
+                    local instig_char
+                    if causer:IsA(Vehicle) then
+                        instig_char = causer:GetPassenger(0)
+                    else
+                        instig_char = causer:GetHandler()
+                    end
                     if instig_char then
                         local bot = instig_char:GetPlayer()
                         if (bot and bot.BOT) then
@@ -696,11 +904,13 @@ VZ_EVENT_SUBSCRIBE("Character", "TakeDamage", function(char, damage, bone, dtype
                         ZombieDie_SpawnRandomPowerup(char)
                         instigator:SetValue("ZKills", zkills + 1, false)
                         char:SetHealth(0)
+                        KILL_COUNT = KILL_COUNT + 1
                     end
-                elseif instig_char then
-                    if (not causer or not causer:IsValid() or not NanosUtils.IsA(causer, Melee)) then
+                elseif (instig_char and not char:GetValue("ApplyingRepack")) then
+                    if (not causer or not causer:IsValid() or (not causer:IsA(Melee) and not causer:IsA(Grenade) and not causer:IsA(Vehicle))) then
                         local perks = instig_char:GetValue("OwnedPerks")
                         local mult = 1
+                        local added_damage = 0
                         if (perks and perks["doubletap"]) then
                             mult = mult * PERKS_CONFIG.doubletap.MultDamage
                         end
@@ -713,6 +923,31 @@ VZ_EVENT_SUBSCRIBE("Character", "TakeDamage", function(char, damage, bone, dtype
                                         if v.weapon:IsValid() then
                                             if v.pap then
                                                 mult = mult * Pack_a_punch_damage_mult
+                                                if v.pap_repack_effect then
+                                                    if not instigator:GetValue("RepackCooldown") then
+                                                        --print("PAP Repack Apply", v.pap_repack_effect)
+
+                                                        added_damage = added_damage + PAP_Repack_Config[v.pap_repack_effect].damage_on_target
+                                                        instigator:SetValue("RepackCooldown", true, false)
+                                                        Timer.SetTimeout(function()
+                                                            if instigator:IsValid() then
+                                                                instigator:SetValue("RepackCooldown", nil, false)
+                                                            end
+                                                        end, PAP_Repack_Config[v.pap_repack_effect].cooldown_ms)
+                                                        AttachRepackParticle(char, v.pap_repack_effect)
+
+                                                        for k2, v2 in pairs(Character.GetAll()) do
+                                                            if (v2:IsValid() and v2:GetHealth() > 0 and v2 ~= char and v2:GetValue("Enemy")) then
+                                                                local dist_sq = v2:GetLocation():DistanceSquared(char:GetLocation())
+                                                                if (dist_sq > 0 and dist_sq < PAP_Repack_Config[v.pap_repack_effect].radius_sq) then
+                                                                    v2:SetValue("ApplyingRepack", true, false)
+                                                                    AttachRepackParticle(v2, v.pap_repack_effect)
+                                                                    v2:ApplyDamage(math.max(1, math.floor(PAP_Repack_Config[v.pap_repack_effect].damage_func(dist_sq) + 0.5)), bone, DamageType.Unknown, Vector(), instigator, causer)
+                                                                end
+                                                            end
+                                                        end
+                                                    end
+                                                end
                                             end
                                         end
                                         break
@@ -722,19 +957,19 @@ VZ_EVENT_SUBSCRIBE("Character", "TakeDamage", function(char, damage, bone, dtype
                         end
                         if mult > 1 then
                             DoubleDamage_Applied = true
-                            --print("DOUBLE APPLY", mult)
-                            if char:GetHealth() - damage - damage * mult > 0 then
+                            --print("DOUBLE APPLY", (mult-1))
+                            if (char:GetHealth() - damage - damage * (mult-1) > 0) then
                                 RandomEnemyJoker(char)
                             end
                             if not instigator.BOT then
                                 --print(causer)
                                 if causer then
-                                    char:ApplyDamage(damage * mult, bone, dtype, from_direction, instigator, causer)
+                                    char:ApplyDamage(damage * (mult-1) + added_damage, bone, dtype, from_direction, instigator, causer)
                                 else
-                                    char:ApplyDamage(damage * mult, bone, dtype, from_direction, instigator)
+                                    char:ApplyDamage(damage * (mult-1) + added_damage, bone, dtype, from_direction, instigator)
                                 end
                             else
-                                char:ApplyDamage(damage * mult, bone, dtype, from_direction, nil, causer)
+                                char:ApplyDamage(damage * (mult-1) + added_damage, bone, dtype, from_direction, nil, causer)
                             end
                         elseif char:GetHealth() - damage > 0 then
                             RandomEnemyJoker(char)
@@ -746,6 +981,9 @@ VZ_EVENT_SUBSCRIBE("Character", "TakeDamage", function(char, damage, bone, dtype
         if DoubleDamage_Applied then
             DoubleDamage_Applied = false
             --print("DoubleDamage_Applied = false so TakeDamage called 2 times, good")
+        end
+        if (char:IsValid() and char:GetValue("ApplyingRepack")) then
+            char:SetValue("ApplyingRepack", nil, false)
         end
     end
 end)
@@ -759,8 +997,7 @@ Timer.SetInterval(function()
                     --print("Character Reached MAP Z LIMITS")
                     if v:GetValue("Enemy") then
                         if v:GetHealth() > 0 then
-                            SpawnEnemy(v:GetValue("EnemyName"), v:GetValue("EnemyTypeAtSpawn"))
-                            v:SetHealth(0)
+                            RespawnEnemy(v)
                         end
                     elseif v:GetPlayer() then
                         PlayerCharacterDie(v)
@@ -791,8 +1028,7 @@ Timer.SetInterval(function()
                                         stuck_nb = stuck_nb + 1
                                         v:SetValue("StuckNB", stuck_nb, false)
                                         if stuck_nb >= Enemies_Stuck_Respawn_After_x_Stuck then
-                                            SpawnEnemy(v:GetValue("EnemyName"), v:GetValue("EnemyTypeAtSpawn"))
-                                            v:SetHealth(0)
+                                            RespawnEnemy(v)
                                             --print("Zombie Respawn, stuck")
                                         end
                                     else
@@ -830,16 +1066,21 @@ function UpdateEnemyLookAt(v)
 end
 
 Timer.SetInterval(function()
-    for k, v in pairs(GetMergedEnemiesChars()) do
-        UpdateEnemyLookAt(v)
+    if ROUND_NB > 0 then
+        for k, v in pairs(GetMergedEnemiesChars()) do
+            UpdateEnemyLookAt(v)
+        end
     end
 end, Enemy_Look_At_Update_ms)
 
-VZ_EVENT_SUBSCRIBE("Character", "RagdollModeChanged", function(enemy, old_state, new_state)
+VZ_EVENT_SUBSCRIBE("Character", "RagdollModeChange", function(enemy, old_state, new_state)
     if enemy:GetValue("Enemy") then
+        --print("Enemy RagdollModeChange", old_state, new_state)
+
         if new_state then
             enemy:SetCollision(CollisionType.StaticOnly)
             --print("Zombie Ragdoll", zombie:GetHealth())
+
             if enemy:GetHealth() > 0 then
                 local target_type = enemy:GetValue("Target_type")
                 if (target_type == "barricade" or target_type == "vault") then
@@ -850,8 +1091,7 @@ VZ_EVENT_SUBSCRIBE("Character", "RagdollModeChanged", function(enemy, old_state,
                         enemy:SetValue("AttackBID", nil, false)
                     end
                     Timer.SetTimeout(function()
-                        SpawnEnemy(enemy:GetValue("EnemyName"), enemy:GetValue("EnemyTypeAtSpawn"))
-                        enemy:SetHealth(0)
+                        RespawnEnemy(enemy)
                     end, Enemies_Ragdoll_Get_Up_Timeout_ms)
                 elseif target_type == "player" then
                     enemy:SetValue("Target", nil, false)
@@ -861,6 +1101,7 @@ VZ_EVENT_SUBSCRIBE("Character", "RagdollModeChanged", function(enemy, old_state,
                         if enemy:IsValid() then
                             if enemy:GetHealth() > 0 then
                                 enemy:SetRagdollMode(false)
+                                --print("enemy:SetRagdollMode(false)", enemy)
 
                                 local zloc = enemy:GetLocation()
 
@@ -882,24 +1123,26 @@ end)
 
 Timer.SetInterval(function()
     if not GAME_PAUSED then
-        for k, v in pairs(GetMergedEnemiesChars()) do
-            if v:IsValid() then
-                if not v:IsInRagdollMode() then
-                    if not v:GetValue("PunchCoolDownTimer") then
-                        local target_type = v:GetValue("Target_type")
-                        if target_type then
-                            if target_type == "player" then
-                                local charid = v:GetValue("Target")
-                                if charid then
-                                    local char = GetCharacterFromId(charid)
-                                    if (char and not char:GetValue("PlayerDown")) then
-                                        local zloc = v:GetLocation()
-                                        local targetloc = char:GetLocation()
-                                        local dir = char:GetVelocity():GetSafeNormal()
-                                        if (zloc:DistanceSquared(targetloc) < GetEnemyTable(v).Damage_At_Distance_sq or zloc:DistanceSquared(targetloc + dir * (char:GetVelocity():Size() / Enemies_Damage_Prediction_Div)) < GetEnemyTable(v).Damage_At_Distance_sq) then
-                                            --print("Zombie StopMovement, distance : " .. tostring(zloc:Distance(targetloc)))
-                                            v:StopMovement()
-                                            ZMoveCompleted(v, true)
+        if ROUND_NB > 0 then
+            for k, v in pairs(GetMergedEnemiesChars()) do
+                if v:IsValid() then
+                    if not v:IsInRagdollMode() then
+                        if not v:GetValue("PunchCoolDownTimer") then
+                            local target_type = v:GetValue("Target_type")
+                            if target_type then
+                                if target_type == "player" then
+                                    local charid = v:GetValue("Target")
+                                    if charid then
+                                        local char = GetCharacterFromId(charid)
+                                        if (char and not char:GetValue("PlayerDown")) then
+                                            local zloc = v:GetLocation()
+                                            local targetloc = char:GetLocation()
+                                            local dir = char:GetVelocity():GetSafeNormal()
+                                            if (zloc:DistanceSquared(targetloc) < GetEnemyTable(v).Damage_At_Distance_sq or zloc:DistanceSquared(targetloc + dir * (char:GetVelocity():Size() / Enemies_Damage_Prediction_Div)) < GetEnemyTable(v).Damage_At_Distance_sq) then
+                                                --print("Zombie StopMovement, distance : " .. tostring(zloc:Distance(targetloc)))
+                                                v:StopMovement()
+                                                ZMoveCompleted(v, true)
+                                            end
                                         end
                                     end
                                 end
@@ -946,7 +1189,7 @@ function GetCustomSpawnsUnlocked(enemy_table)
     local unlocked_spawns = {}
     if _ENV[enemy_table.Spawning_Config.table_name] then
         for k, v in pairs(_ENV[enemy_table.Spawning_Config.table_name]) do
-            if ROOMS_UNLOCKED[v[enemy_table.Spawning_Config.room_key]] then
+            if (ROOMS_UNLOCKED[v[enemy_table.Spawning_Config.room_key]] and not ROOMS_SPAWNS_DISABLED[v[enemy_table.Spawning_Config.room_key]]) then
                 table.insert(unlocked_spawns, v)
             end
         end
@@ -967,7 +1210,7 @@ VZ_EVENT_SUBSCRIBE("Events", "VZ_SpawnGib", function(char, bone, goingtodie)
                 --print("Kill Z Head")
             end
         end
-    elseif char:GetValue("EnemyName") == "Zombie" then
+    elseif enemy_table.Types.crawl then
         if not goingtodie then
             if char:GetValue("EnemyType") ~= "crawl" then
                 if (bone == "foot_l" or bone == "foot_r" or bone == "calf_l" or bone == "calf_r" or bone == "thigh_l" or bone == "thigh_r") then
@@ -991,7 +1234,7 @@ Timer.SetInterval(function()
                         if not char:IsInWater() then -- Copilot idea
                             local char_loc = char:GetLocation()
                             if napalm_loc:DistanceSquared(char_loc) <= Napalm_Fire_Radius_sq then
-                                if not ZDEV_IsModeEnabled("ZDEV_GODMODE") then
+                                if not v2:GetValue("MM_GodMode") then
                                     char:ApplyDamage(Napalm_Fire_Damage)
                                     Events.CallRemote("PlayVZSound", v2, {random_sound_tbl=RANDOM_SOUNDS.napalm_fire_sound})
                                 end
@@ -1004,8 +1247,8 @@ Timer.SetInterval(function()
     end
 end, Napalm_Fire_Damage_Interval)
 
-if ZDEV_IsModeEnabled("ZDEV_COMMANDS") then
-    VZ_EVENT_SUBSCRIBE("Server", "Chat", function(text, ply)
+--if ZDEV_IsModeEnabled("ZDEV_COMMANDS") then
+    VZ_EVENT_SUBSCRIBE("Chat", "PlayerSubmit", function(text, ply)
         local char = ply:GetControlledCharacter()
         if char then
             if text then
@@ -1014,9 +1257,13 @@ if ZDEV_IsModeEnabled("ZDEV_COMMANDS") then
                     if split_txt[1] == "/spawnboss" then
                         if Enemies_Config[split_txt[2]] then
                             local boss_type
-                            for k, v in pairs(Enemies_Config[split_txt[2]].Types) do
-                                boss_type = k
-                                break
+                            if (split_txt[3] and Enemies_Config[split_txt[2]].Types[split_txt[3]]) then
+                                boss_type = split_txt[3]
+                            else
+                                for k, v in pairs(Enemies_Config[split_txt[2]].Types) do
+                                    boss_type = k
+                                    break
+                                end
                             end
                             SpawnEnemy(split_txt[2], boss_type)
                         end
@@ -1025,5 +1272,5 @@ if ZDEV_IsModeEnabled("ZDEV_COMMANDS") then
             end
         end
     end)
-end
+--end
 

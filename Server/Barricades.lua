@@ -31,7 +31,8 @@ function SpawnBarricadePart(root, barricade_config, index)
 
     barricade_part:SetScale(Vector(2, 0.1, 0.025))
     barricade_part:SetCollision(CollisionType.NoCollision)
-    barricade_part:SetMaterial("vzombies-assets::M_Plank")
+    barricade_part:SetMaterial("nanos-world::M_NanosMasked")
+    barricade_part:SetMaterialColorParameter("Tint", Color(0.545098, 0.352941, 0.168627))
 
     return barricade_part
 end
@@ -184,7 +185,7 @@ function GetSpawnFromZSpawnID(zspawnid)
     end
 end
 
-VZ_EVENT_SUBSCRIBE("Events", "RepairBarricade", function(ply, zspawnid)
+VZ_EVENT_SUBSCRIBE_REMOTE("RepairBarricade", function(ply, zspawnid)
     if ply:GetValue("ZMoney") ~= -666 then
         local char = ply:GetControlledCharacter()
         if char then
@@ -200,15 +201,3 @@ VZ_EVENT_SUBSCRIBE("Events", "RepairBarricade", function(ply, zspawnid)
         end
     end
 end)
-
-if ZDEV_IsModeEnabled("ZDEV_COMMANDS") then
-    VZ_EVENT_SUBSCRIBE("Server", "Chat", function(text, ply)
-        if text == "/breakb" then
-            for k, v in pairs(BARRICADES) do
-                for i = 1, 5 do
-                    DamageBarricade(v)
-                end
-            end
-        end
-    end)
-end

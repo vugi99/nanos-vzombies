@@ -23,13 +23,14 @@ function GetPlayerInventoryTable(ply)
     end
 end
 
-function GenerateWeaponToInsert(weapon_name, ammo_bag, slot, ammo_clip, pap)
+function GenerateWeaponToInsert(weapon_name, ammo_bag, slot, ammo_clip, pap, pap_repack_effect)
     return {
         ammo_bag = ammo_bag,
         ammo_clip = ammo_clip,
         weapon_name = weapon_name,
         slot = slot,
         pap = pap,
+        pap_repack_effect = pap_repack_effect,
     }
 end
 
@@ -62,6 +63,7 @@ end
 local function GiveInventoryPlayerWeapon(char, charInvID, i, v)
     --print("GiveInventoryPlayerWeapon", char, charInvID, i, v)
     local weapon = NanosWorldWeapons[v.weapon_name](Vector(), Rotator())
+    weapon:SetValue("WeaponName", v.weapon_name, false)
     weapon:SetAmmoBag(v.ammo_bag)
     if v.ammo_clip then
         weapon:SetAmmoClip(v.ammo_clip)
@@ -72,6 +74,10 @@ local function GiveInventoryPlayerWeapon(char, charInvID, i, v)
     --print("holding", char:GetPicked())
     if v.pap then
         weapon:SetMaterial(Pack_a_punch_weapon_material, Pack_a_punch_weapon_material_index)
+    end
+
+    if v.pap_repack_effect then
+        weapon:SetValue("PAPRepackEffect", v.pap_repack_effect, true)
     end
 
     local has_speed_cola = char:GetValue("OwnedPerks").speed_cola
@@ -105,7 +111,7 @@ function EquipSlot(char, slot)
     if charInvID then
         local Inv = PlayersCharactersWeapons[charInvID]
         local picked_thing = char:GetPicked()
-        if (not picked_thing or (not NanosUtils.IsA(picked_thing, Grenade) and not NanosUtils.IsA(picked_thing, Melee))) then
+        if (not picked_thing or (not picked_thing:IsA(Grenade) and not picked_thing:IsA(Melee))) then
             if slot ~= Inv.selected_slot then
                 local found_weapon_slot = false
 
@@ -172,7 +178,7 @@ function EquipSlot(char, slot)
     end
 end
 
-function AddCharacterWeapon(char, weapon_name, ammo_bag, equip, ammo_clip, pap)
+function AddCharacterWeapon(char, weapon_name, ammo_bag, equip, ammo_clip, pap, pap_repack_effect)
     --print("AddCharacterWeapon", char, weapon_name, ammo_bag, equip, ammo_clip)
     local charInvID = GetCharacterInventory(char)
     local insert_sl = 1
@@ -229,7 +235,7 @@ function AddCharacterWeapon(char, weapon_name, ammo_bag, equip, ammo_clip, pap)
         insert_sl = GetInsertSlot(char, PlayersCharactersWeapons[charInvID])
         --print("GetInsertSlot", insert_sl)
 
-        table.insert(PlayersCharactersWeapons[charInvID].weapons, GenerateWeaponToInsert(weapon_name, ammo_bag, insert_sl, ammo_clip, pap))
+        table.insert(PlayersCharactersWeapons[charInvID].weapons, GenerateWeaponToInsert(weapon_name, ammo_bag, insert_sl, ammo_clip, pap, pap_repack_effect))
         if equip then
             EquipSlot(char, insert_sl)
         else
@@ -240,7 +246,7 @@ function AddCharacterWeapon(char, weapon_name, ammo_bag, equip, ammo_clip, pap)
             char = char,
             selected_slot = insert_sl,
             weapons = {
-                GenerateWeaponToInsert(weapon_name, ammo_bag, insert_sl, ammo_clip, pap),
+                GenerateWeaponToInsert(weapon_name, ammo_bag, insert_sl, ammo_clip, pap, pap_repack_effect),
             },
         })
         EquipSlot(char, insert_sl)
@@ -261,7 +267,7 @@ VZ_EVENT_SUBSCRIBE("Character", "Destroy", function(char)
 end)
 
 VZ_EVENT_SUBSCRIBE("Weapon", "Drop", function(weapon, char, was_triggered_by_player)
-    --print("Drop", weapon, char, was_triggered_by_player, weapon:GetAssetName())
+    --print("Drop", weapon, char, was_triggered_by_player, weapon:GetMesh())
     local charInvID = GetCharacterInventory(char)
     if charInvID then
         for i, v in ipairs(PlayersCharactersWeapons[charInvID].weapons) do
@@ -269,7 +275,7 @@ VZ_EVENT_SUBSCRIBE("Weapon", "Drop", function(weapon, char, was_triggered_by_pla
                 if not v.destroying then
                     DetachFlashLightFromWeapon(weapon)
                     weapon:SetValue("DroppedWeaponName", v.weapon_name, false)
-                    weapon:SetValue("DroppedWeaponPAP", v.pap, false)
+                    weapon:SetValue("DroppedWeaponPAP", {v.pap, v.pap_repack_effect}, false)
                     weapon:SetValue("DroppedWeaponDTimeout", Timer.SetTimeout(function()
                         if weapon:IsValid() then
                             weapon:Destroy()
@@ -300,35 +306,39 @@ VZ_EVENT_SUBSCRIBE("Weapon", "PickUp", function(weapon, char)
         local ammo_clip = weapon:GetAmmoClip()
         local pap = weapon:GetValue("DroppedWeaponPAP")
         weapon:Destroy()
-        AddCharacterWeapon(char, d_weap_name, ammo_bag, true, ammo_clip, pap)
+        AddCharacterWeapon(char, d_weap_name, ammo_bag, true, ammo_clip, pap[1], pap[2])
     end
 end)
 
-VZ_EVENT_SUBSCRIBE("Events", "VZ_Switch_Weapon", function(ply)
+VZ_EVENT_SUBSCRIBE_REMOTE("VZ_Switch_Weapon", function(ply)
     local char = ply:GetControlledCharacter()
     if char then
-        local charInvID = GetCharacterInventory(char)
-        if charInvID then
-            local has_three_gun = char:GetValue("OwnedPerks").three_gun
-            if PlayersCharactersWeapons[charInvID].selected_slot == 1 then
-                EquipSlot(char, 2)
-            elseif (PlayersCharactersWeapons[charInvID].selected_slot == 2 and not has_three_gun) then
-                EquipSlot(char, 1)
-            elseif (PlayersCharactersWeapons[charInvID].selected_slot == 2 and has_three_gun) then
-                EquipSlot(char, 3)
-            elseif PlayersCharactersWeapons[charInvID].selected_slot == 3 then
-                EquipSlot(char, 1)
+        if not char:GetValue("PlayerDown") then
+            if not char:GetVehicle() then
+                local charInvID = GetCharacterInventory(char)
+                if charInvID then
+                    local has_three_gun = char:GetValue("OwnedPerks").three_gun
+                    if PlayersCharactersWeapons[charInvID].selected_slot == 1 then
+                        EquipSlot(char, 2)
+                    elseif (PlayersCharactersWeapons[charInvID].selected_slot == 2 and not has_three_gun) then
+                        EquipSlot(char, 1)
+                    elseif (PlayersCharactersWeapons[charInvID].selected_slot == 2 and has_three_gun) then
+                        EquipSlot(char, 3)
+                    elseif PlayersCharactersWeapons[charInvID].selected_slot == 3 then
+                        EquipSlot(char, 1)
+                    end
+                end
             end
         end
     end
 end)
 
-VZ_EVENT_SUBSCRIBE("Events", "PickupGrenade", function(ply)
+VZ_EVENT_SUBSCRIBE_REMOTE("PickupGrenade", function(ply)
     if ply:IsValid() then
         if not GAME_PAUSED then
             local char = ply:GetControlledCharacter()
             if char then
-                if not char:GetValue("PlayerDown") then
+                if (not char:GetValue("PlayerDown") and not char:GetVehicle()) then
                     if not char:IsInRagdollMode() then
                         local grenades = char:GetValue("ZGrenadesNB")
                         if (grenades and grenades > 0) then
@@ -381,7 +391,7 @@ VZ_EVENT_SUBSCRIBE("Grenade", "Throw", function(grenade)
             local char = GetCharacterFromId(char_id)
             if char then
                 if (not char:GetValue("PlayerDown") and not GAME_PAUSED) then
-                    if not ZDEV_IsModeEnabled("ZDEV_INFINITE_GRENADES") then
+                    if not char:GetPlayer():GetValue("MM_InfGrenades") then
                         char:SetValue("ZGrenadesNB", char:GetValue("ZGrenadesNB") - 1, true)
                     end
 
@@ -397,7 +407,7 @@ VZ_EVENT_SUBSCRIBE("Grenade", "Throw", function(grenade)
             end
         end
     else
-        -- Unused code because grenade explosion destroys the gib
+        -- Destroy unused because grenade explode, could be uncommented if it's broken somehow
         --[[Timer.SetTimeout(function()
             if grenade:IsValid() then
                 grenade:Destroy()
@@ -423,13 +433,13 @@ VZ_EVENT_SUBSCRIBE("Grenade", "Throw", function(grenade)
     end
 end)
 
-VZ_EVENT_SUBSCRIBE("Events", "ThrowGrenade", function(ply)
+VZ_EVENT_SUBSCRIBE_REMOTE("ThrowGrenade", function(ply)
     if ply:IsValid() then
         if not GAME_PAUSED then
             local char = ply:GetControlledCharacter()
             if char then
                 local grenade = char:GetPicked()
-                if (grenade and NanosUtils.IsA(grenade, Grenade)) then
+                if (grenade and grenade:IsA(Grenade)) then
                     grenade:ReleaseUse()
                 end
             end
@@ -465,11 +475,11 @@ function SpawnKnife(location, rotation)
 	return melee
 end
 
-VZ_EVENT_SUBSCRIBE("Events", "UseKnife", function(ply)
+VZ_EVENT_SUBSCRIBE_REMOTE("UseKnife", function(ply)
     if ply:IsValid() then
         local char = ply:GetControlledCharacter()
         if char then
-            if not char:GetValue("PlayerDown") then
+            if (not char:GetValue("PlayerDown") and not char:GetVehicle()) then
                 if char:GetValue("CanUseKnife") then
 
                     local charInvID = GetCharacterInventory(char)
@@ -528,7 +538,7 @@ end)
 function AttachFlashLightToCurWeapon(char)
     local picked_thing = char:GetPicked()
     if picked_thing then
-        if NanosUtils.IsA(picked_thing, Weapon) then
+        if picked_thing:IsA(Weapon) then
             local flashlight = Light(
                 Vector(0, 0, 0),
                 Rotator(0, 0, 0),
@@ -556,13 +566,29 @@ function DetachFlashLightFromWeapon(weapon)
     end
 end
 
-VZ_EVENT_SUBSCRIBE("Character", "WeaponAimModeChanged", function(char, old_state, new_state)
-    --print("WeaponAimModeChanged", new_state)
+VZ_EVENT_SUBSCRIBE("Character", "WeaponAimModeChange", function(char, old_state, new_state)
+    --print("WeaponAimModeChange", new_state)
     local ply = char:GetPlayer()
     if ply then
         if not ply.BOT then
             if ply:GetValue("AimLocked") then
                 if new_state == AimMode.None then
+                    if (not char:GetValue("PlayerDown") and not char:GetVehicle()) then
+                        char:SetWeaponAimMode(AimMode.ZoomedFar)
+                    end
+                end
+            end
+        end
+    end
+end)
+
+VZ_EVENT_SUBSCRIBE_REMOTE("ToggleLockAim", function(ply)
+    local char = ply:GetControlledCharacter()
+    if char then
+        if (not char:GetVehicle() and not char:GetValue("PlayerDown")) then
+            ply:SetValue("AimLocked", not ply:GetValue("AimLocked"), false)
+            if ply:GetValue("AimLocked") then
+                if char:GetWeaponAimMode() == AimMode.None then
                     char:SetWeaponAimMode(AimMode.ZoomedFar)
                 end
             end
@@ -570,21 +596,9 @@ VZ_EVENT_SUBSCRIBE("Character", "WeaponAimModeChanged", function(char, old_state
     end
 end)
 
-VZ_EVENT_SUBSCRIBE("Events", "ToggleLockAim", function(ply)
-    ply:SetValue("AimLocked", not ply:GetValue("AimLocked"), false)
-    if ply:GetValue("AimLocked") then
-        local char = ply:GetControlledCharacter()
-        if char then
-            if char:GetWeaponAimMode() == AimMode.None then
-                char:SetWeaponAimMode(AimMode.ZoomedFar)
-            end
-        end
-    end
-end)
-
 function PickupGib(char, gib_data)
     if gib_data then
-        if not char:GetValue("PlayerDown") then
+        if (not char:GetValue("PlayerDown") and not char:GetVehicle()) then
             if not char:IsInRagdollMode() then
                 local enemy_table = Enemies_Config[gib_data[1]]
                 if enemy_table then
@@ -593,7 +607,7 @@ function PickupGib(char, gib_data)
                             local gib_grenade = Grenade(
                                 Vector(0, 0, 0),
                                 Rotator(0, 0, 0),
-                                Enemies_Config[gib_data[1]].Gibs[gib_data[2]].asset,
+                                gib_data[4],
                                 "",
                                 "",
                                 CollisionType.IgnoreOnlyPawn
@@ -604,7 +618,7 @@ function PickupGib(char, gib_data)
                             gib_grenade:SetTimeToExplode(Enemies_Gibs_Destroy_Timeout_ms / 1000)
 
                             if gib_data[3] then
-                                SetGibMaterials(gib_data[3], gib_grenade, gib_data[2], enemy_table)
+                                SetGibMaterials(gib_grenade, gib_data[2], enemy_table, gib_data[3])
                             end
 
                             if gib_data[2] == enemy_table.Gibs_heart_bone then
@@ -639,7 +653,7 @@ function PickupGib(char, gib_data)
     end
 end
 
-VZ_EVENT_SUBSCRIBE("Events", "PickupGib", function(ply, gib_data)
+VZ_EVENT_SUBSCRIBE_REMOTE("PickupGib", function(ply, gib_data)
     if ply:IsValid() then
         local char = ply:GetControlledCharacter()
         if char then

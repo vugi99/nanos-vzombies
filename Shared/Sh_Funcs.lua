@@ -77,13 +77,22 @@ if VZ_SUBSCRIBED_EVENTS then
     for i, v in ipairs(VZ_SUBSCRIBED_EVENTS) do
         _ENV[v.class].Subscribe(table.unpack(v.params))
     end
+    for i, v in ipairs(VZ_REMOTE_SUBSCRIBED_EVENTS) do
+        Events.SubscribeRemote(table.unpack(v.params))
+    end
 else
     VZ_SUBSCRIBED_EVENTS = {}
+    VZ_REMOTE_SUBSCRIBED_EVENTS = {}
 end
 
 function VZ_EVENT_SUBSCRIBE(class, ...)
     table.insert(VZ_SUBSCRIBED_EVENTS, {class = class, params = {...}})
     return _ENV[class].Subscribe(...)
+end
+
+function VZ_EVENT_SUBSCRIBE_REMOTE(...)
+    table.insert(VZ_REMOTE_SUBSCRIBED_EVENTS, {params = {...}})
+    return Events.SubscribeRemote(...)
 end
 
 
@@ -123,6 +132,7 @@ function ZDEV_IsModeEnabled(mode)
         return false
     end
 end
+Package.Export("ZDEV_IsModeEnabled", ZDEV_IsModeEnabled)
 
 function switch(key, tbl)
     if tbl[key] then
@@ -145,12 +155,19 @@ function CallENVFunc_NoError(name, ...)
 end
 
 function VZ_GetFeatureValue(feature_name, key)
-    return VZ_GLOBAL_FEATURES[feature_name][key]
+    if VZ_GLOBAL_FEATURES[feature_name] then
+        return VZ_GLOBAL_FEATURES[feature_name][key]
+    end
 end
+Package.Export("VZ_GetFeatureValue", VZ_GetFeatureValue)
+
 
 function VZ_GetGamemodeConfigValue(key)
-    return VZ_GAMEMODES_CONFIG[VZ_SELECTED_GAMEMODE].Config[key]
+    if VZ_GAMEMODES_CONFIG[VZ_SELECTED_GAMEMODE].Config then
+        return VZ_GAMEMODES_CONFIG[VZ_SELECTED_GAMEMODE].Config[key]
+    end
 end
+Package.Export("VZ_GetGamemodeConfigValue", VZ_GetGamemodeConfigValue)
 
 function ContainsString(str, search_str)
     local wo_search_str, is_str = str:gsub(search_str, "")
@@ -182,9 +199,52 @@ function IsEnemyDisabled(EnemyName)
     end
 end
 
+function VectorGetLookAt(vec1, to)
+    return (to - vec1):Rotation()
+end
+
+function IsPointInRectangle(entity_location, trigger_loc, trigger_rot, extent)
+
+    -- Check if the entity location is in the box, the center of the box is the trigger location, the rectangle size is the extent and the rectangle rotation is the trigger rotation
+    local box_center = trigger_loc
+    local box_size = extent
+    local box_rot = trigger_rot
+
+    local entity_location_to_box_center = Vector(box_center.X - entity_location.X, box_center.Y - entity_location.Y, box_center.Z - entity_location.Z)
+    local entity_location_to_box_center_rotated = box_rot:RotateVector(entity_location_to_box_center)
+
+    return math.abs(entity_location_to_box_center_rotated.X) <= box_size.X and math.abs(entity_location_to_box_center_rotated.Y) <= box_size.Y and math.abs(entity_location_to_box_center_rotated.Z) <= box_size.Z
+end
+
+function CheckIfEntityInRectangle(class, trigger_loc, trigger_rot, extent)
+    for k, v in pairs(class.GetPairs()) do
+        if v:IsValid() then
+            local ret = IsPointInRectangle(v:GetLocation(), trigger_loc, trigger_rot, extent)
+            if ret then return true end
+        end
+    end
+    return false
+end
+
+function VZ_IsAdmin(ply)
+    if ply then
+        if ply.BOT then
+            return false
+        end
+        if Server_Admins_Steamid then
+            for i, v in ipairs(Server_Admins_Steamid) do
+                if v == ply:GetSteamID() then
+                    return true
+                end
+            end
+        end
+    end
+    return false
+end
+Package.Export("VZ_IsAdmin", VZ_IsAdmin)
 
 if ZDEV_IsModeEnabled("ZDEV_DEBUG_FUNCTION_CALLS") then
-    debug.sethook(function(event)
+    debug.sethook(function()
         local info = debug.getinfo(2)
 
         if info.what == "Lua" then

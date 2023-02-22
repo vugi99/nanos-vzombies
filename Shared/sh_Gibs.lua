@@ -43,18 +43,31 @@ VZ_EVENT_SUBSCRIBE("Character", "TakeDamage", function(char, damage, bone, type,
     end
 end)
 
-function SetGibMaterials(char_asset, gib, bone, enemy_table)
-    if char_asset then
-        if enemy_table.Models_Materials[char_asset] then
-            for i, v in ipairs(enemy_table.Gibs[bone].materials) do
-                local material_part_asset_index = enemy_table.Models_Materials[char_asset][v]
-                if material_part_asset_index then
-                    if enemy_table.Enemy_Materials_Assets[v][material_part_asset_index] then
-                        --print("Set Gib Mat", bone, i-1, enemy_table.Enemy_Materials_Assets[v][material_part_asset_index])
-                        gib:SetMaterial(enemy_table.Enemy_Materials_Assets[v][material_part_asset_index], i-1)
-                    end
+function SetGibMaterials(gib, bone, enemy_table, enemy_mats)
+    for i, v in ipairs(enemy_table.Gibs[bone].materials) do
+        --print(v)
+        gib:SetMaterial(enemy_mats[v][2], i-1)
+    end
+end
+
+function GetRealGibAsset(char, gib_asset)
+    local enemy_table = GetEnemyTable(char)
+    if type(gib_asset) == "table" then
+        local char_mesh = char:GetMesh()
+        for i, v in ipairs(enemy_table.Models) do
+            if type(v) == "string" then
+                if v == char_mesh then
+                    gib_asset = gib_asset[i]
+                    break
+                end
+            else
+                if v.asset == char_mesh then
+                    gib_asset = gib_asset[i]
+                    break
                 end
             end
         end
     end
+
+    return gib_asset
 end

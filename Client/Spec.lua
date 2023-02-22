@@ -1,6 +1,7 @@
 
 
 Spectating_Player = nil
+Free_Cam = nil
 
 function GetResetPlyID(old_ply_id, prev_ply)
     local selected_ply_id
@@ -8,7 +9,7 @@ function GetResetPlyID(old_ply_id, prev_ply)
     for k, v in pairs(Player.GetPairs()) do
         if not v.BOT then
             if v ~= Client.GetLocalPlayer() then
-                if v:GetID() ~= old_ply_id then
+                if (v:GetID() ~= old_ply_id or Free_Cam) then
                     local char = v:GetControlledCharacter()
                     if char then
                         if (not selected_ply_id or ((v:GetID() < selected_ply_id and not prev_ply) or (v:GetID() > selected_ply_id and prev_ply))) then
@@ -49,6 +50,7 @@ end
 function IsSpectatingPlayerCharacter(char)
     if Spectating_Player then
         local spec_char = Spectating_Player:GetControlledCharacter()
+        --print("IsSpectatingPlayerCharacter", spec_char, char, Spectating_Player:GetID())
         if spec_char == char then
             return true
         end
@@ -56,6 +58,7 @@ function IsSpectatingPlayerCharacter(char)
 end
 
 function SpectatePlayer(to_spec)
+    --print("SpectatePlayer", to_spec)
     if to_spec then
         Client.GetLocalPlayer():Spectate(to_spec)
         Spectating_Player = to_spec
@@ -71,13 +74,16 @@ function SpectatePlayer(to_spec)
 end
 
 function StopSpectate()
+    --print("StopSpectate")
     Client.GetLocalPlayer():ResetCamera()
     Spectating_Player = nil
     One_Time_Updates_Canvas:Repaint()
+    Free_Cam = nil
 end
 
 VZ_EVENT_SUBSCRIBE("Player", "Possess", function(ply, char)
-    --print("Player Possess")
+    --print("Player Possess", ply:GetID(), char:GetID(), ply:GetClass(), char:GetClass())
+    --print("Client.GetLocalPlayer()", Client.GetLocalPlayer(), Client.GetLocalPlayer():GetID(), Client.GetLocalPlayer():GetClass())
     if ply == Client.GetLocalPlayer() then
         StopSpectate()
     elseif (not Spectating_Player and not Client.GetLocalPlayer():GetControlledCharacter()) then

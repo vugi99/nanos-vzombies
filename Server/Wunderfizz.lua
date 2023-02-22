@@ -178,7 +178,7 @@ function OpenActiveWunderfizz(char)
     FakeBottleInterval()
 end
 
-VZ_EVENT_SUBSCRIBE("Events", "TakeWunderfizzPerk", function(ply, bottle)
+VZ_EVENT_SUBSCRIBE_REMOTE("TakeWunderfizzPerk", function(ply, bottle)
     if ply:IsValid() then
         if ply:GetValue("ZMoney") ~= -666 then
             local char = ply:GetControlledCharacter()
@@ -205,7 +205,7 @@ VZ_EVENT_SUBSCRIBE("Events", "TakeWunderfizzPerk", function(ply, bottle)
     end
 end)
 
-VZ_EVENT_SUBSCRIBE("Events", "BuyWunderfizz", function(ply, SM_Wunder)
+VZ_EVENT_SUBSCRIBE_REMOTE("BuyWunderfizz", function(ply, SM_Wunder)
     if (SM_Wunder and SM_Wunder:IsValid()) then
         if ply:GetValue("ZMoney") ~= -666 then
             local char = ply:GetControlledCharacter()

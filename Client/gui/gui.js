@@ -7,7 +7,12 @@ Events.Subscribe = function(name, func) {
     testFuncs[name] = function(...Args) {
         return func(...Args)
     }
+}
+Events.Call = function(event_name, ...Args) {
+    console.log("Event Call", event_name, Args)
 }*/
+
+
 
 function getRandomInt(max) {
     return Math.floor(Math.random() * Math.floor(max));
@@ -84,8 +89,8 @@ const waves_text = document.getElementById("waves_text");
 
 Events.Subscribe("NewWave", function(wave_text) {
     waves_text.innerHTML = wave_text
-    waves_text.className = "waves_animation"
-    setTimeout(() => {  waves_text.className = ""; }, 4000);
+    waves_text.classList.add("waves_animation")
+    setTimeout(() => {  waves_text.classList.remove("waves_animation"); }, 4000);
 })
 
 Events.Subscribe("SetWave", function(wave_text) {
@@ -184,11 +189,13 @@ Events.Subscribe("ShowTab", function(players) {
         div_line.classList.add("tab_line");
 
         for (let i2 = 0; i2 < players[i].length; i2++) {
-            let div_item = document.createElement("div");
-            div_item.classList.add("tab_item");
-            div_item.innerText = players[i][i2];
+            if (players[i][i2] != "nil") {
+                let div_item = document.createElement("div");
+                div_item.classList.add("tab_item");
+                div_item.innerText = players[i][i2];
 
-            div_line.appendChild(div_item);
+                div_line.appendChild(div_item);
+            }
         }
 
         tab_container.appendChild(div_line);
@@ -301,6 +308,274 @@ Events.Subscribe("ShowBotOrderWheel", function(orders) {
     })
 })
 
+
+const players_voip_container = document.getElementById("VOIP-container");
+let voip_players_count = 0
+
+let destroying_timeouts = {}
+
+Events.Subscribe("PlayerStartedVOIP", function(player_name, player_id) {
+    let exists = false;
+    for (let i = 0; i < players_voip_container.children.length; i++) {
+        if (players_voip_container.children[i].dataset.player_id == player_id) {
+            exists = true;
+            players_voip_container.children[i].classList.remove("voip_disappear_anim");
+            if (destroying_timeouts[player_id]) {
+                clearTimeout(destroying_timeouts[player_id]);
+            }
+            destroying_timeouts[player_id] = null;
+            break;
+        }
+    }
+    if (!exists) {
+        voip_players_count = voip_players_count + 1
+        players_voip_container.style.setProperty('--players_voip', voip_players_count);
+        let cell = document.createElement("div");
+        cell.innerText = "🎙️ " + player_name;
+        cell.dataset.player_id = player_id;
+        players_voip_container.appendChild(cell).className = "player_voip";
+    }
+})
+
+Events.Subscribe("PlayerStoppedVOIP", function(player_id) {
+    for (let i = 0; i < players_voip_container.children.length; i++) {
+        if (players_voip_container.children[i].dataset.player_id == player_id) {
+            players_voip_container.children[i].classList.add("voip_disappear_anim");
+            destroying_timeouts[player_id] = setTimeout(function() {
+                for (let i = 0; i < players_voip_container.children.length; i++) {
+                    if (players_voip_container.children[i].dataset.player_id == player_id) {
+                        players_voip_container.removeChild(players_voip_container.children[i]);
+                        destroying_timeouts[player_id] = null;
+                        voip_players_count = voip_players_count - 1
+                        players_voip_container.style.setProperty('--players_voip', voip_players_count);
+                        break;
+                    }
+                }
+            }, 700);
+            break;
+        }
+    }
+})
+
+
+function ShowElementByID(id, show) {
+    let elt = document.getElementById(id)
+    if (elt) {
+        if (show) {
+            elt.classList.remove("hidden")
+        } else {
+            elt.classList.add("hidden")
+        }
+    }
+}
+Events.Subscribe("ShowElementByID", ShowElementByID)
+
+Events.Subscribe("ClearFrameTab", function(frame_id, tab_id) {
+    if (VZ_Frames[frame_id]) {
+        if (VZ_Frames[frame_id].Items_Containers[tab_id]) {
+            let c_length = VZ_Frames[frame_id].Items_Containers[tab_id].children.length
+            for (let i = 0; i < c_length; i++) {
+                VZ_Frames[frame_id].Items_Containers[tab_id].removeChild(VZ_Frames[frame_id].Items_Containers[tab_id].children[0])
+            }
+        }
+    }
+})
+
+const Help_Default_Keys_container = document.getElementById("Default_Keys_Container")
+Events.Subscribe("HelpMenuDefaultKeys", function(tbl) {
+    
+    for (let i = 0; i < tbl.length; i++) {
+        let dk_div = document.createElement("div")
+        dk_div.classList.add("HTP_text")
+        dk_div.innerText = "- " + tbl[i][1] + " : " + tbl[i][0]
+
+        Help_Default_Keys_container.appendChild(dk_div)
+    }
+})
+
+let levels_container
+let levels_bar_bg
+let levels_bar
+let levels_text
+let bar_percentage = 10
+
+let bar_update_last = new Date().getTime();
+let bar_update_anim_time = 0
+let bar_update_old_old_width = 0
+let bar_update_target_width = 0
+
+Events.Subscribe("EnableVZLevels", function() {
+    levels_container = document.createElement("div")
+    levels_container.classList.add("lvls_container")
+    levels_container.id = "lvls_container"
+
+    levels_bar_bg = document.createElement("div")
+    levels_bar_bg.classList.add("lvls_bar_bg")
+
+    levels_bar = document.createElement("div")
+    levels_bar.classList.add("lvls_bar")
+
+    levels_text = document.createElement("div")
+    levels_text.classList.add("lvls_text")
+
+    levels_bar_bg.appendChild(levels_bar)
+
+    levels_container.appendChild(levels_bar_bg)
+
+    levels_container.appendChild(levels_text)
+
+    document.body.appendChild(levels_container)
+
+    tab_levels = document.createElement("div")
+    tab_levels.classList.add("tab_item")
+    tab_levels.innerText = "Level"
+
+    tab_top.appendChild(tab_levels)
+})
+
+Events.Subscribe("SetBarPercentage", function(new_perc) {
+    if (levels_bar) {
+        levels_bar.classList.remove("lvlbar_up_anim")
+        levels_bar.classList.remove("lvlbar_down_anim")
+
+        let curTime = new Date().getTime();
+        let old_bar_percentage = bar_percentage
+
+        // delta | bar_update_anim_time    | bar_update_last
+        //       | bar_update_target_width - bar_update_old_old_width | bar_update_old_old_width
+        if (curTime - bar_update_last > 0 && curTime - bar_update_last < bar_update_anim_time) {
+            old_bar_percentage = ((curTime - bar_update_last) * (bar_update_target_width - bar_update_old_old_width) / bar_update_anim_time) + bar_update_old_old_width
+            //console.log(old_bar_percentage)
+        }
+        
+        levels_bar.style.setProperty('--bar-target-width', new_perc + "%");
+        levels_bar.style.setProperty('--bar-target-width-old', old_bar_percentage + "%")
+        levels_bar.style.setProperty('--won-blur-px', Math.floor(Math.abs(new_perc - old_bar_percentage) * 7 / 10));
+        levels_bar.style.setProperty('--won-spread-px', Math.floor(Math.abs(new_perc - old_bar_percentage) / 10));
+        levels_bar.style.setProperty('--bar-anim-time', Math.floor(Math.abs(new_perc - old_bar_percentage) * 20) + "ms");
+        levels_bar.offsetHeight;
+
+        bar_update_last = new Date().getTime()
+        bar_update_anim_time = Math.floor(Math.abs(new_perc - old_bar_percentage) * 20)
+        bar_update_old_old_width = old_bar_percentage
+        bar_update_target_width = new_perc
+
+        //console.log(new_perc, bar_update_anim_time)
+
+        if (new_perc <= old_bar_percentage) {
+            //levels_bar.style.width = new_perc + "%"
+            levels_bar.classList.add("lvlbar_down_anim")
+        } else {
+            levels_bar.classList.add("lvlbar_up_anim")
+        }
+        bar_percentage = new_perc
+    }
+})
+
+Events.Subscribe("SetLvlText", function(text) {
+    if (levels_text) {
+        levels_text.innerText = text
+    }
+})
+
+
+
+const Notifs_Container = document.getElementById("Notifications-container")
+
+Events.Subscribe("AddNotification", function(text, time) {
+    let notification = document.createElement("div")
+    notification.classList.add("Notification")
+    notification.style.setProperty('--notif-anim-time', Math.floor(time) + "ms")
+    notification.style.setProperty('--notif-font-px', Math.floor(100 / Math.log(text.length * 15)))
+    notification.innerText = text
+
+    let notif_progress = document.createElement("div")
+    notif_progress.classList.add("Notification_Progress")
+    notif_progress.style.setProperty('--notif-anim-time', Math.floor(time) + "ms")
+    
+    notification.appendChild(notif_progress)
+
+    Notifs_Container.appendChild(notification)
+    setTimeout(function() {
+        Notifs_Container.removeChild(notification)
+    }, time)
+})
+
+
+
+const repack_container = document.getElementById("Repack-container")
+let repack_img
+
+Events.Subscribe("ShowRepackIcon", function(image) {
+    if (repack_img) {
+        repack_container.removeChild(repack_img)
+        repack_img = null
+    }
+    if (image) {
+        repack_img = document.createElement('img');
+        repack_img.src = image;
+        repack_img.width = "80";
+        repack_img.height = "80";
+        //repack_img.classList.add("repack_img")
+        repack_container.appendChild(repack_img)
+    }
+})
+
+
+/*testFuncs.ShowRepackIcon("images/blast_furnace_icon.png")
+testFuncs.ShowRepackIcon("images/electric_icon.png")
+testFuncs.ShowRepackIcon()*/
+
+
+
+/*testFuncs.AddNotification("test1", 10000)
+testFuncs.AddNotification("test2", 12000)
+testFuncs.AddNotification("You levelled Up !", 12000)*/
+
+
+
+/*testFuncs.EnableVZLevels()
+testFuncs.SetBarPercentage(0);
+for (let i = 1; i < 101; i++) {
+    setTimeout(function() {
+        if (bar_percentage <= 95) {
+            testFuncs.SetBarPercentage((i*5) % 100);
+        } else {
+            testFuncs.SetBarPercentage(0);
+        }
+    }, 400*i)
+}
+testFuncs.SetBarPercentage(0);
+testFuncs.SetLvlText("200")*/
+
+
+/*
+testFuncs.PlayerStartedVOIP("Voltaism", 1)
+testFuncs.PlayerStartedVOIP("Syed", 2)
+testFuncs.PlayerStartedVOIP("Timmy", 3)
+testFuncs.PlayerStartedVOIP("NegativeName", 4)
+
+setTimeout(function() {
+    testFuncs.PlayerStoppedVOIP(2);
+}, 2500)
+
+setTimeout(function() {
+    testFuncs.PlayerStoppedVOIP(3);
+    testFuncs.PlayerStartedVOIP("Syed", 2)
+}, 3000)
+
+setTimeout(function() {
+    testFuncs.PlayerStoppedVOIP(2);
+}, 3500)
+
+*/
+
+
+
+
+
+
+
 //testFuncs.ShowBotOrderWheel(3);
 
 /*setTimeout(() => {  testFuncs.UpdateGUIHealth(100, 80); }, 500);
@@ -357,9 +632,9 @@ setTimeout(() => {  testFuncs.SetPlayerMoney(1, "666666", "100"); }, 2500);*/
 /*testFuncs.AddPlayerMoney("500")
 testFuncs.SetPlayerMoney(0, "400", "-100")*/
 
-/*testFuncs.HideTab();
+//testFuncs.HideTab();
 
-testFuncs.ShowTab('[["Volta", "35", "5626526", "30"], ["Syed", "256", "1243", "999"], ["Lighter", "223", "123553", "102"], ["Derpius", "42", "356353", "40"], ["Timmy", "253", "2453536", "60"], ["Olivato", "232", "355236", "70"]]');*/
+//testFuncs.ShowTab('[["Volta", "35", "-666", "5626526", "30"], ["Syed", "256", "33", "1243", "999"], ["Lighter", "223", "300", "123553", "102"], ["Derpius", "42", "400", "356353", "40"], ["Timmy", "253", "450", "2453536", "60"], ["Olivato", "232", "500", "355236", "70"]]');
 
 /*testFuncs.SetGrenadesNB(2);
 testFuncs.SetGrenadesNB(4);*/

@@ -2,13 +2,15 @@
 
 
 function Buy(ply, price)
-    if ZDEV_IsModeEnabled("ZDEV_INFINITE_MONEY") then
+    if ply:GetValue("MM_InfMoney") then
         return true
     end
     local pmoney = ply:GetValue("ZMoney")
     if (pmoney and pmoney >= price) then
         ply:SetValue("ZMoney", pmoney - price, true)
         return true
+    else
+        Events.CallRemote("AddNotification", ply, "Not Enough Money", 3000)
     end
 end
 Package.Export("Buy", Buy)
@@ -20,6 +22,11 @@ function AddMoney(ply, added)
             added = added * 2
         end
         ply:SetValue("ZMoney", pmoney + added, true)
+        if VZ_GetFeatureValue("Levels", "script_loaded") then
+            if AddPlayerXP then
+                AddPlayerXP(ply, math.floor(added*VZ_GetFeatureValue("Levels", "score_mult_into_xp")))
+            end
+        end
         ply:SetValue("ZScore", ply:GetValue("ZScore") + added, false)
         return true
     end
@@ -27,6 +34,9 @@ end
 Package.Export("AddMoney", AddMoney)
 
 function InteractMapWeapon(weapon, char)
+    if ZDEV_IsModeEnabled("ZDEV_DEBUG_INTERACT") then
+        print("InteractMapWeapon", weapon, char)
+    end
     if weapon:IsValid() then
         local m_weap_id = weapon:GetValue("MapWeaponID")
         if m_weap_id then
@@ -96,9 +106,11 @@ function BuyDoor(ply, door_id)
                         end
                         Events.Call("VZ_DoorOpened", char, door_id)
                     end
+                else
+                    Events.CallRemote("AddNotification", ply, "Cannot Open The Door")
                 end
             end
         end
     end
 end
-VZ_EVENT_SUBSCRIBE("Events", "BuyDoor", BuyDoor)
+VZ_EVENT_SUBSCRIBE_REMOTE("BuyDoor", BuyDoor)

@@ -203,6 +203,8 @@ table.insert(MAP_TELEPORTERS, {
     teleport_back_ms = 0,
     teleporter_cooldown_ms = 0,
     distance_sq = 90000.0,
+    instant_teleporter = false,
+    bots_allowed = false,
     teleport_to = {
         {
             location = Vector(3101.000, 2954.000, 1.000),
@@ -218,6 +220,8 @@ table.insert(MAP_TELEPORTERS, {
     teleport_back_ms = 0,
     teleporter_cooldown_ms = 120000,
     distance_sq = 90000.0,
+    instant_teleporter = false,
+    bots_allowed = false,
     teleport_to = {
         {
             location = Vector(4077.000, 2920.000, 1.000),
@@ -233,6 +237,8 @@ table.insert(MAP_TELEPORTERS, {
     teleport_back_ms = 0,
     teleporter_cooldown_ms = 0,
     distance_sq = 90000.0,
+    instant_teleporter = false,
+    bots_allowed = false,
     teleport_to = {
         {
             location = Vector(4975.000, 2974.000, 1.000),
@@ -252,6 +258,8 @@ table.insert(MAP_TELEPORTERS, {
     teleport_back_ms = 10000,
     teleporter_cooldown_ms = 0,
     distance_sq = 90000.0,
+    instant_teleporter = false,
+    bots_allowed = false,
     teleport_to = {
         {
             location = Vector(6146.000, 2891.000, 0.000),
@@ -304,6 +312,8 @@ MAP_SETTINGS = {
     Bosses_Enabled = true,
     Sky_Light_Intensity = -1.0,
     Sun_Light_Intensity = -1.0,
+    Multi_Spawns = true,
+    Weather = "",
     disabled_enemies = {
     },
 }
@@ -365,6 +375,22 @@ table.insert(HELLHOUND_SPAWNS, {
 })
 
 
+BANKS = {}
+table.insert(BANKS, {
+    location = Vector(-409.000, 1210.000, 1.000),
+    rotation = Rotator(0.000000, 0.000000, 0.000000)
+})
+
+
+VEHICLES_PADS = {}
+table.insert(VEHICLES_PADS, {
+    location = Vector(7045.000, 1512.000, 1.000),
+    rotation = Rotator(0.000000, 89.999748, 0.000000),
+    screen_location = Vector(6739.000, 1512.001, 151.000),
+    screen_rotation = Rotator(0.000000, 89.999748, 89.999999)
+})
+
+
 -- Zombie Spawns
 table.insert(MAP_ROOMS[1][2].z_spawns, {
     location = Vector(1551.000, -2133.000, 1.000),
@@ -423,5 +449,5 @@ table.insert(MAP_ROOMS[1][2].z_spawns, {
 
 
 Package.Subscribe("Load", function()
-	Events.Call("VZOMBIES_MAP_CONFIG", MAP_ROOMS, PLAYER_SPAWNS, MAP_DOORS, MAP_WEAPONS, MAP_PACK_A_PUNCH, MAP_POWER, MAP_MYSTERY_BOXES, MAP_PERKS, MAP_Z_LIMITS, MAP_WUNDERFIZZ, MAP_INTERACT_TRIGGERS, MAP_TELEPORTERS, MAP_LIGHT_ZONES, MAP_SETTINGS, MAP_STATIC_MESHES, HELLHOUND_SPAWNS)
+	Events.Call("VZOMBIES_MAP_CONFIG", MAP_ROOMS, PLAYER_SPAWNS, MAP_DOORS, MAP_WEAPONS, MAP_PACK_A_PUNCH, MAP_POWER, MAP_MYSTERY_BOXES, MAP_PERKS, MAP_Z_LIMITS, MAP_WUNDERFIZZ, MAP_INTERACT_TRIGGERS, MAP_TELEPORTERS, MAP_LIGHT_ZONES, MAP_SETTINGS, MAP_STATIC_MESHES, HELLHOUND_SPAWNS, BANKS, VEHICLES_PADS)
 end)

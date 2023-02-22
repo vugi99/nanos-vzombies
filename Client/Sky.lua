@@ -1,7 +1,13 @@
 
 --print("Sky.lua")
+
+local weather_exists = false
+
 if (not MAP_SETTINGS or MAP_SETTINGS.spawn_nanos_sky) then
-    World.SpawnDefaultSun()
+    if (MAP_SETTINGS.Weather and WeatherType[MAP_SETTINGS.Weather]) then
+        weather_exists = true
+    end
+    Sky.Spawn(weather_exists)
 end
 
 local HoursToSet = SKY_TIME[1]
@@ -19,28 +25,13 @@ if MAP_SETTINGS then
     end
 
     if (MAP_SETTINGS.Sky_Light_Intensity and MAP_SETTINGS.Sky_Light_Intensity >= 0) then
-        World.SetSkyLightIntensity(MAP_SETTINGS.Sky_Light_Intensity)
-    end
-
-    if (MAP_SETTINGS.Sun_Light_Intensity and MAP_SETTINGS.Sun_Light_Intensity >= 0) then
-        World.SetSunLightIntensity(MAP_SETTINGS.Sun_Light_Intensity)
+        --Sky.SetOverallIntensity(MAP_SETTINGS.Sky_Light_Intensity)
     end
 end
 
-World.SetTime(HoursToSet, MinutesToSet)
-World.SetSunSpeed(0)
+Sky.SetTimeOfDay(HoursToSet, MinutesToSet)
+Sky.SetAnimateTimeOfDay(false)
 
-if ZDEV_IsModeEnabled("ZDEV_COMMANDS") then
-    Client.Subscribe("Chat", function(text)
-        if text then
-            local split_txt = split_str(text, " ")
-            if (split_txt and split_txt[1] and split_txt[2]) then
-                if split_txt[1] == "/settime" then
-                    if (tonumber(split_txt[2]) and tonumber(split_txt[3])) then
-                        World.SetTime(tonumber(split_txt[2]), tonumber(split_txt[3]))
-                    end
-                end
-            end
-        end
-    end)
+if weather_exists then
+    Sky.ChangeWeather(WeatherType[MAP_SETTINGS.Weather], 0)
 end

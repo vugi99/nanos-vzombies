@@ -75,6 +75,12 @@ function VZBot.prototype:SetCameraRotation(rotation)
     end
 end
 
+function VZBot.prototype:SetVOIPSetting(setting)
+    if self:IsValid(true) then
+        return true
+    end
+end
+
 function VZBotJoin()
     local Bot = setmetatable({}, VZBot.prototype)
 
@@ -115,6 +121,10 @@ end
 DEFAULT_EREMOTE = Events.CallRemote
 
 function Events.CallRemote(event_name, ply, ...)
+    if ZDEV_IsModeEnabled("ZDEV_DEBUG_SERVER_REMOTE_CALLS") then
+        print("Events.CallRemote", event_name)
+    end
+
     if ply.BOT then
         Events.Call("BOT_" .. event_name, ply, ...)
         return true
@@ -126,6 +136,10 @@ end
 DEFAULT_EBROADCAST = Events.BroadcastRemote
 
 function Events.BroadcastRemote(event_name, ...)
+    if ZDEV_IsModeEnabled("ZDEV_DEBUG_SERVER_REMOTE_CALLS") then
+        print("Events.BroadcastRemote", event_name)
+    end
+
     for k, v in pairs(ALL_BOTS) do
         if v.Valid then
             Events.Call("BOT_" .. event_name, v, ...)
@@ -207,7 +221,7 @@ function GetNearestZombieInTargets(char, targets)
     return nearest_z, nearest_dist_sq
 end
 
-VZ_EVENT_SUBSCRIBE("Events", "BotAction", function(ply, bot_id, action, to_reach, target)
+VZ_EVENT_SUBSCRIBE_REMOTE("BotAction", function(ply, bot_id, action, to_reach, target)
     local Bot = GetBotFromBotID(bot_id)
     if Bot then
         if Bot:GetValue("RequestedActionFromPlayer") == ply:GetID() then
@@ -260,7 +274,7 @@ function CheckToStopBotReviveTimer(char, revived_dead)
     end
 end
 
-VZ_EVENT_SUBSCRIBE("Character", "MoveCompleted", function(char, success)
+VZ_EVENT_SUBSCRIBE("Character", "MoveComplete", function(char, success)
     local bot = char:GetPlayer()
     if (bot and bot.BOT) then
         local action = char:GetValue("DoingAction")
@@ -277,7 +291,7 @@ VZ_EVENT_SUBSCRIBE("Character", "MoveCompleted", function(char, success)
             end
 
             if ZDEV_IsModeEnabled("ZDEV_DEBUG_BOTS_MOVEMENT") then
-                print("BOT", bot.ID, "MoveCompleted", success, action[1])
+                print("BOT", bot.ID, "MoveComplete", success, action[1])
             end
             if success then
                 local WaitingSomething
@@ -480,7 +494,7 @@ function BOTShootIntervalFunc(char)
     end
 end
 
-VZ_EVENT_SUBSCRIBE("Events", "NewBotTargets", function(ply, bot_id, targets_chars)
+VZ_EVENT_SUBSCRIBE_REMOTE("NewBotTargets", function(ply, bot_id, targets_chars)
     --print("NewBotTargets")
     local Bot = GetBotFromNanosBotID(bot_id)
     if Bot then
@@ -582,7 +596,7 @@ VZ_EVENT_SUBSCRIBE("Events", "VZ_DoorOpened", function(char, door_id)
     end
 end)
 
-VZ_EVENT_SUBSCRIBE("Character", "RagdollModeChanged", function(char, old_state, new_state)
+VZ_EVENT_SUBSCRIBE("Character", "RagdollModeChange", function(char, old_state, new_state)
     local ply = char:GetPlayer()
     if (ply and ply.BOT) then
         if new_state then
@@ -599,6 +613,7 @@ VZ_EVENT_SUBSCRIBE("Character", "RagdollModeChanged", function(char, old_state, 
                             end
                         end
                     end, Bots_Ragdoll_Get_Up_Timeout_ms)
+                    char:SetValue("BotGotInRagdoll", true, false) -- Can be used later in case the bot got out of the map
                 end
             end
         end
@@ -637,12 +652,13 @@ if Bots_Enabled then
     end, Bots_Smart_Reload_Check_Interval_ms)
 end
 
-VZ_EVENT_SUBSCRIBE("Events", "BotOrder", function(ply, char, order, moveto_location)
+VZ_EVENT_SUBSCRIBE_REMOTE("BotOrder", function(ply, char, order, moveto_location)
     if (char:IsValid() and not char:GetValue("PlayerDown") and not char:IsInRagdollMode()) then
 
         if char:GetPlayer():GetValue("RequestedActionFromPlayer") then
             char:GetPlayer():SetValue("RequestedActionFromPlayer", nil, false)
         end
+        Events.CallRemote("AddNotification", ply, char:GetPlayer():GetAccountName() .. " " .. order)
         if order == "MoveTo" then
             char:SetValue("DoingAction", {"MoveToOrder"}, false)
             char:MoveTo(moveto_location, Bots_Acceptance_Radius)

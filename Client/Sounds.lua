@@ -100,7 +100,8 @@ function PlayVZSound(data_tbl, loc)
         end
     end
 end
-Events.Subscribe("PlayVZSound", PlayVZSound)
+VZ_EVENT_SUBSCRIBE("Events", "PlayVZSound", PlayVZSound)
+VZ_EVENT_SUBSCRIBE_REMOTE("PlayVZSound", PlayVZSound)
 
 function LastStandExitSound()
     local down_exit = Sound(
@@ -144,7 +145,7 @@ VZ_EVENT_SUBSCRIBE("Character", "ValueChange", function(char, key, value)
     end
 end)
 
-VZ_EVENT_SUBSCRIBE("Events", "OpenMBOXSound", function(loc)
+VZ_EVENT_SUBSCRIBE_REMOTE("OpenMBOXSound", function(loc)
     PlayVZSound({basic_sound_tbl=OpenMBOX_Sound}, loc)
     PlayVZSound({basic_sound_tbl=MBOX_Sound}, loc)
 end)
@@ -179,7 +180,7 @@ VZ_EVENT_SUBSCRIBE("StaticMesh", "Destroy", function(SM)
     end
 end)
 
-VZ_EVENT_SUBSCRIBE("Events", "PowerONSound", function()
+VZ_EVENT_SUBSCRIBE_REMOTE("PowerONSound", function()
     PlayVZSound({basic_sound_tbl=PowerOn_Sound})
     PlayVZSound({basic_sound_tbl=PowerOn3D_Sound}, MAP_POWER.location + Vector(0, 0, 100))
     POWER_ON = true
@@ -325,7 +326,7 @@ VZ_EVENT_SUBSCRIBE("Character", "Death", function(char, last_damage_taken, last_
     if not char:GetPlayer() then
         local attached_actors = char:GetAttachedEntities()
         for k, v in pairs(attached_actors) do
-            if NanosUtils.IsA(v, Sound) then
+            if v:IsA(Sound) then
                 v:Destroy()
             end
         end
@@ -513,7 +514,7 @@ function PlayStartRepairBarricade()
     PlayVZSound({basic_sound_tbl=Barricade_Start_Repair})
 end
 
-VZ_EVENT_SUBSCRIBE("Events", "ZombieGroundDirt", function(sound_path, loc)
+VZ_EVENT_SUBSCRIBE_REMOTE("ZombieGroundDirt", function(sound_path, loc)
     PlayVZSound({random_sound_tbl=RANDOM_SOUNDS.spawn_dirt_sound, random_sound_selected=sound_path}, loc)
 
     local zombie_g_dirt_particle = Particle(
@@ -526,7 +527,7 @@ VZ_EVENT_SUBSCRIBE("Events", "ZombieGroundDirt", function(sound_path, loc)
     zombie_g_dirt_particle:SetScale(Enemies_Ground_Dirt_Scale)
 end)
 
-VZ_EVENT_SUBSCRIBE("Events", "JokerZombieSound", function(char)
+VZ_EVENT_SUBSCRIBE_REMOTE("JokerZombieSound", function(char)
     if char:IsValid() then
         PlayVZSound({random_sound_tbl=RANDOM_SOUNDS.zombie_death}, char:GetLocation())
     end

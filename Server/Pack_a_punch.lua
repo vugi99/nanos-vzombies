@@ -51,19 +51,21 @@ function UpgradeWeapon(ply, pap_sm)
                                 if Inv.selected_slot then
 
                                     local selected_weap
+                                    local is_pap
+                                    local repack_effect
                                     for i, v in ipairs(Inv.weapons) do
                                         if (v.slot == Inv.selected_slot and v.weapon) then
                                             if v.weapon:IsValid() then
-                                                if not v.pap then
-                                                    selected_weap = v.weapon_name
-                                                end
+                                                selected_weap = v.weapon_name
+                                                is_pap = v.pap
+                                                repack_effect = v.pap_repack_effect
                                             end
                                             break
                                         end
                                     end
 
                                     if selected_weap then
-                                        if Buy(ply, Pack_a_punch_price) then
+                                        if (not is_pap and Buy(ply, Pack_a_punch_price)) or (is_pap and Buy(ply, Pack_a_punch_repack_price)) then
                                             pap_sm:SetValue("CanBuyPackAPunch", false, true)
 
                                             for i, v in ipairs(Inv.weapons) do
@@ -84,11 +86,13 @@ function UpgradeWeapon(ply, pap_sm)
                                                 PAP_Upgrade_Data.upgraded_weapon:SetCollision(CollisionType.NoCollision)
                                                 PAP_Upgrade_Data.upgraded_weapon:SetGravityEnabled(false)
                                                 PAP_Upgrade_Data.upgraded_weapon:SetMaterial(Pack_a_punch_weapon_material, Pack_a_punch_weapon_material_index)
-                                                PAP_Upgrade_Data.upgraded_weapon:SetValue("PAPWeaponForCharacterID", {char:GetID(), selected_weap}, false)
+                                                PAP_Upgrade_Data.upgraded_weapon:SetValue("PAPWeaponForCharacterID", {char:GetID(), selected_weap, is_pap, repack_effect}, false)
 
                                                 Events.BroadcastRemote("PlayVZSound", {basic_sound_tbl=PAP_Ready_Sound}, MAP_PACK_A_PUNCH.location)
                                                 PAP_Upgrade_Data.del_timeout = Timer.SetTimeout(function()
-                                                    PAP_Upgrade_Data.upgraded_weapon:Destroy()
+                                                    if PAP_Upgrade_Data.upgraded_weapon:IsValid() then
+                                                        PAP_Upgrade_Data.upgraded_weapon:Destroy()
+                                                    end
                                                     PAP_Upgrade_Data = nil
                                                     MAP_PAP_SM:SetValue("CanBuyPackAPunch", true, true)
                                                 end, Pack_a_punch_destroy_weapon_time_ms)
@@ -109,17 +113,28 @@ function UpgradeWeapon(ply, pap_sm)
         end
     end
 end
-VZ_EVENT_SUBSCRIBE("Events", "UpgradeWeap", UpgradeWeapon)
+VZ_EVENT_SUBSCRIBE_REMOTE("UpgradeWeap", UpgradeWeapon)
 
 function InteractPAPWeapon(weapon, char)
-    if weapon:IsValid() then
+    if (weapon and weapon:IsValid()) then
         local pap_weapon_for_char = weapon:GetValue("PAPWeaponForCharacterID")
         if pap_weapon_for_char then
             if pap_weapon_for_char[1] == char:GetID() then
                 local max_ammo = GetWeaponNameMaxAmmo(pap_weapon_for_char[2])
                 if max_ammo then
                     weapon:Destroy()
-                    AddCharacterWeapon(char, pap_weapon_for_char[2], max_ammo, true, nil, true)
+                    local repack_effect
+                    if pap_weapon_for_char[3] then
+                        local CanSelectEffects = {}
+                        for k, v in pairs(PAP_Repack_Config) do
+                            if k ~= tostring(pap_weapon_for_char[4]) then
+                                table.insert(CanSelectEffects, k)
+                            end
+                        end
+                        repack_effect = CanSelectEffects[math.random(table_count(CanSelectEffects))]
+                    end
+
+                    AddCharacterWeapon(char, pap_weapon_for_char[2], max_ammo, true, nil, true, repack_effect)
                     Timer.ClearTimeout(PAP_Upgrade_Data.del_timeout)
                     PAP_Upgrade_Data = nil
                     MAP_PAP_SM:SetValue("CanBuyPackAPunch", true, true)

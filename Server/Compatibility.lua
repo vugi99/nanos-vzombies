@@ -16,11 +16,11 @@ for k, v in pairs(MAP_ROOMS) do
 end
 
 if found_outdated_no_type then
-    Package.Warn("VZombies : Zombie Map Config is outdated, fixed the outdated issues.")
+    Console.Warn("VZombies : Zombie Map Config is outdated, fixed the outdated issues.")
 end
 
 if not NanosWorldWeapons[Powerups_Config.death_machine.minigun_weapon_name] then
-    Package.Warn("Missing Death Machine Powerup Weapon, running in compatibility mode")
+    Console.Warn("Missing Death Machine Powerup Weapon, running in compatibility mode")
 
     Powerups_Config.death_machine = nil
     for i, v in ipairs(Powerups_Names) do

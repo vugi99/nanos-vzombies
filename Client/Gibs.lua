@@ -1,6 +1,5 @@
 
-
-VZ_EVENT_SUBSCRIBE("Events", "VZ_SpawnGib", function(char, bone, goingtodie, instigator)
+function CL_VZ_SpawnGib(char, bone, goingtodie, instigator)
     if char:IsValid() then
         local bone_transform = char:GetBoneTransform(bone)
 
@@ -35,10 +34,12 @@ VZ_EVENT_SUBSCRIBE("Events", "VZ_SpawnGib", function(char, bone, goingtodie, ins
 
         if (instigator == Client.GetLocalPlayer() or (dist < Enemies_Gibs_Max_Spawn_Distance_sq)) then
 
+            local gib_asset = GetRealGibAsset(char, enemy_table.Gibs[bone].asset)
+
             local gib = Prop(
                 bone_transform.Location,
                 bone_transform.Rotation,
-                enemy_table.Gibs[bone].asset,
+                gib_asset,
                 CollisionType.IgnoreOnlyPawn,
                 true,
                 GrabMode.Disabled
@@ -46,14 +47,12 @@ VZ_EVENT_SUBSCRIBE("Events", "VZ_SpawnGib", function(char, bone, goingtodie, ins
             gib:SetValue("GibData", {char:GetValue("EnemyName"), bone})
             --print(gib:GetID())
 
-            if (enemy_table.Enemy_Materials_Assets and enemy_table.Models_Materials) then
+            local enemy_mats = char:GetValue("EnemyMaterials")
+
+            if (enemy_mats) then
                 if enemy_table.Gibs[bone].materials then
-                    local char_mesh = char:GetMesh()
-                    local splited = split_str(char_mesh, ":")
-                    if splited[2] then
-                        gib:SetValue("GibData", {char:GetValue("EnemyName"), bone, splited[2]})
-                        SetGibMaterials(splited[2], gib, bone, enemy_table)
-                    end
+                    gib:SetValue("GibData", {char:GetValue("EnemyName"), bone, enemy_mats, gib_asset})
+                    SetGibMaterials(gib, bone, enemy_table, enemy_mats)
                 end
             end
 
@@ -70,7 +69,9 @@ VZ_EVENT_SUBSCRIBE("Events", "VZ_SpawnGib", function(char, bone, goingtodie, ins
             --print("Gib aborted")
         end
     end
-end)
+end
+VZ_EVENT_SUBSCRIBE("Events", "VZ_SpawnGib", CL_VZ_SpawnGib)
+VZ_EVENT_SUBSCRIBE_REMOTE("VZ_SpawnGib", CL_VZ_SpawnGib)
 
 -- Remove character head if the death hit is on the head (To fix the last TakeDamage not called if it was killed on the server)
 -- I don't really understand why last_bone_damage is head when the character was killed serverside, this could become an issue if it gets fixed

@@ -8,6 +8,36 @@
     --player_win_money_player: 0;
     --player_win_money_top: 20;
     --revive_time: 1;
+    --players_voip: 1;
+    --won-blur-px: 0;
+    --won-spread-px: 0;
+    --bar-target-width: 0%;
+    --bar-target-width-old: 0%;
+    --bar-anim-time: 0ms;
+    --notif-anim-time: 0ms;
+}
+
+/* Scroll Bar */
+/* width */
+::-webkit-scrollbar {
+    width: 10px;
+}
+  
+/* Track */
+::-webkit-scrollbar-track {
+    background: #f1f1f11f;
+    border-radius: 4px;
+}
+
+/* Handle */
+::-webkit-scrollbar-thumb {
+    background: rgb(255, 72, 0);
+    border-radius: 4px;
+}
+  
+/* Handle on hover */
+::-webkit-scrollbar-thumb:hover {
+    background: rgb(255, 72, 0);
 }
 
 html, body {
@@ -184,7 +214,8 @@ body {
 }
 
 .hidden {
-    visibility: hidden;
+    visibility: hidden !important;
+    display: none !important;
 }
 
 #grenades_container {
@@ -286,4 +317,296 @@ body {
 .blooming-menu__item:nth-of-type(3) .blooming-menu__item-btn {
     background-image: url(images/stayhere.svg);
     background-size: 35%;
+}
+
+
+#VOIP-container {
+    position: absolute;
+    left: 20px;
+    bottom: 410px;
+    width: 11%;
+    display: grid;
+    grid-template-rows: repeat(var(--players_voip), 1fr);
+    direction: rtl;
+}
+
+.player_voip {
+    text-align: center;
+    width: 100%;
+    font-size: 24px;
+    height: 85%;
+    background-color: rgba(0, 82, 20, 0.9);
+    border-radius: 10px;
+    margin-bottom: 5%;
+}
+
+@keyframes voip_disappear {
+    0% {
+        opacity: 1;
+        background-color: rgba(0, 82, 20, 0.85);
+    }
+    100% {
+        opacity: 0.4;
+        background-color: rgba(92, 92, 92, 0.5);
+    }
+}
+.voip_disappear_anim {
+    animation: 700ms running voip_disappear;
+}
+
+.Frame_Container {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%,-50%);
+    background-color: rgba(51, 34, 34, 0.95);
+    text-align: center;
+    border-radius: 10px;
+    overflow-x: hidden;
+    overflow-y: auto;
+}
+
+.Frame_Header {
+    width: 100%;
+    height: 50px;
+    font-size: 50px;
+    text-shadow: 1px 1px 2px black;
+    border-bottom: 1px solid black;
+}
+
+.Tabs_Header {
+    width: 100%;
+    height: 35px;
+    font-size: 35px;
+    border-bottom: 1px dashed rgb(151, 141, 130);
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(50px, 1fr));
+    overflow-x: auto;
+    overflow-y: hidden;
+}
+
+button {
+    border: none;
+    font-size: 30px;
+    font-family: "Dirty Ego";
+    text-decoration: none;
+    color: white;
+    background-color: rgba(41, 35, 35, 0.92);
+}
+
+button:hover {
+    background-color: rgba(14, 4, 71, 0.3);
+    cursor: pointer;
+}
+
+.FrameTab {
+    width: 100%;
+    height: 100%;
+}
+
+.FTSelectedTab {
+    background-color: rgba(37, 41, 6, 0.92);
+}
+
+.Items_Container {
+    width: 100%;
+}
+
+.Item_Container {
+    width: 100%;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(50%, 1fr));
+    height: 35px;
+    border-bottom: 1px solid rgb(110, 110, 110);
+}
+
+.Item_Text {
+    height: 100%;
+    text-align: center;
+    font-family: Verdana;
+    font-size: 20px;
+    border-right: 1px solid rgb(255, 255, 255);
+}
+
+.Item_Checkbox {
+    margin-top: 5px;
+    margin-bottom: 5px;
+}
+
+.Item_TextInput {
+    text-align: center;
+    width: 70%;
+    height: 70%;
+    margin-top: 3px;
+    margin-left: 15%;
+    border-radius: 5px;
+}
+
+.Item_Select {
+    text-align: center;
+    width: 72%;
+    height: 80%;
+    margin-left: 15%;
+    margin-top: 3px;
+    border-radius: 5px;
+}
+
+.Item_Button {
+    text-align: center;
+    width: 72%;
+    height: 80%;
+    margin-top: 4px;
+    margin-left: 15%;
+    border-radius: 5px;
+    font-family: Helvetica;
+    font-size: 22px;
+}
+.Item_Button:active {
+    background-color: rgba(37, 41, 6, 0.92);
+}
+
+.Item_Text_Solo {
+    font-size: 25px;
+    font-family: Helvetica;
+    height: 35px;
+}
+
+.Item_Text_Solo_Bottom {
+    border-bottom: 1px solid rgb(110, 110, 110);
+}
+
+.Item_Image {
+    margin-top: 3px;
+}
+
+.lvls_container {
+    position: absolute;
+    bottom: 33px;
+    height: 1%;
+    width: 33%;
+    left: 50%;
+    transform: translate(-50%,0%);
+}
+
+.lvls_bar_bg {
+    height: 100%;
+    width: 85%;
+    background-color: rgba(97, 97, 97, 0.95);
+    border-radius: 20px;
+}
+
+.lvls_bar {
+    left: 0px;
+    height: 100%;
+    width: 10%;
+    background-color: rgb(12, 129, 138);
+    box-shadow: 0px 0px 0px 0px #0C818A;
+    border-radius: 20px;
+}
+
+.lvls_text {
+    font-size: 220%;
+    font-family: "Dirty Ego";
+    color: rgb(255, 255, 255);
+    width: 13%;
+    float: right;
+    transform: translate(0%,-75%);
+}
+
+@keyframes lvlbar_up {
+    0% {
+        box-shadow: 0px 0px 0px 0px #0C818A;
+        width: var(--bar-target-width-old);
+    }
+    80% {
+        box-shadow: 0px 0px calc(var(--won-blur-px) * 1px)  calc(1px * var(--won-spread-px)) #0C818A;
+    }
+    100% {
+        box-shadow: 0px 0px 0px 0px #0C818A;
+        width: var(--bar-target-width);
+    }
+}
+.lvlbar_up_anim {
+    animation: var(--bar-anim-time) lvlbar_up forwards;
+}
+
+@keyframes lvlbar_down {
+    0% {
+        box-shadow: 0px 0px 0px 0px #0C818A;
+        width: var(--bar-target-width-old);
+        background-color: rgb(12, 129, 138);
+    }
+    80% {
+        box-shadow: 0px 0px calc(var(--won-blur-px) * 1px)  calc(1px * var(--won-spread-px)) #0c8a1d;
+        background-color: #0c8a1d;
+    }
+    100% {
+        box-shadow: 0px 0px 0px 0px #0C818A;
+        width: var(--bar-target-width);
+        background-color: rgb(12, 129, 138);
+    }
+}
+.lvlbar_down_anim {
+    animation: var(--bar-anim-time) lvlbar_down forwards;
+}
+
+#Notifications-container {
+    position: absolute;
+    left: 10px;
+    top: 50px;
+    width: 13%;
+    display: grid;
+    grid-template-rows: repeat(var(--players_voip), 1fr);
+}
+
+
+@keyframes Notification_Anim {
+    0% {
+        opacity: 1;
+    }
+    80% {
+        opacity: 1;
+    }
+    100% {
+        opacity: 0;
+    }
+}
+
+@keyframes Notification_Progress {
+    0% {
+        width: 0%;
+        background-color: rgba(53, 53, 53, 0.01);
+    }
+    100% {
+        width: 100%;
+        background-color: rgba(187, 187, 187, 0.5);
+    }
+}
+
+.Notification {
+    position: relative;
+    width: 100%;
+    border-radius: 20px;
+    font-family: Helvetica;
+    font-size: calc(var(--notif-font-px) * 1px);
+    text-align: center;
+    animation: var(--notif-anim-time) Notification_Anim forwards linear;
+    background-color: rgba(53, 53, 53, 0.92);
+    margin-top: 10px;
+}
+
+.Notification_Progress {
+    position: absolute;
+    left: 0;
+    top: 0;
+    border-radius: 20px;
+    height: 100%;
+    animation: var(--notif-anim-time) Notification_Progress forwards linear;
+}
+
+#Repack-container {
+    position: absolute;
+    right: 110px;
+    bottom: 110px;
+    
 }

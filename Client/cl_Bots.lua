@@ -13,6 +13,8 @@ function VZBot.prototype:SetValue(key, value)
 end
 
 function CL_VZBot(Bot_id, tbl)
+    --print("CL_VZBot", Bot_id, NanosUtils.Dump(tbl))
+
     for k, v in pairs(ALL_BOTS) do
         if v.ID == Bot_id then
             local ChangedValues = {}
@@ -55,11 +57,18 @@ function CL_VZBot(Bot_id, tbl)
             v.Stored = tbl
             v.Stored.Values = OldValues
 
+            if v.Stored.Possessed then
+                CallENVFunc_NoError("CheckToAddText3D", v.Stored.Possessed)
+            end
+
             for k2, v2 in ipairs(ChangedValues) do
                 for k3, v3 in pairs(Sub_Callbacks.ValueChange) do
                     v3(v, v2[1], v2[2])
                 end
             end
+
+            --print("CL VZBot end2", NanosUtils.Dump(v))
+
             return v
         end
     end
@@ -75,6 +84,10 @@ function CL_VZBot(Bot_id, tbl)
 
     Bot.Stored.Name = "Bot " .. tostring(Bot.ID)
 
+    if Bot.Stored.Possessed then
+        CallENVFunc_NoError("CheckToAddText3D", Bot.Stored.Possessed)
+    end
+
     local l_count = table_last_count(ALL_BOTS)
     ALL_BOTS[l_count + 1] = Bot
 
@@ -84,11 +97,13 @@ function CL_VZBot(Bot_id, tbl)
         end
     end
 
+    --print("CL VZBot end", NanosUtils.Dump(ALL_BOTS[l_count + 1]))
+
     return ALL_BOTS[l_count + 1]
 end
-VZ_EVENT_SUBSCRIBE("Events", "BotUpdateValues", CL_VZBot)
+VZ_EVENT_SUBSCRIBE_REMOTE("BotUpdateValues", CL_VZBot)
 
-VZ_EVENT_SUBSCRIBE("Events", "BotLeft", function(Bot_id)
+VZ_EVENT_SUBSCRIBE_REMOTE("BotLeft", function(Bot_id)
     for k, v in pairs(ALL_BOTS) do
         if v.ID == Bot_id then
             RemovePlayerMoney(v)
@@ -103,7 +118,7 @@ VZ_EVENT_SUBSCRIBE("Events", "BotLeft", function(Bot_id)
     end
 end)
 
-VZ_EVENT_SUBSCRIBE("Events", "AllBotsLeft", function()
+VZ_EVENT_SUBSCRIBE_REMOTE("AllBotsLeft", function()
     for k, v in pairs(ALL_BOTS) do
         RemovePlayerMoney(v)
     end
@@ -130,7 +145,7 @@ end)
 
 
 function GetPowerSM()
-    for k, v in pairs(StaticMesh.GetPairs()) do
+    for k, v in pairs(PreparedLoops["Power"]) do
         if v:GetValue("MapPower") then
             return v
         end
@@ -147,7 +162,7 @@ function GetNearestPowerup(char)
             local loc = v:GetLocation()
             local dist_sq = char_loc:DistanceSquared(loc)
             if (not nearest_dist_sq or nearest_dist_sq > dist_sq) then
-                local path = Client.FindPathToLocation(char_loc, loc)
+                local path = Navigation.FindPathToLocation(char_loc, loc)
                 if (path.IsValid and not path.IsPartial) then
                     nearest = v
                     nearest_dist_sq = dist_sq
@@ -176,7 +191,7 @@ function GetPerkToBuy(bot, char)
     if Perk_To_Buy then
         local money = bot:GetValue("ZMoney")
         if money >= PERKS_CONFIG[Perk_To_Buy].price then
-            for k, v in pairs(StaticMesh.GetPairs()) do
+            for k, v in pairs(PreparedLoops["Perks"]) do
                 local perk_name = v:GetValue("MapPerk")
                 if (perk_name and perk_name == Perk_To_Buy) then
                     return v
@@ -224,7 +239,7 @@ function GetWeaponOrAmmoToBuy(Bot, char, bot_inv)
                 if money >= MAP_WEAPONS[weapon_id].price then
                     local rank = GetWeaponRank(weapon_name)
                     if rank > Best_Can_Buy_Weapon_Rank then
-                        local path = Client.FindPathToLocation(char:GetLocation(), v:GetLocation())
+                        local path = Navigation.FindPathToLocation(char:GetLocation(), v:GetLocation())
                         if (path.IsValid and not path.IsPartial) then
                             Best_Can_Buy_Weapon = v
                             Best_Can_Buy_Weapon_Rank = rank
@@ -258,7 +273,7 @@ function GetWeaponOrAmmoToBuy(Bot, char, bot_inv)
                                 price = Pack_a_punch_price
                             end
                             if money >= price then
-                                local path = Client.FindPathToLocation(char:GetLocation(), v:GetLocation())
+                                local path = Navigation.FindPathToLocation(char:GetLocation(), v:GetLocation())
                                 if (path.IsValid and not path.IsPartial) then
                                     return v
                                 end
@@ -274,7 +289,7 @@ end
 
 function GetPAPSM()
     if MAP_PACK_A_PUNCH then
-        for k, v in pairs(StaticMesh.GetPairs()) do
+        for k, v in pairs(PreparedLoops["PAP"]) do
             if v:IsValid() then
                 local is_pap = v:GetValue("IsPackAPunch")
                 if is_pap then
@@ -308,14 +323,14 @@ function GetDoorToOpen(Bot, char, ROOMS_UNLOCKED)
                 if (not CheapestDoorOpenablePrice or price < CheapestDoorOpenablePrice) then
                     if money >= price then
                         if CanOpenDoor(door_id, ROOMS_UNLOCKED) then
-                            local path = Client.FindPathToLocation(char_loc, v:GetLocation())
+                            local path = Navigation.FindPathToLocation(char_loc, v:GetLocation())
                             if (path.IsValid and not path.IsPartial) then
                                 CheapestDoorOpenable = v
                                 CheapestDoorOpenablePrice = price
                             else
-                                local point_around = Client.GetRandomPointInNavigableRadius(v:GetLocation(), Bots_Reach_Door_Around)
+                                local point_around = Navigation.GetRandomPointInNavigableRadius(v:GetLocation(), Bots_Reach_Door_Around)
                                 if (point_around and point_around ~= Vector(0, 0, 0)) then
-                                    local path2 = Client.FindPathToLocation(char_loc, point_around)
+                                    local path2 = Navigation.FindPathToLocation(char_loc, point_around)
                                     if (path2.IsValid and not path2.IsPartial) then
                                         CheapestDoorOpenable = v
                                         CheapestDoorOpenablePrice = price
@@ -344,7 +359,7 @@ function GetNearestCharacterThatNeedRevive(char)
                 local loc = v:GetLocation()
                 local dist_sq = char_loc:DistanceSquared(loc)
                 if (not nearest_down_char_distance_sq or dist_sq < nearest_down_char_distance_sq) then
-                    local path = Client.FindPathToLocation(char_loc, loc)
+                    local path = Navigation.FindPathToLocation(char_loc, loc)
                     if (path.IsValid and not path.IsPartial) then
                         nearest_down_char = v
                         nearest_down_char_distance_sq = dist_sq
@@ -401,12 +416,12 @@ function GetBotMoveLocation(Bot, char)
             Client.DrawDebugSphere(flee_middle, Bots_Flee_Zombies_Move_Radius, 50, Color.AZURE, 3, 1)
         end
         for i = 1, Bots_Flee_Point_Retry_Number do
-            local flee_point = Client.GetRandomPointInNavigableRadius(flee_middle, Bots_Flee_Zombies_Move_Radius)
+            local flee_point = Navigation.GetRandomPointInNavigableRadius(flee_middle, Bots_Flee_Zombies_Move_Radius)
             if (flee_point and flee_point ~= Vector(0, 0, 0)) then
                 if ZDEV_IsModeEnabled("ZDEV_DEBUG_BOTS_FLEE") then
                     Client.DrawDebugCylinder(flee_point - Vector(0, 0, 20), flee_point + Vector(0, 0, 180), 35, 30, Color.GREEN, 3, 1)
                 end
-                local path = Client.FindPathToLocation(loc, flee_point)
+                local path = Navigation.FindPathToLocation(loc, flee_point)
                 if (path.IsValid and not path.IsPartial) then
                     if path.Length <= Bots_Flee_Zombies_Move_Distance * 2 + Bots_Flee_Zombies_Move_Radius * 2 then
                         return flee_point
@@ -416,12 +431,13 @@ function GetBotMoveLocation(Bot, char)
         end
     end
 
-    local reachable_loc = Client.GetRandomReachablePointInRadius(char:GetLocation(), Bots_Move_Max_Radius)
+    local reachable_loc = Navigation.GetRandomReachablePointInRadius(char:GetLocation(), Bots_Move_Max_Radius)
     return reachable_loc
 end
 
 
-VZ_EVENT_SUBSCRIBE("Events", "RequestBotAction", function(bot_id, bot_stored, bot_inv, ROOMS_UNLOCKED)
+VZ_EVENT_SUBSCRIBE_REMOTE("RequestBotAction", function(bot_id, bot_stored, bot_inv, ROOMS_UNLOCKED)
+    --print("RequestBotAction", bot_id)
     local Bot = CL_VZBot(bot_id, bot_stored)
     if Bot then
         local char = Bot:GetControlledCharacter()
@@ -433,7 +449,7 @@ VZ_EVENT_SUBSCRIBE("Events", "RequestBotAction", function(bot_id, bot_stored, bo
                         local SM = GetPowerSM()
                         if SM then
                             local loc = SM:GetLocation()
-                            local path = Client.FindPathToLocation(char:GetLocation(), loc)
+                            local path = Navigation.FindPathToLocation(char:GetLocation(), loc)
                             if (path.IsValid and not path.IsPartial) then
                                 Events.CallRemote("BotAction", bot_id, v, loc)
                                 return
@@ -451,7 +467,7 @@ VZ_EVENT_SUBSCRIBE("Events", "RequestBotAction", function(bot_id, bot_stored, bo
                     local perk_target = GetPerkToBuy(Bot, char)
                     if perk_target then
                         local loc = perk_target:GetLocation()
-                        local path = Client.FindPathToLocation(char:GetLocation(), loc)
+                        local path = Navigation.FindPathToLocation(char:GetLocation(), loc)
                         if (path.IsValid and not path.IsPartial) then
                             Events.CallRemote("BotAction", bot_id, v, loc, perk_target)
                             return
@@ -474,9 +490,9 @@ VZ_EVENT_SUBSCRIBE("Events", "RequestBotAction", function(bot_id, bot_stored, bo
                                 if Best_Inv_Weapon then
                                     if not Best_Inv_Weapon.pap then
                                         local loc = pack_a_punch:GetLocation()
-                                        local point_around = Client.GetRandomPointInNavigableRadius(loc, Bots_Reach_PAP_Around)
+                                        local point_around = Navigation.GetRandomPointInNavigableRadius(loc, Bots_Reach_PAP_Around)
                                         if (point_around and point_around ~= Vector(0, 0, 0)) then
-                                            local path = Client.FindPathToLocation(char:GetLocation(), point_around)
+                                            local path = Navigation.FindPathToLocation(char:GetLocation(), point_around)
                                             --print(NanosUtils.Dump(path))
                                             if (path.IsValid and not path.IsPartial) then
                                                 Events.CallRemote("BotAction", bot_id, v, point_around, pack_a_punch)
@@ -501,7 +517,7 @@ VZ_EVENT_SUBSCRIBE("Events", "RequestBotAction", function(bot_id, bot_stored, bo
                         Events.CallRemote("BotAction", bot_id, v, reachable_loc)
                     else
                         Events.CallRemote("BotAction", bot_id, "FAILED")
-                        Package.Warn("Bot MOVE didn't find ReachablePoint")
+                        Console.Warn("Bot MOVE didn't find ReachablePoint")
                     end
                     return
                 elseif v == "REVIVE" then
@@ -549,7 +565,7 @@ VZ_EVENT_SUBSCRIBE("VZBot", "ValueChange", function(Bot, key, value)
                                                     trace_mode = trace_mode | TraceMode.DrawDebug
                                                 end
 
-                                                local trace = Client.TraceLineSingle(
+                                                local trace = Trace.LineSingle(
                                                     char_loc + Vector(0, 0, 90),
                                                     loc + Aim_Offset,
                                                     --CollisionChannel.WorldStatic | CollisionChannel.WorldDynamic | CollisionChannel.Pawn | CollisionChannel.PhysicsBody | CollisionChannel.Vehicle | CollisionChannel.Mesh,
@@ -626,7 +642,7 @@ function BotOrder(char, order)
                         trace_mode = trace_mode | TraceMode.DrawDebug
                     end
 
-                    local trace = Client.TraceLineSingle(
+                    local trace = Trace.LineSingle(
                         cam_loc,
                         cam_loc + forward_vec * Bot_MoveTo_Order_Distance_From_Camera,
                         CollisionChannel.WorldStatic,
@@ -635,7 +651,7 @@ function BotOrder(char, order)
                     )
 
                     if trace.Success then
-                        local path = Client.FindPathToLocation(char:GetLocation(), trace.Location)
+                        local path = Navigation.FindPathToLocation(char:GetLocation(), trace.Location)
                         if (path.IsValid and not path.IsPartial) then
                             Events.CallRemote("BotOrder", char, order, trace.Location)
                         end

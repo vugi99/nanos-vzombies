@@ -8,6 +8,7 @@ WAITING_PLAYERS = {}
 ROUND_NB = 0
 REMAINING_ENEMIES_TO_SPAWN = 0
 GAME_TIMER_SECONDS = 0
+KILL_COUNT = 0
 GAME_PAUSED = false
 
 ENEMIES_TO_SPAWN_TBL = {}
@@ -24,6 +25,17 @@ function RoundFinished(reset_all, restart_game, ply_left)
     ENEMIES_SPAWN_INTERVAL = 0
     REMAINING_ENEMIES_TO_SPAWN = 0
     In_Hellhound_Round = false
+
+    for k, v in pairs(PLAYING_PLAYERS) do
+        if v:IsValid() then
+            if not v.BOT then
+                if v:GetValue("PlayerXP") then
+                    Events.CallRemote("PlayerLevelXPUpdate", v, v:GetValue("PlayerLevel"), v:GetValue("PlayerXP"))
+                end
+            end
+        end
+    end
+
     if (not reset_all and not restart_game) then
         for k, v in pairs(PLAYING_PLAYERS) do
             if not v:GetControlledCharacter() then
@@ -35,11 +47,16 @@ function RoundFinished(reset_all, restart_game, ply_left)
             end
         end
     end
+
     if (reset_all or restart_game) then
+        Events.Call("VZ_GameEnding", restart_game)
+
         ROUND_NB = 0
         ResetMapPower()
         SPAWNS_UNLOCKED = {}
+        SPAWNS_ENABLED = {}
         ROOMS_UNLOCKED = {}
+        ROOMS_SPAWNS_DISABLED = {}
         DestroyEnemies()
         DestroyBosses()
         DestroyMapDoors()
@@ -56,16 +73,18 @@ function RoundFinished(reset_all, restart_game, ply_left)
 
         local New_Playing_Players = {}
         for k, v in pairs(PLAYING_PLAYERS) do
-            if not v.BOT then
-                if v ~= ply_left then
-                    table.insert(New_Playing_Players, v)
+            if v:IsValid() then
+                if not v.BOT then
+                    if v ~= ply_left then
+                        table.insert(New_Playing_Players, v)
+                    end
+                else
+                    local char = v:GetControlledCharacter()
+                    if char then
+                        char:Destroy()
+                    end
+                    v:Kick(true)
                 end
-            else
-                local char = v:GetControlledCharacter()
-                if char then
-                    char:Destroy()
-                end
-                v:Kick(true)
             end
         end
 
@@ -85,6 +104,10 @@ function RoundFinished(reset_all, restart_game, ply_left)
             end
         end
 
+        if DestroyVehicles then
+            DestroyVehicles()
+        end
+
         Events.Call("VZ_GameEnded", restart_game)
     end
     if not reset_all then
@@ -100,7 +123,9 @@ function RoundFinished(reset_all, restart_game, ply_left)
                 end
             else
                 Events.BroadcastRemote("PlayVZSound", {basic_sound_tbl=GameOver_Sound})
-                WaitingMapvote = Package.Call("mapvote", "StartMapVote", Mapvote_tbl)
+                if StartMapVote then
+                    WaitingMapvote = StartMapVote(Mapvote_tbl)
+                end
                 --print(WaitingMapvote)
             end
         else
@@ -149,8 +174,10 @@ function StartRound()
         UnlockRoom(1)
         DestroyMapGrenades()
 
+        KILL_COUNT = 0
+
+        GAME_TIMER_SECONDS = 0
         if Game_Time_On_Screen then
-            GAME_TIMER_SECONDS = 0
             Events.BroadcastRemote("UpdateGameTime", 0)
         end
 
@@ -183,33 +210,48 @@ function StartRound()
     ENEMIES_TO_SPAWN_TBL = {}
 
     if not CanStartHellhoundRound() then
+        local MaxPercentages = {}
+
         local SpawningPercentages = {}
-        for k, v in pairs(Enemies_Config.Zombie.Types) do
-            SpawningPercentages[k] = 0
-        end
-        for k, v in pairs(Enemies_Config.Zombie.FirstWave) do
-            SpawningPercentages[k] = v
-        end
-
-        for k, v in pairs(Enemies_Config.Zombie.Added_Per_Wave_Percentage) do
-            local calculated = v * (ROUND_NB - 1)
-            if calculated > 100 then
-                calculated = 100
+        for k, v in pairs(FirstWave) do
+            SpawningPercentages[k] = {}
+            MaxPercentages[k] = 0
+            for k2, v2 in pairs(Enemies_Config[k].Types) do
+                SpawningPercentages[k][k2] = 0
             end
+            for k2, v2 in pairs(v) do
+                SpawningPercentages[k][k2] = v2
+                MaxPercentages[k] = MaxPercentages[k] + v2
+            end
+        end
 
-            for k2, v2 in pairs(SpawningPercentages) do
-                if k2 ~= k then
-                    SpawningPercentages[k2] = v2 - calculated
+        for k, v in pairs(Added_Per_Wave_Percentage) do
+            for k2, v2 in pairs(v) do
+                local calculated = v2 * (ROUND_NB - 1)
+                if calculated > MaxPercentages[k] then
+                    calculated = MaxPercentages[k]
                 end
+
+                for k3, v3 in pairs(SpawningPercentages) do
+                    for k4, v4 in pairs(v3) do
+                        if (k3 == k and k4 ~= k2) then
+                            SpawningPercentages[k][k4] = v4 - calculated
+                        end
+                    end
+                end
+
+                SpawningPercentages[k][k2] = SpawningPercentages[k][k2] + calculated
             end
-            SpawningPercentages[k] = SpawningPercentages[k] + calculated
         end
         --print(NanosUtils.Dump(SpawningPercentages))
 
         local SpawningCount = {}
         for k, v in pairs(SpawningPercentages) do
-            if v > 0 then
-                SpawningCount[k] = math.floor(REMAINING_ENEMIES_TO_SPAWN * (v/100))
+            SpawningCount[k] = {}
+            for k2, v2 in pairs(v) do
+                if v2 > 0 then
+                    SpawningCount[k][k2] = math.floor(REMAINING_ENEMIES_TO_SPAWN * v2/100)
+                end
             end
         end
         --print(NanosUtils.Dump(SpawningCount))
@@ -218,15 +260,25 @@ function StartRound()
         --local FastZombiesToSpawnNB = math.floor((Running_Zombies_Percentage_Start + (Added_Running_Zombies_Percentage_At_Each_Wave * (ROUND_NB - 1))) * REMAINING_ENEMIES_TO_SPAWN / 100)
         --local SlowZombiesToSpawnNB = REMAINING_ENEMIES_TO_SPAWN - FastZombiesToSpawnNB
         for k, v in pairs(SpawningCount) do
-            for i = 1, v do
-                table.insert(ENEMIES_TO_SPAWN_TBL, {"Zombie", k})
+            for k2, v2 in pairs(v) do
+                for i = 1, v2 do
+                    table.insert(ENEMIES_TO_SPAWN_TBL, {k, k2})
+                end
             end
         end
 
         local tbl_cnt = table_count(ENEMIES_TO_SPAWN_TBL)
         if tbl_cnt < REMAINING_ENEMIES_TO_SPAWN then
+            local added_per_wave_names = {}
+            for k, v in pairs(Added_Per_Wave_Percentage) do
+                for k2, v2 in pairs(v) do
+                    table.insert(added_per_wave_names, {k, k2})
+                end
+            end
+            local added_per_wave_names_c = table_count(added_per_wave_names)
             for i = tbl_cnt, REMAINING_ENEMIES_TO_SPAWN do
-                table.insert(ENEMIES_TO_SPAWN_TBL, {"Zombie", "run"})
+                local selected_id = math.random(added_per_wave_names_c)
+                table.insert(ENEMIES_TO_SPAWN_TBL, {added_per_wave_names[selected_id][1], added_per_wave_names[selected_id][2]})
             end
         end
     else
@@ -285,35 +337,16 @@ function CanStartHellhoundRound()
     end
 end
 
-if ZDEV_IsModeEnabled("ZDEV_COMMANDS") then
-    VZ_EVENT_SUBSCRIBE("Server", "Console", function(text)
-        local split_txt = split_str(text, " ")
-        if (split_txt[1] and split_txt[2]) then
-            if split_txt[1] == "round_nb" then
-                ROUND_NB = tonumber(split_txt[2]) - 1
-                print("ROUND_NB set to", ROUND_NB + 1)
-
-                REMAINING_ENEMIES_TO_SPAWN = 0
-                for k, v in pairs(GetEnemiesCharsCopy()) do
-                    v:SetHealth(0)
-                end
-            end
-        end
-    end)
-end
-
 VZ_EVENT_SUBSCRIBE("Server", "Tick", function(ds)
     if not GAME_PAUSED then
-        if Game_Time_On_Screen then
-            if ROUND_NB > 0 then
-                GAME_TIMER_SECONDS = GAME_TIMER_SECONDS + ds
-                --print(GAME_TIMER_SECONDS)
-            end
+        if ROUND_NB > 0 then
+            GAME_TIMER_SECONDS = GAME_TIMER_SECONDS + ds
+            --print(GAME_TIMER_SECONDS)
         end
     end
 end)
 
-VZ_EVENT_SUBSCRIBE("Events", "TogglePauseGame", function(ply)
+VZ_EVENT_SUBSCRIBE_REMOTE("TogglePauseGame", function(ply)
     if Can_Host_Pause_Game then
         if ply:GetIP() == "127.0.0.1" then
             GAME_PAUSED = not GAME_PAUSED
@@ -333,7 +366,7 @@ VZ_EVENT_SUBSCRIBE("Events", "TogglePauseGame", function(ply)
                                 elseif (v:GetValue("Target_type") == "barricade" or v:GetValue("Target_type") == "vault" or v:GetValue("GroundAnim")) then
                                     local zombie_type = v:GetValue("EnemyType")
                                     REMAINING_ENEMIES_TO_SPAWN = REMAINING_ENEMIES_TO_SPAWN + 1
-                                    table.insert(ENEMIES_TO_SPAWN_TBL, zombie_type)
+                                    table.insert(ENEMIES_TO_SPAWN_TBL, {v:GetValue("EnemyName"), zombie_type})
                                     v:SetHealth(0)
                                 end
                             end
@@ -344,6 +377,30 @@ VZ_EVENT_SUBSCRIBE("Events", "TogglePauseGame", function(ply)
                 -- Destroy grenades of the world to avoid zombies going in ragdoll during pause
                 for k, v in pairs(Grenade.GetPairs()) do
                     v:Destroy()
+                end
+
+                -- Stop Bots
+                for k, v in pairs(PLAYING_PLAYERS) do
+                    if (v and v:IsValid() and v.BOT) then
+                        local char = v:GetControlledCharacter()
+                        if char then
+                            CheckToStopBotReviveTimer(char, false)
+                            BotResetTarget(v)
+                            v:SetValue("BotAimPlayer", nil, true)
+
+                            if char:GetValue("DoingAction") then
+                                char:SetValue("DoingAction", nil, false)
+                                char:MoveTo(char:GetLocation(), 50)
+                            end
+                        end
+                    end
+                end
+            else
+                for k, v in pairs(PLAYING_PLAYERS) do
+                    if (v and v:IsValid() and v.BOT) then
+                        RequestBotAction(v)
+                        v:SetValue("BotAimPlayer", GetRandomPlayer():GetID(), true)
+                    end
                 end
             end
         end

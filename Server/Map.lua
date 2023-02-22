@@ -3,7 +3,9 @@
 DOORS_STATIC_MESHES = {}
 
 SPAWNS_UNLOCKED = {}
+SPAWNS_ENABLED = {}
 ROOMS_UNLOCKED = {}
+ROOMS_SPAWNS_DISABLED = {}
 
 MAP_POWER_SM = nil
 MAP_POWER_SM_HANDLE = nil
@@ -124,27 +126,61 @@ function PlayerTurnPowerON(ply, power_sm)
         end
     end
 end
-VZ_EVENT_SUBSCRIBE("Events", "TurnPowerON", PlayerTurnPowerON)
+VZ_EVENT_SUBSCRIBE_REMOTE("TurnPowerON", PlayerTurnPowerON)
 
 function UnlockRoom(id)
     if not ROOMS_UNLOCKED[id] then
         ROOMS_UNLOCKED[id] = true
         for k, v in pairs(MAP_ROOMS[id]) do
             if v.type == "ground" then
-                table.insert(SPAWNS_UNLOCKED, {
+                local t_Insert = {
                     location = v.location,
                     rotation = v.rotation,
-                    zspawnid = v.zspawnid
-                })
+                    zspawnid = v.zspawnid,
+                    room_id = id,
+                }
+                table.insert(SPAWNS_UNLOCKED, t_Insert)
+                if not ROOMS_SPAWNS_DISABLED[id] then
+                    table.insert(SPAWNS_ENABLED, t_Insert)
+                end
             else
                 for k2, v2 in pairs(v.z_spawns) do
                     table.insert(SPAWNS_UNLOCKED, v2)
+                    if not ROOMS_SPAWNS_DISABLED[id] then
+                        table.insert(SPAWNS_ENABLED, v2)
+                    end
                 end
             end
         end
         Events.Call("VZ_RoomUnlocked", id)
     end
 end
+
+function DisableRoomSpawns(id)
+    ROOMS_SPAWNS_DISABLED[id] = true
+    local spawns_to_remove = {}
+    for i, v in ipairs(SPAWNS_ENABLED) do
+        if v.room_id == id then
+            table.insert(spawns_to_remove, i)
+        end
+    end
+    for i, v in ipairs(spawns_to_remove) do
+        table.remove(SPAWNS_ENABLED, v - i + 1)
+    end
+end
+Package.Export("DisableRoomSpawns", DisableRoomSpawns)
+
+function EnableRoomSpawns(id)
+    if ROOMS_SPAWNS_DISABLED[id] then
+        ROOMS_SPAWNS_DISABLED[id] = nil
+        for i, v in ipairs(SPAWNS_UNLOCKED) do
+            if v.room_id == id then
+                table.insert(SPAWNS_ENABLED, v)
+            end
+        end
+    end
+end
+Package.Export("EnableRoomSpawns", EnableRoomSpawns)
 
 if VZ_GetFeatureValue("Map_Weapons", "spawned") then
     for i, v in ipairs(MAP_WEAPONS) do
@@ -165,7 +201,7 @@ if MAP_LIGHT_ZONES then
         local trigger = Trigger(v.location, v.rotation, v.scale * 31.5, TriggerType.Box, ZDEV_IsModeEnabled("ZDEV_DEBUG_TRIGGERS"), Color.RED)
 
         VZ_ENT_EVENT_SUBSCRIBE(trigger, "BeginOverlap", function(self, triggered_by)
-            if NanosUtils.IsA(triggered_by, Character) then
+            if triggered_by:IsA(Character) then
                 local ply = triggered_by:GetPlayer()
                 if ply then
                     --print("FL Zone BeginOverlap")
@@ -182,7 +218,7 @@ if MAP_LIGHT_ZONES then
         end)
 
         VZ_ENT_EVENT_SUBSCRIBE(trigger, "EndOverlap", function(self, triggered_by)
-            if NanosUtils.IsA(triggered_by, Character) then
+            if triggered_by:IsA(Character) then
                 local ply = triggered_by:GetPlayer()
                 if ply then
                     --print("FL Zone EndOverlap")
@@ -202,7 +238,7 @@ if MAP_LIGHT_ZONES then
                         if table_count(FLZones) == 0 then
                             local picked_thing = triggered_by:GetPicked()
                             if picked_thing then
-                                if NanosUtils.IsA(picked_thing, Weapon) then
+                                if picked_thing:IsA(Weapon) then
                                     DetachFlashLightFromWeapon(picked_thing)
                                 end
                             end
@@ -223,5 +259,28 @@ if MAP_STATIC_MESHES then
         )
         SM:SetScale(v.scale)
         SM:SetValue("MapSMID", i, false)
+    end
+end
+
+function OpenMapDoor(door_id)
+    local map_door = GetMapDoorFromID(door_id)
+    if map_door then
+        local required_rooms_good = true
+        for i, v in ipairs(MAP_DOORS[door_id].required_rooms) do
+            if not ROOMS_UNLOCKED[v] then
+                required_rooms_good = false
+                break
+            end
+        end
+
+        if required_rooms_good then
+            map_door:Destroy()
+            for i, v in ipairs(MAP_DOORS[door_id].between_rooms) do
+                UnlockRoom(v)
+            end
+            Events.Call("VZ_DoorOpened", char, door_id)
+
+            return true
+        end
     end
 end

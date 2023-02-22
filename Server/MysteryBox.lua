@@ -203,7 +203,7 @@ function OpenActiveMysteryBox(char)
     Events.BroadcastRemote("OpenMBOXSound", SM_MysteryBoxes[Active_MysteryBox_ID].mbox:GetLocation())
 end
 
-VZ_EVENT_SUBSCRIBE("Events", "BuyMBOX", function(ply, mbox)
+VZ_EVENT_SUBSCRIBE_REMOTE("BuyMBOX", function(ply, mbox)
     if (mbox and mbox:IsValid()) then
         local mbox_can_buy = mbox:GetValue("CanBuyMysteryBox")
         if mbox_can_buy then
@@ -222,7 +222,7 @@ VZ_EVENT_SUBSCRIBE("Events", "BuyMBOX", function(ply, mbox)
 end)
 
 VZ_EVENT_SUBSCRIBE("Weapon", "Interact", function(weapon, char)
-    if weapon:IsValid() then
+    if (weapon and weapon:IsValid()) then
         local mbox_fake_weapon = weapon:GetValue("MBOXFakeWeapon")
         if mbox_fake_weapon then
             return false

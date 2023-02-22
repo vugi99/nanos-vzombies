@@ -2,11 +2,13 @@
 
 
 One_Time_Update_Data = {
-    HTP_Text_Showed = true,
     Zombies_Remaining_Number = 0,
     InteractText = nil,
     WaitingPlayer = nil,
 }
+
+local LocalXP
+local LocalLevel
 
 -- This canvas will be completly frozen
 Frozen_Canvas = Canvas(
@@ -17,11 +19,13 @@ Frozen_Canvas = Canvas(
 )
 Frozen_Canvas:Subscribe("Update", function(self, width, height)
     if ZDEV_CONFIG.ENABLED then
-        self:DrawText("VZ DEV MODE", Vector2D(math.floor(Client.GetViewportSize().X * 0.5), 10), 0, 16, Color.RED, 0, true, true, Color(0, 0, 0, 0), Vector2D(), false, Color.WHITE)
+        self:DrawText("VZ DEV MODE", Vector2D(math.floor(Viewport.GetViewportSize().X * 0.5), 10), 0, 16, Color.RED, 0, true, true, Color(0, 0, 0, 0), Vector2D(), false, Color.WHITE)
     end
-    self:DrawText("VZombies " .. Package.GetVersion(), Vector2D(60, math.floor(Client.GetViewportSize().Y * 0.99)), 0, 12, Color.WHITE, 0, true, true, Color(0, 0, 0, 0), Vector2D(), false, Color.WHITE)
+    self:DrawText("VZombies " .. Package.GetVersion(), Vector2D(string.len("VZombies " .. Package.GetVersion()) * 4, math.floor(Viewport.GetViewportSize().Y * 0.99)), 0, 12, Color.WHITE, 0, true, true, Color(0, 0, 0, 0), Vector2D(), false, Color.WHITE)
 
-    self:DrawText(VZ_SELECTED_GAMEMODE .. " Mode", Vector2D(math.floor(Client.GetViewportSize().X * 0.78), math.floor(Client.GetViewportSize().Y * 0.96)), 0, 12, Color.WHITE, 0, true, true, Color(0, 0, 0, 0), Vector2D(), true, Color.BLACK)
+    if VZ_CL_Current_Settings.Selected_Gamemode_Showed then
+        self:DrawText(VZ_SELECTED_GAMEMODE .. " Mode", Vector2D(math.floor(Viewport.GetViewportSize().X * 0.78), math.floor(Viewport.GetViewportSize().Y * 0.96)), 0, 12, Color.WHITE, 0, true, true, Color(0, 0, 0, 0), Vector2D(), true, Color.BLACK)
+    end
 end)
 Frozen_Canvas:Repaint()
 
@@ -33,16 +37,16 @@ One_Time_Updates_Canvas = Canvas(
     true
 )
 One_Time_Updates_Canvas:Subscribe("Update", function(self, width, height)
-    if One_Time_Update_Data.HTP_Text_Showed then
-        self:DrawText("How to play (" .. Input.GetMappedKey("How to play") .. ")", Vector2D(math.floor(Client.GetViewportSize().X * 0.5), math.floor(Client.GetViewportSize().Y * 0.5)), 0, 25, Color.WHITE, 0, true, true, Color(0, 0, 0, 0), Vector2D(), false, Color.WHITE)
-    end
-    if Remaining_Enemies_Text then
-        self:DrawText("Remaining Enemies : " .. tostring(One_Time_Update_Data.Zombies_Remaining_Number), Vector2D(135, math.floor(Client.GetViewportSize().Y * 0.04)), 0, 14, Color.WHITE, 0, true, true, Color(0, 0, 0, 0), Vector2D(), false, Color.WHITE)
+    --if One_Time_Update_Data.HTP_Text_Showed then
+        --self:DrawText("How to play (" .. Input.GetMappedKeys("How to play")[1] .. ")", Vector2D(math.floor(Viewport.GetViewportSize().X * 0.5), math.floor(Viewport.GetViewportSize().Y * 0.5)), 0, 25, Color.WHITE, 0, true, true, Color(0, 0, 0, 0), Vector2D(), false, Color.WHITE)
+    --end
+    if (Remaining_Enemies_Text and VZ_CL_Current_Settings.Zombies_Remaining_Showed) then
+        self:DrawText("Remaining Enemies : " .. tostring(One_Time_Update_Data.Zombies_Remaining_Number), Vector2D(135, math.floor(Viewport.GetViewportSize().Y * 0.04)), 0, 14, Color.WHITE, 0, true, true, Color(0, 0, 0, 0), Vector2D(), false, Color.WHITE)
     end
     if One_Time_Update_Data.InteractText then
         self:DrawText(
             One_Time_Update_Data.InteractText,
-            (Client.GetViewportSize() / 2) + Vector2D(0, Interact_Text_Y_Offset),
+            (Viewport.GetViewportSize() / 2) + Vector2D(0, Interact_Text_Y_Offset),
             0,
             20,
             Color.WHITE,
@@ -56,26 +60,22 @@ One_Time_Updates_Canvas:Subscribe("Update", function(self, width, height)
         )
     end
     if One_Time_Update_Data.WaitingPlayer then
-        self:DrawText("Game full, Waiting for free slot", Vector2D(135, math.floor(Client.GetViewportSize().Y * 0.06)), 0, 14, Color.ORANGE, 0, true, true, Color(0, 0, 0, 0), Vector2D(), false, Color.WHITE)
+        self:DrawText("Game full, Waiting for free slot", Vector2D(135, math.floor(Viewport.GetViewportSize().Y * 0.06)), 0, 14, Color.ORANGE, 0, true, true, Color(0, 0, 0, 0), Vector2D(), false, Color.WHITE)
     end
-    if Spectating_Player then
+    if (Spectating_Player and not Free_Cam and VZ_CL_Current_Settings.Spectating_Player_Showed) then
         local text = "Spectating : " .. Spectating_Player:GetAccountName()
-        self:DrawText(text, Vector2D(math.floor(Client.GetViewportSize().X * 0.5), 30), 0, 14, Color.WHITE, 0, true, true, Color(0, 0, 0, 0), Vector2D(), false, Color.WHITE)
+        self:DrawText(text, Vector2D(math.floor(Viewport.GetViewportSize().X * 0.5), 30), 0, 14, Color.WHITE, 0, true, true, Color(0, 0, 0, 0), Vector2D(), false, Color.WHITE)
     end
     if GAME_PAUSED then
-        self:DrawText("PAUSE", Vector2D(math.floor(Client.GetViewportSize().X * 0.5), math.floor(Client.GetViewportSize().Y * 0.5)), FontType.OpenSans, 120, Color.WHITE, 0, true, true, Color(0, 0, 0, 0), Vector2D(), true, Color.BLACK)
+        self:DrawText("PAUSE", Vector2D(math.floor(Viewport.GetViewportSize().X * 0.5), math.floor(Viewport.GetViewportSize().Y * 0.5)), FontType.OpenSans, 120, Color.WHITE, 0, true, true, Color(0, 0, 0, 0), Vector2D(), true, Color.BLACK)
     end
 end)
 One_Time_Updates_Canvas:Repaint()
 
-Timer.SetTimeout(function()
-    One_Time_Update_Data.HTP_Text_Showed = false
-    One_Time_Updates_Canvas:Repaint()
-end, How_To_Play_Text_Destroy_ms)
-
 GAME_TIMER_SECONDS = 0
 
-GUI = WebUI("vzombies GUI", "file://gui/index.html", true, true, true)
+GUI = WebUI("vzombies GUI", "file://gui/index.html", WebUIVisibility.Visible, true, true)
+Package.Export("GUI", GUI)
 
 ROUND_NB = 0
 
@@ -93,12 +93,14 @@ CurPerks = {}
 RequestedTabData = false
 Tab_Open = false
 
-Client.SetBloodScreenEnabled(false)
+Viewport.SetBloodScreenEnabled(false)
 
 Client.SetOutlineColor(Outline_Selected_Bot_Color, 0)
 Client.SetOutlineColor(Outline_Players_Color, 1)
 
-Client.SetChatConfiguration(table.unpack(Chat_Config))
+Chat.SetConfiguration(table.unpack(Chat_Config))
+
+Input.SetMouseEnabled(false)
 
 function IsSelfCharacter(char)
     local local_player = Client.GetLocalPlayer()
@@ -123,7 +125,7 @@ end
 
 function NeedToUpdateAmmoText(char, weapon)
     if (IsSelfCharacter(char) or IsSpectatingPlayerCharacter(char)) then
-        if (not NanosUtils.IsA(weapon, Grenade) and not NanosUtils.IsA(weapon, Melee)) then
+        if (not weapon:IsA(Grenade) and not weapon:IsA(Melee)) then
             GUI:CallEvent("SetAmmoText", tostring(weapon:GetAmmoClip()), tostring(weapon:GetAmmoBag()))
         end
     end
@@ -137,12 +139,13 @@ VZ_EVENT_SUBSCRIBE("Character", "Drop", function(char)
     if local_char then
         if (local_char == char) then
             GUI:CallEvent("SetAmmoText", "0", "0")
+            GUI:CallEvent("ShowRepackIcon")
         end
     elseif IsSpectatingPlayerCharacter(char) then
         GUI:CallEvent("SetAmmoText", "0", "0")
     end
 end)
-VZ_EVENT_SUBSCRIBE("Events", "UpdateAmmoText", function()
+VZ_EVENT_SUBSCRIBE_REMOTE("UpdateAmmoText", function()
     local local_player = Client.GetLocalPlayer()
     local local_char = local_player:GetControlledCharacter()
     if local_char then
@@ -188,6 +191,11 @@ function SetPlayerMoney(ply, money)
                 end
             end
             GUI:CallEvent("SetPlayerMoney", i-1, tostring(money), tostring(money - PlayersMoney[i].money))
+            if LocalXP then
+                if Client.GetLocalPlayer() == ply then
+                    AddLocalXP(math.floor((money - PlayersMoney[i].money)*VZ_GetFeatureValue("Levels", "score_mult_into_xp")))
+                end
+            end
             PlayersMoney[i].money = money
         end
     end
@@ -283,7 +291,7 @@ function SetRoundNumber(nb, is_hellhound)
     UpdateDiscordRichPresence()
 end
 
-VZ_EVENT_SUBSCRIBE("Events", "SetClientRoundNumber", function(nb, is_hellhound)
+VZ_EVENT_SUBSCRIBE_REMOTE("SetClientRoundNumber", function(nb, is_hellhound)
     SetRoundNumber(nb, is_hellhound)
 end)
 
@@ -311,15 +319,15 @@ function UpdateHealth(health)
         GUI:CallEvent("UpdateGUIHealth", max_health, health)
 
         if health <= 0 then
-            Client.SetBloodScreenIntensity(1.1)
+            Viewport.SetBloodScreenIntensity(1.1)
         elseif health <= PlayerHealth then
-            Client.SetBloodScreenIntensity(((health * 0.01) - (PlayerHealth * 0.01)) * -1)
+            Viewport.SetBloodScreenIntensity(((health * 0.01) - (PlayerHealth * 0.01)) * -1)
         else
-            Client.SetBloodScreenIntensity(0.0)
+            Viewport.SetBloodScreenIntensity(0.0)
         end
     else
         GUI:CallEvent("HideGUIHealth")
-        Client.SetBloodScreenIntensity(0.0)
+        Viewport.SetBloodScreenIntensity(0.0)
     end
 end
 
@@ -345,7 +353,7 @@ VZ_EVENT_SUBSCRIBE("Character", "Destroy", function(char)
     end
 end)
 
-VZ_EVENT_SUBSCRIBE("Events", "UpdateGUIHealth", function()
+VZ_EVENT_SUBSCRIBE_REMOTE("UpdateGUIHealth", function()
     local ply = Client.GetLocalPlayer()
     local char = ply:GetControlledCharacter()
     if char then
@@ -385,7 +393,7 @@ function PowerupGrabbedGUI(powerup_name)
         Powerups_On_GUI[powerup_name] = true
     end
 end
-VZ_EVENT_SUBSCRIBE("Events", "PowerupGrabbed", PowerupGrabbedGUI)
+VZ_EVENT_SUBSCRIBE_REMOTE("PowerupGrabbed", PowerupGrabbedGUI)
 
 function DurationPowerupRemovedGUI(powerup_name)
     if Powerups_Config[powerup_name].icon then
@@ -393,7 +401,7 @@ function DurationPowerupRemovedGUI(powerup_name)
         Powerups_On_GUI[powerup_name] = nil
     end
 end
-VZ_EVENT_SUBSCRIBE("Events", "DurationPowerupRemoved", DurationPowerupRemovedGUI)
+VZ_EVENT_SUBSCRIBE_REMOTE("DurationPowerupRemoved", DurationPowerupRemovedGUI)
 
 VZ_EVENT_SUBSCRIBE("Character", "ValueChange", function(char, key, value)
     if IsSelfCharacter(char) then
@@ -407,7 +415,7 @@ VZ_EVENT_SUBSCRIBE("Character", "ValueChange", function(char, key, value)
     end
 end)
 
-VZ_EVENT_SUBSCRIBE("Events", "RemoveGUIPowerups", function()
+VZ_EVENT_SUBSCRIBE_REMOTE("RemoveGUIPowerups", function()
     for k, v in pairs(Powerups_Config) do
         if v.icon then
             GUI:CallEvent("RemovePowerup", v.icon)
@@ -450,7 +458,7 @@ VZ_EVENT_SUBSCRIBE("Character", "Destroy", function(char)
     end
 end)
 
-VZ_EVENT_SUBSCRIBE("Events", "TabData", function(tab_data)
+VZ_EVENT_SUBSCRIBE_REMOTE("TabData", function(tab_data)
     Tab_Open = true
     GUI:CallEvent("ShowTab", JSON.stringify(tab_data))
     RequestedTabData = false
@@ -458,6 +466,13 @@ end)
 
 function UpdateGrenadesNB(nb)
     GUI:CallEvent("SetGrenadesNB", nb)
+end
+if Client.GetLocalPlayer() then
+    if Client.GetLocalPlayer():GetControlledCharacter() then
+        if Client.GetLocalPlayer():GetControlledCharacter():GetValue("ZGrenadesNB") then
+            UpdateGrenadesNB(Client.GetLocalPlayer():GetControlledCharacter():GetValue("ZGrenadesNB"))
+        end
+    end
 end
 
 VZ_EVENT_SUBSCRIBE("Character", "ValueChange", function(char, key, value)
@@ -474,7 +489,7 @@ VZ_EVENT_SUBSCRIBE("Character", "Destroy", function(char)
     end
 end)
 
-VZ_EVENT_SUBSCRIBE("Events", "SetClientRemainingZombies", function(remaining)
+VZ_EVENT_SUBSCRIBE_REMOTE("SetClientRemainingZombies", function(remaining)
     if Remaining_Enemies_Text then
         One_Time_Update_Data.Zombies_Remaining_Number = remaining
         One_Time_Updates_Canvas:Repaint()
@@ -482,28 +497,9 @@ VZ_EVENT_SUBSCRIBE("Events", "SetClientRemainingZombies", function(remaining)
 end)
 
 function Get3DLocationOnScreen(loc)
-    local project = Client.ProjectWorldToScreen(loc)
+    local project = Viewport.ProjectWorldToScreen(loc)
     if (project and project ~= Vector2D(-1, -1)) then
         return project
-    end
-end
-
-if ZDEV_IsModeEnabled("ZDEV_DEBUG_HIGHLIGHT_ZOMBIES") then
-    local highlight_color = Color(10, 2.5, 0)
-    Client.SetHighlightColor(highlight_color, 0, HighlightMode.Always)
-
-    VZ_EVENT_SUBSCRIBE("Character", "ValueChange", function(char, key, value)
-        if key == "EnemyType" then
-            if value then
-                char:SetHighlightEnabled(true, 0)
-            end
-        end
-    end)
-
-    for k, v in pairs(Character.GetPairs()) do
-        if v:GetValue("EnemyType") then
-            v:SetHighlightEnabled(true, 0)
-        end
     end
 end
 
@@ -526,6 +522,7 @@ VZ_EVENT_SUBSCRIBE("Character", "ValueChange", function(char, key, value)
     if key == "PlayerDown" then
         if not IsSelfCharacter(char) then
             if value then
+                AddNotification(char:GetPlayer():GetAccountName() .. " is down", 10000)
                 local billboard = Billboard(
                     Vector(0, 0, 0),
                     "nanos-world::M_NanosTranslucent_Depth",
@@ -550,7 +547,7 @@ VZ_EVENT_SUBSCRIBE("Character", "ValueChange", function(char, key, value)
     end
 end)
 
-VZ_EVENT_SUBSCRIBE("Events", "UpdateGameTime", function(time_s)
+VZ_EVENT_SUBSCRIBE_REMOTE("UpdateGameTime", function(time_s)
     GAME_TIMER_SECONDS = time_s
 end)
 
@@ -588,53 +585,56 @@ function EnableCharOutline(v, enable)
     end
 end
 
-Timer.SetInterval(function()
-    local local_char = Client.GetLocalPlayer():GetControlledCharacter()
-    local TraceFrom
-    if local_char then
-        TraceFrom = local_char:GetBoneTransform("head").Location
-    else
-        TraceFrom = Client.GetLocalPlayer():GetCameraLocation()
-    end
 
-    if TraceFrom then
-        for k, v in pairs(Character.GetPairs()) do
-            if local_char ~= v then
-                local ply = v:GetPlayer()
-                if ply then
-                    local ignored_actors = {}
-                    if local_char then
-                        ignored_actors = {local_char}
-                    elseif (Spectating_Player and Spectating_Player:IsValid()) then
-                        local spec_char = Spectating_Player:GetControlledCharacter()
-                        if spec_char:IsValid() then
-                            ignored_actors = {spec_char}
+if Outline_Players_Enabled then
+    Timer.SetInterval(function()
+        local local_char = Client.GetLocalPlayer():GetControlledCharacter()
+        local TraceFrom
+        if local_char then
+            TraceFrom = local_char:GetBoneTransform("head").Location
+        else
+            TraceFrom = Client.GetLocalPlayer():GetCameraLocation()
+        end
+
+        if TraceFrom then
+            for k, v in pairs(Character.GetPairs()) do
+                if local_char ~= v then
+                    local ply = v:GetPlayer()
+                    if ply then
+                        local ignored_actors = {}
+                        if local_char then
+                            ignored_actors = {local_char}
+                        elseif (Spectating_Player and Spectating_Player:IsValid()) then
+                            local spec_char = Spectating_Player:GetControlledCharacter()
+                            if spec_char:IsValid() then
+                                ignored_actors = {spec_char}
+                            end
                         end
-                    end
 
-                    local trace_mode = TraceMode.ReturnEntity
-                    if ZDEV_IsModeEnabled("ZDEV_DEBUG_TRACES") then
-                        trace_mode = trace_mode | TraceMode.DrawDebug
-                    end
+                        local trace_mode = TraceMode.ReturnEntity
+                        if ZDEV_IsModeEnabled("ZDEV_DEBUG_TRACES") then
+                            trace_mode = trace_mode | TraceMode.DrawDebug
+                        end
 
-                    local trace = Client.TraceLineSingle(TraceFrom, v:GetLocation(), CollisionChannel.Pawn | CollisionChannel.WorldStatic, trace_mode, ignored_actors)
+                        local trace = Trace.LineSingle(TraceFrom, v:GetLocation(), CollisionChannel.Pawn | CollisionChannel.WorldStatic, trace_mode, ignored_actors)
 
-                    if trace.Success then
-                        if (trace.Entity and trace.Entity == v) then
-                            EnableCharOutline(v, false)
+                        if trace.Success then
+                            if (trace.Entity and trace.Entity == v) then
+                                EnableCharOutline(v, false)
+                            else
+                                EnableCharOutline(v, true)
+                            end
                         else
                             EnableCharOutline(v, true)
                         end
-                    else
-                        EnableCharOutline(v, true)
                     end
                 end
             end
+        else
+            ResetOutlined()
         end
-    else
-        ResetOutlined()
-    end
-end, Outline_Players_Check_Interval_ms)
+    end, Outline_Players_Check_Interval_ms)
+end
 
 VZ_EVENT_SUBSCRIBE("Character", "Destroy", function(char)
     if Outlined_Characters[char:GetID()] then
@@ -643,54 +643,96 @@ VZ_EVENT_SUBSCRIBE("Character", "Destroy", function(char)
 end)
 
 if Player_Names_On_Heads then
-    PNOH_Canvas = Canvas(
+    --[[PNOH_Canvas = Canvas(
         true,
         Color(0, 0, 0, 0),
         Player_Names_On_Heads_Canvas_Update_Interval_ms / 1000,
         true
     )
     PNOH_Canvas:Subscribe("Update", function(self, width, height)
-        local self_char = Client.GetLocalPlayer():GetControlledCharacter()
-        local self_loc
-        if self_char then
-            self_loc = self_char:GetLocation()
-        elseif Spectating_Player then
-            local specing_char = Spectating_Player:GetControlledCharacter()
-            if specing_char then
-                self_loc = specing_char:GetLocation()
+        if VZ_CL_Current_Settings.Player_Names_On_Heads then
+            local self_char = Client.GetLocalPlayer():GetControlledCharacter()
+            local self_loc
+            if self_char then
+                self_loc = self_char:GetLocation()
+            elseif Spectating_Player then
+                local specing_char = Spectating_Player:GetControlledCharacter()
+                if specing_char then
+                    self_loc = specing_char:GetLocation()
+                end
+            else
+                self_loc = Client.GetLocalPlayer():GetCameraLocation()
             end
-        else
-            self_loc = Client.GetLocalPlayer():GetCameraLocation()
-        end
-        for k, v in pairs(Character.GetPairs()) do
-            local ply = v:GetPlayer()
-            if ply then
-                if ply ~= Client.GetLocalPlayer() then
-                    local char_loc = v:GetLocation()
-                    local dist_sq = self_loc:DistanceSquared(char_loc)
-                    if dist_sq <= Player_Name_Displayed_at_dist_sq then
-                        local Vector_head_text = Get3DLocationOnScreen(char_loc + Vector(0, 0, 97))
-                        if Vector_head_text then
-                            self:DrawText(
-                                ply:GetAccountName(),
-                                Vector_head_text,
-                                FontType.Roboto,
-                                16,
-                                Color.AZURE,
-                                0,
-                                true,
-                                true,
-                                Color(0, 0, 0, 0),
-                                Vector2D(),
-                                true,
-                                Color.BLACK
-                            )
+            for k, v in pairs(Character.GetPairs()) do
+                local ply = v:GetPlayer()
+                if ply then
+                    if ply ~= Client.GetLocalPlayer() then
+                        local char_loc = v:GetLocation()
+                        local dist_sq = self_loc:DistanceSquared(char_loc)
+                        if dist_sq <= Player_Name_Displayed_at_dist_sq then
+                            local Vector_head_text = Get3DLocationOnScreen(char_loc + Vector(0, 0, 97))
+                            if Vector_head_text then
+                                self:DrawText(
+                                    ply:GetAccountName(),
+                                    Vector_head_text,
+                                    FontType.Roboto,
+                                    16,
+                                    Color.AZURE,
+                                    0,
+                                    true,
+                                    true,
+                                    Color(0, 0, 0, 0),
+                                    Vector2D(),
+                                    true,
+                                    Color.BLACK
+                                )
+                            end
                         end
                     end
                 end
             end
         end
+    end)]]--
+
+    function CheckToAddText3D(char)
+        --print(char, char:GetPlayer())
+        local local_ply = Client.GetLocalPlayer()
+        if local_ply then
+            local local_char = local_ply:GetControlledCharacter()
+            if local_char == char then
+                return
+            end
+        end
+        if (char:GetPlayer() and not char:GetValue("Text3DEnt")) then
+            local text_3d = TextRender(
+                Vector(),
+                Rotator(),
+                char:GetPlayer():GetAccountName(),
+                Player_Name_Text3D_Scale,
+                Color.AZURE,
+                FontType.OpenSans,
+                TextRenderAlignCamera.AlignCameraRotation
+            )
+            text_3d:SetTextSettings(0, 0, 0, TextRenderHorizontalAlignment.Center, TextRenderVerticalAlignment.Center)
+            text_3d:AttachTo(char, AttachmentRule.SnapToTarget, "", 0, false)
+            text_3d:SetRelativeLocation(Player_Name_Text3D_Head_Offset)
+            text_3d:SetMaterialColorParameter("Emissive", Color.AZURE * 2)
+
+            char:SetValue("Text3DEnt", text_3d)
+        end
+    end
+
+    VZ_EVENT_SUBSCRIBE("Character", "ValueChange", function(char, key, value)
+        if key == "OwnedPerks" then
+            CheckToAddText3D(char)
+        end
     end)
+
+    for k, v in pairs(Character.GetPairs()) do
+        if v:GetValue("OwnedPerks") then
+            CheckToAddText3D(v)
+        end
+    end
 end
 
 if Game_Time_On_Screen then
@@ -701,20 +743,22 @@ if Game_Time_On_Screen then
         true
     )
     GAME_TIME_Canvas:Subscribe("Update", function(self, width, height)
-        local time_seconds = math.floor(GAME_TIMER_SECONDS)
-        local minutes = math.floor(time_seconds/60)
-        local seconds = time_seconds - (minutes * 60)
+        if VZ_CL_Current_Settings.Game_Time_Showed then
+            local time_seconds = math.floor(GAME_TIMER_SECONDS)
+            local minutes = math.floor(time_seconds/60)
+            local seconds = time_seconds - (minutes * 60)
 
-        local minutes_text = tostring(minutes)
-        if minutes < 10 then
-            minutes_text = "0" .. minutes_text
+            local minutes_text = tostring(minutes)
+            if minutes < 10 then
+                minutes_text = "0" .. minutes_text
+            end
+            local seconds_text = tostring(seconds)
+            --print(seconds)
+            if seconds < 10 then
+                seconds_text = "0" .. seconds_text
+            end
+            self:DrawText(minutes_text .. ":" .. seconds_text, Vector2D(150, Viewport.GetViewportSize().Y * 0.97), FontType.Oswald, 15, Color.WHITE, 0, false, true, Color.TRANSPARENT, Vector2D(), false, Color.TRANSPARENT)
         end
-        local seconds_text = tostring(seconds)
-        --print(seconds)
-        if seconds < 10 then
-            seconds_text = "0" .. seconds_text
-        end
-        self:DrawText(minutes_text .. ":" .. seconds_text, Vector2D(150, Client.GetViewportSize().Y * 0.97), FontType.Oswald, 15, Color.WHITE, 0, false, true, Color.TRANSPARENT, Vector2D(), false, Color.TRANSPARENT)
     end)
 end
 
@@ -740,7 +784,7 @@ if Ping_Enabled then
                 if v.entity:IsValid() then
                     if v.entity:GetValue("DoorID") then
                         DrawPing(self, v.location, "Door", v.color)
-                    elseif v.entity:GetType() == "Weapon" then
+                    elseif v.entity:IsA(Weapon) then
                         if v.entity:GetValue("MapWeaponID") then
                             DrawPing(self, v.location, MAP_WEAPONS[v.entity:GetValue("MapWeaponID")].weapon_name .. " WallBuy", v.color)
                         elseif not v.entity:GetHandler() then
@@ -760,8 +804,10 @@ if Ping_Enabled then
                         DrawPing(self, v.location, "Wunderfizz", v.color)
                     elseif v.entity:GetValue("EnemyName") then
                         DrawPing(self, v.entity:GetLocation(), v.entity:GetValue("EnemyName"), v.color)
-                    elseif (v.entity:GetType() == "Character" and v.entity:GetPlayer()) then
+                    elseif (v.entity:IsA(Character) and v.entity:GetPlayer()) then
                         DrawPing(self, v.entity:GetLocation(), v.entity:GetPlayer():GetAccountName(), v.color)
+                    elseif (v.entity:IsA(Vehicle) and v.entity:GetValue("VehName")) then
+                        DrawPing(self, v.entity:GetLocation(), v.entity:GetValue("VehName"), v.color)
                     else
                         DrawPing(self, v.location, "Ping", v.color)
                     end
@@ -772,7 +818,7 @@ if Ping_Enabled then
         end
     end)
 
-    VZ_EVENT_SUBSCRIBE("Events", "SyncPing", function(color, location, entity)
+    VZ_EVENT_SUBSCRIBE_REMOTE("SyncPing", function(color, location, entity)
         Last_Ping_ID = Last_Ping_ID + 1
         local current_id = Last_Ping_ID
         Pings_To_Display[current_id] = {
@@ -795,3 +841,114 @@ if Ping_Enabled then
         end
     end)
 end
+
+VZ_EVENT_SUBSCRIBE("Player", "VOIP", function(ply, is_talking)
+    if is_talking then
+        GUI:CallEvent("PlayerStartedVOIP", ply:GetAccountName(), ply:GetID())
+    else
+        GUI:CallEvent("PlayerStoppedVOIP", ply:GetID())
+    end
+end)
+
+VZ_EVENT_SUBSCRIBE("Events", "VZOMBIES_CLIENT_GAMEMODE_LOADED", function()
+    local passed_tbl = {}
+    for i, v in ipairs(Binded_Keys) do
+        table.insert(passed_tbl, {v, Input.GetMappedKeys(v)[1]})
+    end
+    GUI:CallEvent("HelpMenuDefaultKeys", passed_tbl)
+end)
+
+
+VZ_EVENT_SUBSCRIBE_REMOTE("PlayerLevelXPUpdate", function(level, xp)
+    if not LocalXP then
+        GUI:CallEvent("EnableVZLevels")
+    end
+    if LocalLevel ~= level then
+        LocalLevel = level
+        SetGUILevel(level)
+    end
+    if LocalXP ~= xp then
+        LocalXP = xp
+        SetGUIXP(xp, VZ_GetFeatureValue("Levels", "levels_xp_func")(LocalLevel))
+    end
+end)
+
+function SetGUILevel(level)
+    GUI:CallEvent("SetLvlText", tostring(level))
+end
+
+function SetGUIXP(xp, target)
+    GUI:CallEvent("SetBarPercentage", (xp * 100) / target)
+end
+
+function AddLocalXP(added)
+    if LocalXP then
+        if added > 0 then
+            LocalXP = LocalXP + added
+            local XP_target = VZ_GetFeatureValue("Levels", "levels_xp_func")(LocalLevel)
+            if LocalXP >= XP_target then
+                LocalXP = LocalXP - XP_target
+                LocalLevel = LocalLevel + 1
+                AddNotification("Level Up")
+                SetGUILevel(LocalLevel)
+            end
+            SetGUIXP(LocalXP, XP_target)
+        end
+    end
+end
+
+function AddNotification(text, time)
+    time = time or 5000
+    GUI:CallEvent("AddNotification", text, time)
+end
+VZ_EVENT_SUBSCRIBE_REMOTE("AddNotification", AddNotification)
+Package.Export("AddNotification", AddNotification)
+
+AddNotification("How To Play (" .. Input.GetMappedKeys("How to play")[1] .. ")", 15000)
+
+
+VZ_EVENT_SUBSCRIBE("Character", "PickUp", function(char, picked)
+    if char then
+        if Client.GetLocalPlayer() and Client.GetLocalPlayer():GetControlledCharacter() then
+            if Client.GetLocalPlayer():GetControlledCharacter() == char then
+                if picked:GetValue("PAPRepackEffect") then
+                    local config = PAP_Repack_Config[picked:GetValue("PAPRepackEffect")]
+                    if config then
+                        GUI:CallEvent("ShowRepackIcon", config.icon)
+                    end
+                end
+            end
+        end
+    end
+end)
+
+VZ_EVENT_SUBSCRIBE("Player", "UnPossess", function(ply, char)
+    if ply == Client.GetLocalPlayer() then
+        GUI:CallEvent("ShowRepackIcon")
+    end
+end)
+
+VZ_EVENT_SUBSCRIBE("Weapon", "ValueChange", function(weap, key, value)
+    if (weap and weap:IsValid()) then
+        if key == "PAPRepackEffect" then
+            local handler = weap:GetHandler()
+            if handler then
+                local handler_ply = handler:GetPlayer()
+                if handler_ply then
+                    if handler_ply == Client.GetLocalPlayer() then
+                        if value then
+                            local config = PAP_Repack_Config[value]
+                            if config then
+                                GUI:CallEvent("ShowRepackIcon", config.icon)
+                            else
+                                GUI:CallEvent("ShowRepackIcon")
+                            end
+                        else
+                            GUI:CallEvent("ShowRepackIcon")
+                        end
+                    end
+                end
+            end
+        end
+    end
+end)

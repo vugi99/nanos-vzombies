@@ -39,6 +39,9 @@
                 Kills
             </div>
             <div class="tab_item">
+                Money
+            </div>
+            <div class="tab_item">
                 Score
             </div>
             <div class="tab_item">
@@ -61,22 +64,12 @@
         <div class="HTP_text">Wave number is displayed in the bottom left hand corner</div>
         <div class="HTP_text">The selected mode is displayed under ammo</div>
 
-        <div class="HTP_category_title">Default Keys</div>
+        <div class="HTP_category_title">Keys</div>
+        
         <div class="HTP_text">Press your Interact key (the one in the game key settings) to do what the text shows on your screen, when you need to Hold a key, it's still the Interact key</div>
         <div class="HTP_text">The keys below can be configured in scripting keys : </div>
-        <div class="HTP_text">- X : Change Weapon Slot</div>
-        <div class="HTP_text">- TAB : Opens TAB Menu</div>
-        <div class="HTP_text">- V : Use Knife</div>
-        <div class="HTP_text">- A : Throw Grenade</div>
-        <div class="HTP_text">- L : Lock Aim</div>
-        <div class="HTP_text">- P : Pause</div>
-        <div class="HTP_text">- B : Bot Order</div>
-        <div class="HTP_text">- K : Suicide</div>
-        <div class="HTP_text">- F : Ping</div>
-        <div class="HTP_text">- E (Interact) : Buy something</div>
-        <div class="HTP_text">- Alt-E (Interact) : Select Bot to give order</div>
-        <div class="HTP_text">- Left Arrow : Previous Player (spectate)</div>
-        <div class="HTP_text">- Right Arrow : Next Player (spectate)</div>
+        <div id="Default_Keys_Container">
+        </div>
 
         <div class="HTP_category_title">Waves</div>
         <div class="HTP_text">A determined amount of zombies spawns at each wave, when you killed all of them a music plays and you have some time free before the next wave starts, another sound plays when a new wave starts</div>
@@ -132,8 +125,21 @@
     <div id="orders-wheel-container">
 
     </div>
+
+    <div id="VOIP-container">
+        
+    </div>
+
+    <div id="Notifications-container">
+
+    </div>
+
+    <div id="Repack-container">
+
+    </div>
     
     <script src="./blooming-menu.min.js" type="text/javascript"></script>
     <script src="./gui.js" type="text/javascript"></script>
+    <script src="./frame_system.js" type="text/javascript"></script>
 </body>
 </html>

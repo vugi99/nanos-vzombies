@@ -2,7 +2,7 @@
 
 if DRP_Enabled then
     if DRP_ClientID > 0 then
-        Client.InitializeDiscord(DRP_ClientID)
+        Discord.Initialize(DRP_ClientID)
     end
 end
 
@@ -18,14 +18,14 @@ function UpdateDiscordRichPresence()
                 NewDRP_Config[k] = v
             end
         end
-        Client.SetDiscordActivity(NewDRP_Config.state, NewDRP_Config.details, NewDRP_Config.large_image, NewDRP_Config.large_text)
+        Discord.SetActivity(NewDRP_Config.state, NewDRP_Config.details, NewDRP_Config.large_image, NewDRP_Config.large_text)
     end
 end
 
 function UpdateSteamRichPresence()
     if Steam_Rich_Presence_Enabled then
         local new_rp = Steam_Rich_Presence_Text:gsub("{MAP_NAME}", split_str(Client.GetMap(), ":")[2])
-        Client.SetSteamRichPresence(new_rp)
+        Steam.SetRichPresence(new_rp)
     end
 end
 UpdateSteamRichPresence()

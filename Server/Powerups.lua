@@ -21,6 +21,7 @@ function GetWeaponNameMaxAmmo(weapon_name)
             return v.max_ammo
         end
     end
+    return 10666
 end
 
 function GetPowerupsOnMapCopy()
@@ -67,146 +68,152 @@ function Carpenter_Repair_Func()
 end
 
 function PowerupGrabbed(powerup_name, by_char)
-    local ply = by_char:GetPlayer()
-    Events.CallRemote("PlayVZSound", ply, {basic_sound_tbl=Powerup_Grab_Sound})
-    if powerup_name == "carpenter" then
-        if Carpenter_Interval_ID then
-            Timer.ClearInterval(Carpenter_Interval_ID)
-        end
-
-        Carpenter_Repair_Index = 1
-        Carpenter_Interval_ID = Timer.SetInterval(Carpenter_Repair_Func, Powerups_Config.carpenter.repair_interval_ms)
-
-        for k, v in pairs(Character.GetPairs()) do
-            local vply = v:GetPlayer()
-            if vply then
-                AddMoney(vply, Powerups_Config.carpenter.money_won)
+    if Powerups_Config[powerup_name] then
+        local ply = by_char:GetPlayer()
+        Events.CallRemote("PlayVZSound", ply, {basic_sound_tbl=Powerup_Grab_Sound})
+        if powerup_name == "carpenter" then
+            if Carpenter_Interval_ID then
+                Timer.ClearInterval(Carpenter_Interval_ID)
             end
-        end
-    elseif powerup_name == "max_ammo" then
-        for k, char in pairs(Character.GetPairs()) do
-            if char:GetPlayer() then
-                if not char:GetValue("PlayerDown") then
-                    local charInvID = GetCharacterInventory(char)
-                    if charInvID then
-                        for i, v in ipairs(PlayersCharactersWeapons[charInvID].weapons) do
-                            local max_ammo = GetWeaponNameMaxAmmo(v.weapon_name)
-                            if max_ammo then
-                                v.ammo_bag = max_ammo
-                                if v.weapon then
-                                    v.weapon:SetAmmoBag(max_ammo)
-                                    Events.CallRemote("UpdateAmmoText", char:GetPlayer())
+
+            Carpenter_Repair_Index = 1
+            Carpenter_Interval_ID = Timer.SetInterval(Carpenter_Repair_Func, Powerups_Config.carpenter.repair_interval_ms)
+
+            for k, v in pairs(Character.GetPairs()) do
+                local vply = v:GetPlayer()
+                if vply then
+                    AddMoney(vply, Powerups_Config.carpenter.money_won)
+                end
+            end
+        elseif powerup_name == "max_ammo" then
+            for k, char in pairs(Character.GetPairs()) do
+                if char:GetPlayer() then
+                    if not char:GetValue("PlayerDown") then
+                        local charInvID = GetCharacterInventory(char)
+                        if charInvID then
+                            for i, v in ipairs(PlayersCharactersWeapons[charInvID].weapons) do
+                                local max_ammo = GetWeaponNameMaxAmmo(v.weapon_name)
+                                if max_ammo then
+                                    v.ammo_bag = max_ammo
+                                    if v.weapon then
+                                        v.weapon:SetAmmoBag(max_ammo)
+                                        Events.CallRemote("UpdateAmmoText", char:GetPlayer())
+                                    end
+                                else
+                                    Package.Error("PowerupGrabbed:max_ammo, GetWeaponNameMaxAmmo doesn't work for weapon : " .. tostring(v.weapon_name))
                                 end
-                            else
-                                Package.Error("PowerupGrabbed:max_ammo, GetWeaponNameMaxAmmo doesn't work for weapon : " .. tostring(v.weapon_name))
+                            end
+                        end
+                        char:SetValue("ZGrenadesNB", Max_Grenades_NB, true)
+                    end
+                end
+            end
+        elseif powerup_name == "nuke" then
+            for k, v in pairs(Character.GetAll()) do
+                if v:IsValid() then -- Ragdolls being removed can destroy some zombies in the list
+                    if v:GetValue("Enemy") then
+                        local enemy_table = Enemies_Config[v:GetValue("EnemyName")]
+                        if not enemy_table.Boss then
+                            if v:GetHealth() > 0 then
+                                v:SetHealth(0)
                             end
                         end
                     end
-                    char:SetValue("ZGrenadesNB", Max_Grenades_NB, true)
                 end
             end
-        end
-    elseif powerup_name == "nuke" then
-        for k, v in pairs(Character.GetPairs()) do
-            if v:GetValue("Enemy") then
-                local enemy_table = Enemies_Config[v:GetValue("EnemyName")]
-                if not enemy_table.Boss then
-                    if v:GetHealth() > 0 then
-                        v:SetHealth(0)
-                    end
+            for k, v in pairs(Character.GetPairs()) do
+                local vply = v:GetPlayer()
+                if vply then
+                    AddMoney(vply, Powerups_Config.nuke.money_won)
                 end
             end
-        end
-        for k, v in pairs(Character.GetPairs()) do
-            local vply = v:GetPlayer()
-            if vply then
-                AddMoney(vply, Powerups_Config.nuke.money_won)
+        elseif powerup_name == "instakill" then
+            local remove_Active_Timeout = Timer.SetTimeout(function()
+                ACTIVE_POWERUPS.instakill = nil
+                Events.BroadcastRemote("DurationPowerupRemoved", "instakill")
+            end, Powerups_Config.instakill.duration)
+            if ACTIVE_POWERUPS.instakill then
+                Timer.ClearTimeout(ACTIVE_POWERUPS.instakill.timeout)
+                ACTIVE_POWERUPS.instakill.timeout = remove_Active_Timeout
+            else
+                ACTIVE_POWERUPS.instakill = {
+                    timeout = remove_Active_Timeout
+                }
             end
-        end
-    elseif powerup_name == "instakill" then
-        local remove_Active_Timeout = Timer.SetTimeout(function()
-            ACTIVE_POWERUPS.instakill = nil
-            Events.BroadcastRemote("DurationPowerupRemoved", "instakill")
-        end, Powerups_Config.instakill.duration)
-        if ACTIVE_POWERUPS.instakill then
-            Timer.ClearTimeout(ACTIVE_POWERUPS.instakill.timeout)
-            ACTIVE_POWERUPS.instakill.timeout = remove_Active_Timeout
-        else
-            ACTIVE_POWERUPS.instakill = {
-                timeout = remove_Active_Timeout
-            }
-        end
-    elseif powerup_name == "x2" then
-        local remove_Active_Timeout = Timer.SetTimeout(function()
-            ACTIVE_POWERUPS.x2 = nil
-            Events.BroadcastRemote("DurationPowerupRemoved", "x2")
-        end, Powerups_Config.x2.duration)
-        if ACTIVE_POWERUPS.x2 then
-            Timer.ClearTimeout(ACTIVE_POWERUPS.x2.timeout)
-            ACTIVE_POWERUPS.x2.timeout = remove_Active_Timeout
-        else
-            ACTIVE_POWERUPS.x2 = {
-                timeout = remove_Active_Timeout
-            }
-        end
-    elseif powerup_name == "death_machine" then
-        local remove_active_timeout_char = by_char:GetValue("DeathMachineTimer")
-        if remove_active_timeout_char then
-            Timer.ClearTimeout(remove_active_timeout_char)
-
-            local held_weapon = by_char:GetPicked()
-            if held_weapon then
-                held_weapon:Destroy()
+        elseif powerup_name == "x2" then
+            local remove_Active_Timeout = Timer.SetTimeout(function()
+                ACTIVE_POWERUPS.x2 = nil
+                Events.BroadcastRemote("DurationPowerupRemoved", "x2")
+            end, Powerups_Config.x2.duration)
+            if ACTIVE_POWERUPS.x2 then
+                Timer.ClearTimeout(ACTIVE_POWERUPS.x2.timeout)
+                ACTIVE_POWERUPS.x2.timeout = remove_Active_Timeout
+            else
+                ACTIVE_POWERUPS.x2 = {
+                    timeout = remove_Active_Timeout
+                }
             end
-        end
+        elseif powerup_name == "death_machine" then
+            local remove_active_timeout_char = by_char:GetValue("DeathMachineTimer")
+            if remove_active_timeout_char then
+                Timer.ClearTimeout(remove_active_timeout_char)
 
-        local charInvID = GetCharacterInventory(by_char)
-        if charInvID then
-            local Inv = PlayersCharactersWeapons[charInvID]
-
-            for i, v in ipairs(Inv.weapons) do
-                if (v.slot == Inv.selected_slot and v.weapon) then
-                    if v.weapon:IsValid() then
-                        v.ammo_bag = v.weapon:GetAmmoBag()
-                        v.ammo_clip = v.weapon:GetAmmoClip()
-
-                        v.destroying = true
-                        v.weapon:Destroy()
-                    end
-                    v.weapon = nil
-                    break
+                local held_weapon = by_char:GetPicked()
+                if held_weapon then
+                    held_weapon:Destroy()
                 end
             end
-        end
-
-        local death_machine_weapon = NanosWorldWeapons[Powerups_Config.death_machine.minigun_weapon_name]()
-        death_machine_weapon:SetAmmoSettings(Powerups_Config.death_machine.minigun_clip, Powerups_Config.death_machine.minigun_clip)
-
-        by_char:PickUp(death_machine_weapon)
-
-        death_machine_weapon:Subscribe("Drop", function(weap, char, was_triggered_by_player)
-            weap:Destroy()
-        end)
-
-        remove_active_timeout_char = Timer.SetTimeout(function()
-            by_char:SetValue("DeathMachineTimer", nil, true)
 
             local charInvID = GetCharacterInventory(by_char)
             if charInvID then
                 local Inv = PlayersCharactersWeapons[charInvID]
 
-                EquipSlot(by_char, Inv.selected_slot)
+                for i, v in ipairs(Inv.weapons) do
+                    if (v.slot == Inv.selected_slot and v.weapon) then
+                        if v.weapon:IsValid() then
+                            v.ammo_bag = v.weapon:GetAmmoBag()
+                            v.ammo_clip = v.weapon:GetAmmoClip()
+
+                            v.destroying = true
+                            v.weapon:Destroy()
+                        end
+                        v.weapon = nil
+                        break
+                    end
+                end
             end
-        end, Powerups_Config.death_machine.duration)
-        by_char:SetValue("DeathMachineTimer", remove_active_timeout_char, true)
 
-        by_char:SetValue("BOTReloading", nil, false)
-    end
+            local death_machine_weapon = NanosWorldWeapons[Powerups_Config.death_machine.minigun_weapon_name]()
+            death_machine_weapon:SetAmmoSettings(Powerups_Config.death_machine.minigun_clip, Powerups_Config.death_machine.minigun_clip)
 
-    if powerup_name == "death_machine" then
-        return
+            by_char:PickUp(death_machine_weapon)
+
+            death_machine_weapon:Subscribe("Drop", function(weap, char, was_triggered_by_player)
+                weap:Destroy()
+            end)
+
+            remove_active_timeout_char = Timer.SetTimeout(function()
+                if by_char:IsValid() then
+                    by_char:SetValue("DeathMachineTimer", nil, true)
+
+                    local charInvID = GetCharacterInventory(by_char)
+                    if charInvID then
+                        local Inv = PlayersCharactersWeapons[charInvID]
+
+                        EquipSlot(by_char, Inv.selected_slot)
+                    end
+                end
+            end, Powerups_Config.death_machine.duration)
+            by_char:SetValue("DeathMachineTimer", remove_active_timeout_char, true)
+
+            by_char:SetValue("BOTReloading", nil, false)
+        end
+
+        if powerup_name == "death_machine" then
+            return
+        end
+        Events.BroadcastRemote("PowerupGrabbed", powerup_name)
     end
-    Events.BroadcastRemote("PowerupGrabbed", powerup_name)
 end
 
 Timer.SetInterval(function()
@@ -259,8 +266,12 @@ function SpawnPowerup(loc, powerup_name)
                     POWERUPS_PICKUPS[k] = nil
                 end
             end
-            SM_Powerup:Destroy()
-            PS_Powerup:Destroy()
+            if SM_Powerup:IsValid() then
+                SM_Powerup:Destroy()
+            end
+            if PS_Powerup:IsValid() then
+                PS_Powerup:Destroy()
+            end
         end, Powerup_Delete_after_ms)
     })
 end
@@ -297,23 +308,7 @@ VZ_EVENT_SUBSCRIBE("Events", "VZ_EquippedInventorySlot", function(char, slot)
 end)
 
 if ZDEV_IsModeEnabled("ZDEV_COMMANDS") then
-    VZ_EVENT_SUBSCRIBE("Server", "Chat", function(text, ply)
-        local char = ply:GetControlledCharacter()
-        if char then
-            if text then
-                local split_txt = split_str(text, " ")
-                if (split_txt and split_txt[1] and split_txt[2]) then
-                    if split_txt[1] == "/givepwrup" then
-                        if Powerups_Config[split_txt[2]] then
-                            PowerupGrabbed(split_txt[2], char)
-                        end
-                    end
-                end
-            end
-        end
-    end)
-
-    VZ_EVENT_SUBSCRIBE("Server", "Chat", function(text, ply)
+    VZ_EVENT_SUBSCRIBE("Chat", "PlayerSubmit", function(text, ply)
         local char = ply:GetControlledCharacter()
         if char then
             if text then

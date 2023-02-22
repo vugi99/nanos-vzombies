@@ -1,28 +1,45 @@
-# package configurations
-[package]
-    # package name
-    name =                 "vzombies"
+# vault configurations
+[meta]
+    # friendly name
+    title =                 "vzombies"
     # contributors
-    author =               "Voltaism"
+    author =                "Voltaism"
     # version
-    version =              "2.0.0"
-    # image URL
-    image =                "https://i.imgur.com/Oodfx03.jpg"
-    # package type: 'script' (normal package), 'game-mode' (unique package - can only load one at a time), 'library' (doesn't start a Lua VM) or 'loading-screen' (special package for loading screen)
-    type =                 "game-mode"
-    # whether to force the custom map script to do not load
-    force_no_map_script =  false
+    version =               "3.0.0"
+
+# game-mode configurations
+[game_mode]
+    # whether to force the custom map package to do not load
+    force_no_map_package =  false
     # auto destroy all entities spawned by this package when it unloads
-    auto_cleanup =         true
+    auto_cleanup =          true
+    # whether to load all level entities on client - only enable it if your package needs to use level static meshes entities
+    load_level_entities =   false
+    # the game version (major.minor) at the time this package was created, for granting compatibility between breaking changes
+    compatibility_version = "1.37"
     # packages requirements
     packages_requirements = [
-        
+                            "default-weapons",
     ]
     # asset packs requirements
     assets_requirements = [
-        "vzombies-assets",
+                            "vzombies-assets",
     ]
     # compatible maps - maps to be highlighted when starting a new game through main menu
     compatible_maps = [
-        
+                            
     ]
+
+# game-mode custom settings configurations
+# those settings can be configured through new game menu, Config.toml and server command line
+# and can be accessed through Server.GetCustomSettings() method from any package
+[custom_settings]
+    DEV_MODE = { label = "Dev Mode", type = "boolean", description = "Enable Mod Menu and more", default = false }
+    Max_Bots = { label = "Max Bots", type = "integer", description = "", default = 1 }
+    Max_Enemies_Dead_Ragdolls = { label = "Max Enemies Ragdolls", type = "integer", description = "", default = 20 }
+    Max_enemies_spawned = { label = "Max Alive Enemies Spawned", type = "integer", description = "", default = 30 }
+    PlayerHealth = { label = "Player Health", type = "integer", description = "", default = 100 }
+    PlayerSpeedMultiplier = { label = "Player Speed Multiplier", type = "floating", description = "", default = 1.500000 }
+    Player_Start_Money = { label = "Player Start Money", type = "integer", description = "", default = 500 }
+    Players_Spawns_Multiplier = { label = "Player Spawns Multiplier", type = "floating", description = "Adds more spawns to the maps (use with caution)", default = 1.500000 }
+    VZ_SELECTED_GAMEMODE = { label = "SubMode", type = "select", description = "", options = [ "SURVIVAL", "SHARPSHOOTER", "INVISIBLE_ZOMBIES", "GUNGAME", "GRIEF" ], default = "SURVIVAL" }
