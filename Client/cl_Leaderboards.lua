@@ -11,6 +11,7 @@ VZ_EVENT_SUBSCRIBE_REMOTE("SendMapLeaderboard", function(ml)
     Current_Map_Leaderboard = ml
     ClearVZFrameTab("Leaderboard", "Leaderboard")
     for i, v in ipairs(Current_Map_Leaderboard) do
-        AddTabText("Leaderboard", "Leaderboard", tostring(i) .. ".   Round " .. tostring(v.Rounds) .. ",   Kills " .. tostring(v.Kills) .. ",   Time " .. tostring(v.Time) .. "s,   Players" .. v.Players)
+        v.Date = v.Date or "?"
+        AddTabText("Leaderboard", "Leaderboard", tostring(i) .. ".   Round " .. tostring(v.Rounds) .. ",   Kills " .. tostring(v.Kills) .. ",   Time " .. tostring(v.Time) .. "s,   Date " .. v.Date .. ",   Players" .. v.Players)
     end
 end)

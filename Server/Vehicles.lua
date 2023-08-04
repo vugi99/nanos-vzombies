@@ -49,7 +49,7 @@ if VEHICLES_PADS then
                     if char then
                         if (not char:GetValue("PlayerDown") and not char:GetVehicle()) then
                             if VZVehicles[veh_name] then
-                                local is_occupied = CheckIfEntityInRectangle(Vehicle, veh_pad_ground:GetLocation() + Vector(0, 0, 100), veh_pad_ground:GetRotation(), Vector(500, 250, 300)) or CheckIfEntityInRectangle(Character, veh_pad_ground:GetLocation() + Vector(0, 0, 100), veh_pad_ground:GetRotation(), Vector(500, 250, 300))
+                                local is_occupied = CheckIfEntityInRectangle(VehicleWheeled, veh_pad_ground:GetLocation() + Vector(0, 0, 100), veh_pad_ground:GetRotation(), Vector(500, 250, 300)) or CheckIfEntityInRectangle(Character, veh_pad_ground:GetLocation() + Vector(0, 0, 100), veh_pad_ground:GetRotation(), Vector(500, 250, 300))
                                 if is_occupied then
                                     Events.CallRemote("AddNotification", ply, "Cannot Spawn Vehicle")
                                     return
@@ -100,7 +100,7 @@ VZ_EVENT_SUBSCRIBE("Character", "LeaveVehicle", function(char, veh)
 end)
 
 function DestroyVehicles()
-    for k, v in pairs(Vehicle.GetAll()) do
+    for k, v in pairs(VehicleWheeled.GetAll()) do
         if v:IsValid() then
             v:Destroy()
         end

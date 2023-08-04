@@ -89,6 +89,12 @@ function VZBot.prototype:GetID()
     end
 end
 
+function VZBot.prototype:GetSteamID()
+    if self:IsValid(true) then
+        return tostring(self.ID)
+    end
+end
+
 function VZBot.prototype:GetAccountName()
     if self:IsValid(true) then
         return self.Stored.Name

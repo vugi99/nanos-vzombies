@@ -5,7 +5,7 @@
 VZVehicles = {}
 Package.Export("VZVehicles", VZVehicles)
 
-VZVehicles.Offroad = Vehicle.Inherit("Offroad")
+VZVehicles.Offroad = VehicleWheeled.Inherit("Offroad")
 VZVehicles.Offroad.name = "Offroad"
 VZVehicles.Offroad.image = "assets://nanos-world/Thumbnails/SK_Offroad.jpg"
 VZVehicles.Offroad.category = "wheeled"
@@ -37,7 +37,7 @@ function VZVehicles.Offroad:Constructor(location, rotation)
 end
 
 
-VZVehicles.CamperVan = Vehicle.Inherit("CamperVan")
+VZVehicles.CamperVan = VehicleWheeled.Inherit("CamperVan")
 VZVehicles.CamperVan.name = "CamperVan"
 VZVehicles.CamperVan.image = "assets://nanos-world/Thumbnails/SK_CamperVan.jpg"
 VZVehicles.CamperVan.category = "wheeled"
@@ -66,7 +66,7 @@ function VZVehicles.CamperVan:Constructor(location, rotation)
 end
 
 
-VZVehicles.Van = Vehicle.Inherit("Van")
+VZVehicles.Van = VehicleWheeled.Inherit("Van")
 VZVehicles.Van.name = "Van"
 VZVehicles.Van.image = "assets://nanos-world/Thumbnails/SK_Van.jpg"
 VZVehicles.Van.category = "wheeled"
@@ -93,7 +93,7 @@ function VZVehicles.Van:Constructor(location, rotation)
 end
 
 
-VZVehicles.Wagon = Vehicle.Inherit("Wagon")
+VZVehicles.Wagon = VehicleWheeled.Inherit("Wagon")
 VZVehicles.Wagon.name = "Wagon"
 VZVehicles.Wagon.image = "assets://nanos-world/Thumbnails/SK_Wagon.jpg"
 VZVehicles.Wagon.category = "wheeled"
@@ -123,7 +123,7 @@ function VZVehicles.Wagon:Constructor(location, rotation)
 end
 
 
-VZVehicles.Sedan = Vehicle.Inherit("Sedan")
+VZVehicles.Sedan = VehicleWheeled.Inherit("Sedan")
 VZVehicles.Sedan.name = "Sedan"
 VZVehicles.Sedan.image = "assets://nanos-world/Thumbnails/SK_Sedan.jpg"
 VZVehicles.Sedan.category = "wheeled"
@@ -153,7 +153,7 @@ function VZVehicles.Sedan:Constructor(location, rotation)
 end
 
 
-VZVehicles.SUV = Vehicle.Inherit("SUV")
+VZVehicles.SUV = VehicleWheeled.Inherit("SUV")
 VZVehicles.SUV.name = "SUV"
 VZVehicles.SUV.image = "assets://nanos-world/Thumbnails/SK_SUV.jpg"
 VZVehicles.SUV.category = "wheeled"
@@ -181,7 +181,7 @@ function VZVehicles.SUV:Constructor(location, rotation)
 end
 
 
-VZVehicles.Hatchback = Vehicle.Inherit("Hatchback")
+VZVehicles.Hatchback = VehicleWheeled.Inherit("Hatchback")
 VZVehicles.Hatchback.name = "Hatchback"
 VZVehicles.Hatchback.image = "assets://nanos-world/Thumbnails/SK_Hatchback.jpg"
 VZVehicles.Hatchback.category = "wheeled"
@@ -208,7 +208,7 @@ function VZVehicles.Hatchback:Constructor(location, rotation)
 end
 
 
-VZVehicles.Pickup = Vehicle.Inherit("Pickup")
+VZVehicles.Pickup = VehicleWheeled.Inherit("Pickup")
 VZVehicles.Pickup.name = "Pickup"
 VZVehicles.Pickup.image = "assets://nanos-world/Thumbnails/SK_Pickup.jpg"
 VZVehicles.Pickup.category = "wheeled"
@@ -239,7 +239,7 @@ function VZVehicles.Pickup:Constructor(location, rotation)
 end
 
 
-VZVehicles.SportsCar = Vehicle.Inherit("SportsCar")
+VZVehicles.SportsCar = VehicleWheeled.Inherit("SportsCar")
 VZVehicles.SportsCar.name = "SportsCar"
 VZVehicles.SportsCar.image = "assets://nanos-world/Thumbnails/SK_SportsCar.jpg"
 VZVehicles.SportsCar.category = "wheeled"
@@ -266,7 +266,7 @@ function VZVehicles.SportsCar:Constructor(location, rotation)
 end
 
 
-VZVehicles.TruckBox = Vehicle.Inherit("TruckBox")
+VZVehicles.TruckBox = VehicleWheeled.Inherit("TruckBox")
 VZVehicles.TruckBox.name = "Truck Box"
 VZVehicles.TruckBox.image = "assets://nanos-world/Thumbnails/SK_Truck_Box.jpg"
 VZVehicles.TruckBox.category = "wheeled"

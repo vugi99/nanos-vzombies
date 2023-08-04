@@ -5,6 +5,8 @@ POWER_ON = false
 PLAYING_PLAYERS = {}
 WAITING_PLAYERS = {}
 
+GAME_LEFT_PLAYERS_STATS = {}
+
 ROUND_NB = 0
 REMAINING_ENEMIES_TO_SPAWN = 0
 GAME_TIMER_SECONDS = 0
@@ -57,6 +59,7 @@ function RoundFinished(reset_all, restart_game, ply_left)
         SPAWNS_ENABLED = {}
         ROOMS_UNLOCKED = {}
         ROOMS_SPAWNS_DISABLED = {}
+        GAME_LEFT_PLAYERS_STATS = {}
         DestroyEnemies()
         DestroyBosses()
         DestroyMapDoors()
@@ -192,11 +195,13 @@ function StartRound()
                 HandlePlayerJoin(Bot, true)
             end
         end
+
+        GAME_LEFT_PLAYERS_STATS = {}
     end
 
     ROUND_NB = ROUND_NB + 1
     Events.BroadcastRemote("SetClientRoundNumber", ROUND_NB, CanStartHellhoundRound())
-    REMAINING_ENEMIES_TO_SPAWN = math.floor((First_Wave_Enemies + (Add_at_each_wave * (ROUND_NB - 1)) + (Add_at_each_wave_per_player * (ROUND_NB - 1) * PLAYING_PLAYERS_NB)) * Zombies_Number_Mult)
+    REMAINING_ENEMIES_TO_SPAWN = math.floor(Zombies_Number_Mult_Func(First_Wave_Enemies + (Add_at_each_wave * (ROUND_NB - 1)) + (Add_at_each_wave_per_player * (ROUND_NB - 1) * PLAYING_PLAYERS_NB), ROUND_NB) + 0.5)
     if CanStartHellhoundRound() then
         if Enemies_Config.Hellhound.Spawning_Config.Number_To_Spawn_mult then
             REMAINING_ENEMIES_TO_SPAWN = math.floor(REMAINING_ENEMIES_TO_SPAWN * Enemies_Config.Hellhound.Spawning_Config.Number_To_Spawn_mult)

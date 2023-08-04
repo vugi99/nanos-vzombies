@@ -426,11 +426,11 @@ Events.Subscribe("EnableVZLevels", function() {
 
     document.body.appendChild(levels_container)
 
-    tab_levels = document.createElement("div")
+    /*tab_levels = document.createElement("div")
     tab_levels.classList.add("tab_item")
     tab_levels.innerText = "Level"
 
-    tab_top.appendChild(tab_levels)
+    levels_container.appendChild(tab_levels)*/
 })
 
 Events.Subscribe("SetBarPercentage", function(new_perc) {

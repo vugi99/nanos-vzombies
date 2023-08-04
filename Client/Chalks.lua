@@ -16,7 +16,7 @@ if VZ_GetFeatureValue("Map_Weapons", "spawned") then
                         0.01
                     )
 
-                    chalk:SetMaterialTextureParameter("Texture", "package://" .. Package.GetPath() .. "/Client/images/Chalks/" .. v.weapon_name .. ".png")
+                    chalk:SetMaterialTextureParameter("Texture", "package://" .. Package.GetName() .. "/Client/images/Chalks/" .. v.weapon_name .. ".png")
                     chalk:SetMaterialScalarParameter("Opacity", 1)
                     chalk:SetMaterialColorParameter("Emissive", Chalks_Emissive_Color * Chalks_Emissive_Value)
 

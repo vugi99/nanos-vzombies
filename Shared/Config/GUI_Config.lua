@@ -8,7 +8,7 @@ Player_Names_On_Heads = true
 Player_Name_Text3D_Head_Offset = Vector(0, 0, 105)
 Player_Name_Text3D_Scale = Vector(0.37, 0.37, 0.37)
 
-Player_To_Revive_image = "package://" .. Package.GetPath() .. "/Client/gui/images/to_revive.png"
+Player_To_Revive_image = "package://" .. Package.GetName() .. "/Client/gui/images/to_revive.png"
 To_Revive_Billboard_Relative_Location = Vector(0, 0, 100)
 
 Game_Time_On_Screen = true

@@ -36,7 +36,7 @@ if VEHICLES_PADS then
     else
         for i, v in ipairs(VEHICLES_PADS) do
             local veh_pad_screen_webui = WebUI3d2d(
-                "file://"..Package.GetPath().."/Client/gui/veh_pad.html",
+                "file://"..Package.GetName().."/Client/gui/veh_pad.html",
                 true,
                 800,
                 580,

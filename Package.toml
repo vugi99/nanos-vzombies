@@ -5,7 +5,7 @@
     # contributors
     author =                "Voltaism"
     # version
-    version =               "3.0.0"
+    version =               "3.0.1"
 
 # game-mode configurations
 [game_mode]
@@ -16,7 +16,7 @@
     # whether to load all level entities on client - only enable it if your package needs to use level static meshes entities
     load_level_entities =   false
     # the game version (major.minor) at the time this package was created, for granting compatibility between breaking changes
-    compatibility_version = "1.37"
+    compatibility_version = "1.58"
     # packages requirements
     packages_requirements = [
                             "default-weapons",
@@ -36,10 +36,10 @@
 [custom_settings]
     DEV_MODE = { label = "Dev Mode", type = "boolean", description = "Enable Mod Menu and more", default = false }
     Max_Bots = { label = "Max Bots", type = "integer", description = "", default = 1 }
-    Max_Enemies_Dead_Ragdolls = { label = "Max Enemies Ragdolls", type = "integer", description = "", default = 20 }
-    Max_enemies_spawned = { label = "Max Alive Enemies Spawned", type = "integer", description = "", default = 30 }
+    Max_Enemies_Dead_Ragdolls = { label = "Max Enemies Ragdolls", type = "integer", description = "", default = 15 }
+    Max_enemies_spawned = { label = "Max Alive Enemies Spawned", type = "integer", description = "", default = 25 }
     PlayerHealth = { label = "Player Health", type = "integer", description = "", default = 100 }
     PlayerSpeedMultiplier = { label = "Player Speed Multiplier", type = "floating", description = "", default = 1.500000 }
     Player_Start_Money = { label = "Player Start Money", type = "integer", description = "", default = 500 }
     Players_Spawns_Multiplier = { label = "Player Spawns Multiplier", type = "floating", description = "Adds more spawns to the maps (use with caution)", default = 1.500000 }
-    VZ_SELECTED_GAMEMODE = { label = "SubMode", type = "select", description = "", options = [ "SURVIVAL", "SHARPSHOOTER", "INVISIBLE_ZOMBIES", "GUNGAME", "GRIEF" ], default = "SURVIVAL" }
+    VZ_SELECTED_GAMEMODE = { label = "SubMode", type = "select", description = "", options = [ "SURVIVAL", "SHARPSHOOTER", "INVISIBLE_ZOMBIES", "GUNGAME", "GRIEF", "TOPDOWN" ], default = "SURVIVAL" }

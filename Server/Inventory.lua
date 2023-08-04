@@ -61,7 +61,7 @@ function GetInsertSlot(char, Inv)
 end
 
 local function GiveInventoryPlayerWeapon(char, charInvID, i, v)
-    --print("GiveInventoryPlayerWeapon", char, charInvID, i, v)
+    --print("GiveInventoryPlayerWeapon", char, charInvID, i, NanosUtils.Dump(v))
     local weapon = NanosWorldWeapons[v.weapon_name](Vector(), Rotator())
     weapon:SetValue("WeaponName", v.weapon_name, false)
     weapon:SetAmmoBag(v.ammo_bag)
@@ -110,6 +110,7 @@ function EquipSlot(char, slot)
     local charInvID = GetCharacterInventory(char)
     if charInvID then
         local Inv = PlayersCharactersWeapons[charInvID]
+        --print(NanosUtils.Dump(Inv.weapons))
         local picked_thing = char:GetPicked()
         if (not picked_thing or (not picked_thing:IsA(Grenade) and not picked_thing:IsA(Melee))) then
             if slot ~= Inv.selected_slot then
@@ -128,6 +129,7 @@ function EquipSlot(char, slot)
                             --print("After:", v, PlayersCharactersWeapons[charInvID].weapons[i])
                         end
                         v.weapon = nil
+                        v.destroying = nil
                         found_weapon_slot = true
                         break
                     end
@@ -158,6 +160,7 @@ function EquipSlot(char, slot)
                             v.ammo_clip = v.weapon:GetAmmoClip()
                             v.destroying = true
                             v.weapon:Destroy()
+                            v.destroying = nil
 
                             GiveInventoryPlayerWeapon(char, charInvID, i, v)
                             weapon_given = true
@@ -179,10 +182,11 @@ function EquipSlot(char, slot)
 end
 
 function AddCharacterWeapon(char, weapon_name, ammo_bag, equip, ammo_clip, pap, pap_repack_effect)
-    --print("AddCharacterWeapon", char, weapon_name, ammo_bag, equip, ammo_clip)
+    --print("AddCharacterWeapon", char, weapon_name, ammo_bag, equip, ammo_clip, char:GetPicked())
     local charInvID = GetCharacterInventory(char)
     local insert_sl = 1
     if charInvID then
+        --print(NanosUtils.Dump(PlayersCharactersWeapons[charInvID].weapons))
 
         -- If the player already have this weapon, don't give a new one
         local already_have = false
@@ -202,16 +206,20 @@ function AddCharacterWeapon(char, weapon_name, ammo_bag, equip, ammo_clip, pap, 
 
         -- If the player slots are full, drop the weapon in the selected slot
         local has_three_gun = char:GetValue("OwnedPerks").three_gun
-        if ((inv_w_count == 2 and not has_three_gun) or (inv_w_count == 3 and has_three_gun)) then
+        if ((inv_w_count >= 2 and not has_three_gun) or (inv_w_count >= 3 and has_three_gun)) then
             for i, v in ipairs(PlayersCharactersWeapons[charInvID].weapons) do
                 if v.slot == PlayersCharactersWeapons[charInvID].selected_slot then
                     if v.weapon then
                         --print("bef char:Drop()")
                         --print("Dropping Weapon Because Slots Full", char:GetPicked())
                         if not v.just_dropped then
-                            v.Dropping = true
-                            char:Drop()
-                            v.Dropping = nil
+                            if char:GetPicked() then
+                                v.Dropping = true
+                                char:Drop()
+                                v.Dropping = nil
+                            else
+                                table.remove(PlayersCharactersWeapons[charInvID].weapons, i)
+                            end
                         else
                             table.remove(PlayersCharactersWeapons[charInvID].weapons, i)
                         end
@@ -270,6 +278,7 @@ VZ_EVENT_SUBSCRIBE("Weapon", "Drop", function(weapon, char, was_triggered_by_pla
     --print("Drop", weapon, char, was_triggered_by_player, weapon:GetMesh())
     local charInvID = GetCharacterInventory(char)
     if charInvID then
+        --print(NanosUtils.Dump(PlayersCharactersWeapons[charInvID]))
         for i, v in ipairs(PlayersCharactersWeapons[charInvID].weapons) do
             if (v.weapon and v.weapon == weapon) then
                 if not v.destroying then
@@ -297,15 +306,15 @@ VZ_EVENT_SUBSCRIBE("Weapon", "Drop", function(weapon, char, was_triggered_by_pla
 end)
 
 VZ_EVENT_SUBSCRIBE("Weapon", "PickUp", function(weapon, char)
-    --print("PickUp Event")
     local d_weap_name = weapon:GetValue("DroppedWeaponName")
     if d_weap_name then
         Timer.ClearTimeout(weapon:GetValue("DroppedWeaponDTimeout"))
-        --print("Pickup_Exec")
         local ammo_bag = weapon:GetAmmoBag()
         local ammo_clip = weapon:GetAmmoClip()
         local pap = weapon:GetValue("DroppedWeaponPAP")
+        --print("Pickup_Exec", weapon:GetValue("DroppedWeaponName"), char:GetPicked())
         weapon:Destroy()
+        --print("Pickup_2", char:GetPicked())
         AddCharacterWeapon(char, d_weap_name, ammo_bag, true, ammo_clip, pap[1], pap[2])
     end
 end)
@@ -368,6 +377,7 @@ VZ_EVENT_SUBSCRIBE_REMOTE("PickupGrenade", function(ply)
                                             v.weapon:Destroy()
                                         end
                                         v.weapon = nil
+                                        v.destroying = nil
                                         break
                                     end
                                 end
@@ -496,6 +506,7 @@ VZ_EVENT_SUBSCRIBE_REMOTE("UseKnife", function(ply)
                                     v.weapon:Destroy()
                                 end
                                 v.weapon = nil
+                                v.destroying = nil
                                 break
                             end
                         end
@@ -639,6 +650,7 @@ function PickupGib(char, gib_data)
                                             v.weapon:Destroy()
                                         end
                                         v.weapon = nil
+                                        v.destroying = nil
                                         break
                                     end
                                 end

@@ -480,6 +480,7 @@ button:hover {
 }
 
 .lvls_container {
+    opacity: 0;
     position: absolute;
     bottom: 33px;
     height: 1%;

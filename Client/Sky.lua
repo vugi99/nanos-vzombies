@@ -4,7 +4,7 @@
 local weather_exists = false
 
 if (not MAP_SETTINGS or MAP_SETTINGS.spawn_nanos_sky) then
-    if (MAP_SETTINGS.Weather and WeatherType[MAP_SETTINGS.Weather]) then
+    if (MAP_SETTINGS and MAP_SETTINGS.Weather and WeatherType[MAP_SETTINGS.Weather]) then
         weather_exists = true
     end
     Sky.Spawn(weather_exists)

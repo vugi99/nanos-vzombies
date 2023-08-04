@@ -127,10 +127,11 @@ function LoadServerFiles()
     Events.Call("VZOMBIES_GAMEMODE_LOADED")
 end
 
+--print(Server.GetMap())
 if not MAP_CONFIG_LOADED then
     local map_path = Server.GetMap()
     if map_path then
-        local splited_map_path = split_str(map_path, ":")
+        --[[local splited_map_path = split_str(map_path, ":")
         if (splited_map_path[1] and splited_map_path[2]) then
             local map_path_in_maps = "Server/Maps/" .. splited_map_path[1] .. ";" .. splited_map_path[2] .. ".lua"
             local map_files = Package.GetFiles("Server/Maps", ".lua")
@@ -140,6 +141,15 @@ if not MAP_CONFIG_LOADED then
                     Package.Require(v)
                     break
                 end
+            end
+        end]]--
+        local map_path_in_maps = "Server/Maps/" .. map_path .. ".lua"
+        local map_files = Package.GetFiles("Server/Maps", ".lua")
+        for i, v in ipairs(map_files) do
+            --print(v)
+            if v == map_path_in_maps then
+                Package.Require(v)
+                break
             end
         end
     end
@@ -152,7 +162,7 @@ Package.Subscribe("Load", function()
 end)
 
 if Send_Errors_To_Server then
-    Events.Subscribe("LogErrorFromClient", function(ply, text, logtype)
+    Events.SubscribeRemote("LogErrorFromClient", function(ply, text, logtype)
         local logtype_name = "Unknown"
         for k, v in pairs(LogType) do
             if v == logtype then

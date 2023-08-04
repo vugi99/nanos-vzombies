@@ -4,9 +4,22 @@
 function ZPlayingPlayerInit(ply)
     PLAYING_PLAYERS_NB = PLAYING_PLAYERS_NB + 1
     table.insert(PLAYING_PLAYERS, ply)
-    ply:SetValue("ZMoney", Player_Start_Money, true)
-    ply:SetValue("ZScore", 0, false)
-    ply:SetValue("ZKills", 0, false)
+
+    local ZMoney = Player_Start_Money
+    local ZScore = 0
+    local ZKills = 0
+
+    if GAME_LEFT_PLAYERS_STATS[ply:GetSteamID()] then
+        if GAME_LEFT_PLAYERS_STATS[ply:GetSteamID()][1] > Player_Start_Money then
+            ZMoney = GAME_LEFT_PLAYERS_STATS[ply:GetSteamID()][1]
+        end
+        ZScore = GAME_LEFT_PLAYERS_STATS[ply:GetSteamID()][2]
+        ZKills = GAME_LEFT_PLAYERS_STATS[ply:GetSteamID()][3]
+    end
+
+    ply:SetValue("ZMoney", ZMoney, true)
+    ply:SetValue("ZScore", ZScore, false)
+    ply:SetValue("ZKills", ZKills, false)
     ply:SetValue("playing", true, false)
 end
 
@@ -608,6 +621,14 @@ VZ_EVENT_SUBSCRIBE("Player", "Destroy", function(ply)
         end
     end
     PlayerLeftCheckSyncPlayers(ply)
+
+    if ply:GetValue("ZMoney") then
+        GAME_LEFT_PLAYERS_STATS[ply:GetSteamID()] = {
+            ply:GetValue("ZMoney"),
+            ply:GetValue("ZScore"),
+            ply:GetValue("ZKills"),
+        }
+    end
 
     Events.Call("VZ_PlayerLeft", ply)
 end)

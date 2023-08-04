@@ -132,7 +132,23 @@ VZ_GAMEMODES_CONFIG = {
                 script_loaded = false,
             },
         },
-    }
+    },
+
+    TOPDOWN = {
+        Scripts = {
+            Server = {
+                "SubModes/TopDown/TopDown.lua",
+            },
+            Client = {
+                "SubModes/TopDown/cl_TopDown.lua",
+            },
+        },
+        Config = {
+            Max_Arm_Length = 350,
+            Min_Arm_Length = 25,
+            Scroll_Mult = 1,
+        },
+    },
 }
 
 VZ_GLOBAL_FEATURES = {
@@ -179,7 +195,7 @@ VZ_GLOBAL_FEATURES = {
     },
     Leaderboards = {
         script_loaded = false,
-        records_saved = 5,
+        records_saved = 10,
     },
     Banks = {
         script_loaded = true,

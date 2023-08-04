@@ -74,7 +74,7 @@ One_Time_Updates_Canvas:Repaint()
 
 GAME_TIMER_SECONDS = 0
 
-GUI = WebUI("vzombies GUI", "file://gui/index.html", WebUIVisibility.Visible, true, true)
+GUI = WebUI("vzombies GUI", "file://gui/index.html", WidgetVisibility.Visible, true, true)
 Package.Export("GUI", GUI)
 
 ROUND_NB = 0

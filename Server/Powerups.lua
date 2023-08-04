@@ -100,7 +100,7 @@ function PowerupGrabbed(powerup_name, by_char)
                                         Events.CallRemote("UpdateAmmoText", char:GetPlayer())
                                     end
                                 else
-                                    Package.Error("PowerupGrabbed:max_ammo, GetWeaponNameMaxAmmo doesn't work for weapon : " .. tostring(v.weapon_name))
+                                    Console.Error("PowerupGrabbed:max_ammo, GetWeaponNameMaxAmmo doesn't work for weapon : " .. tostring(v.weapon_name))
                                 end
                             end
                         end
@@ -176,6 +176,7 @@ function PowerupGrabbed(powerup_name, by_char)
 
                             v.destroying = true
                             v.weapon:Destroy()
+                            v.destroying = nil
                         end
                         v.weapon = nil
                         break

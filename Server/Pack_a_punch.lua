@@ -139,7 +139,7 @@ function InteractPAPWeapon(weapon, char)
                     PAP_Upgrade_Data = nil
                     MAP_PAP_SM:SetValue("CanBuyPackAPunch", true, true)
                 else
-                    Package.Error("max_ammo not found : Interact pack a punch weapon : " .. tostring(pap_weapon_for_char[2]))
+                    Console.Error("max_ammo not found : Interact pack a punch weapon : " .. tostring(pap_weapon_for_char[2]))
                 end
             end
             return false

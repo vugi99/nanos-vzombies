@@ -59,6 +59,7 @@ function InsertMapRecordInLB()
         Players = JSON.stringify(players_names),
         Kills = KILL_COUNT,
         Time = math.floor(GAME_TIMER_SECONDS + 0.5),
+        Date = os.date("%H:%M %d/%m/%y"),
     })
 end
 

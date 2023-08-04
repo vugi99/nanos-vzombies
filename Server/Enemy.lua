@@ -198,7 +198,7 @@ function SpawnEnemy(EnemyName, EnemyType)
                 Events.Call("VZ_EnemySpawned", enemy)
             end
         else
-            Package.Error("VZombies : Can't select a zombie spawn")
+            Console.Error("VZombies : Can't select a zombie spawn")
         end
     end
 end

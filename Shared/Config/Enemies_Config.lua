@@ -1,8 +1,12 @@
 
-First_Wave_Enemies = 5
+First_Wave_Enemies = 7
 Add_at_each_wave = 1
 Add_at_each_wave_per_player = 1 -- number of zombies added at each wave per playing player
-Zombies_Number_Mult = 2 -- The calculated number of zombies is multiplied by this
+
+--math.log(math.sqrt(round_nb) + 2.71)
+Zombies_Number_Mult_Func = function(nb, round_nb)
+    return nb*(1 + round_nb/math.log(round_nb/(2.5) + 1)/10)
+end
 
 Zombies_Health_Start = {
     30,
@@ -38,8 +42,8 @@ Enemies_Spawn_Interval_min_time_ms = 500
 
 DestroyEnemy_After_death_ms = 20000
 
-Max_enemies_spawned = 30
-Max_Enemies_Dead_Ragdolls = 20
+Max_enemies_spawned = 25
+Max_Enemies_Dead_Ragdolls = 15
 
 Enemy_Route_Update_ms = 100
 Enemy_Look_At_Update_ms = 300
