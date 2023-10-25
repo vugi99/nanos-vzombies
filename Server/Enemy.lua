@@ -72,6 +72,29 @@ function Calculate_Enemy_Health(enemy_table)
     end
 end
 
+function GetSelectedSpawn(spawn_type_data)
+    local selected_spawn
+    if spawn_type_data.type == "zombie_spawns" then
+        selected_spawn = SmartSpawnLogic(SPAWNS_ENABLED)
+    elseif spawn_type_data.type == "direct_zombie_spawns" then
+        local spawns_ = {}
+        for k, v in pairs(SPAWNS_ENABLED) do
+            local spawn_target = GetSpawnTargetFromZSpawnID(v.zspawnid)
+            if spawn_target then
+                if spawn_target.type == "ground" then
+                    table.insert(spawns_, v)
+                end
+            end
+        end
+        if spawns_[1] then
+            selected_spawn = SmartSpawnLogic(spawns_)
+        end
+    elseif spawn_type_data.type == "custom_spawns" then
+        selected_spawn = SmartSpawnLogic(GetCustomSpawnsUnlocked(spawn_type_data))
+    end
+    return selected_spawn, spawn_type_data.type
+end
+
 function SpawnEnemy(EnemyName, EnemyType)
     local players_alive = GetPlayersAlive()
     if table_count(players_alive) > 0 then
@@ -79,17 +102,24 @@ function SpawnEnemy(EnemyName, EnemyType)
         local enemy_table = Enemies_Config[EnemyName]
 
         local selected_spawn
-        if enemy_table.Spawning_Config.type == "zombie_spawns" then
-            selected_spawn = SmartSpawnLogic(SPAWNS_ENABLED)
-        elseif enemy_table.Spawning_Config.type == "custom_spawns" then
-            selected_spawn = SmartSpawnLogic(GetCustomSpawnsUnlocked(enemy_table))
+        local selected_spawn_type
+        if enemy_table.Spawning_Config.type then
+            selected_spawn = GetSelectedSpawn(enemy_table.Spawning_Config)
+            selected_spawn_type = enemy_table.Spawning_Config.type
+        elseif enemy_table.Spawning_Config.types then
+            for i, v in ipairs(enemy_table.Spawning_Config.types) do
+                selected_spawn, selected_spawn_type = GetSelectedSpawn(v)
+                if selected_spawn then
+                    break
+                end
+            end
         end
 
         if selected_spawn then
             local selected_spawn_target = GetSpawnTargetFromZSpawnID(selected_spawn.zspawnid)
 
-            local is_ground_anim_disabled = false
-            if (enemy_table.Spawning_Config.type ~= "zombie_spawns" or (selected_spawn.ground_anim == false or selected_spawn_target.ground_anim == false)) then
+            local is_ground_anim_disabled = (enemy_table.Custom_Skeleton == true)
+            if ((selected_spawn_type ~= "zombie_spawns" and selected_spawn_type ~= "direct_zombie_spawns") or (selected_spawn.ground_anim == false or selected_spawn_target.ground_anim == false)) then
                 is_ground_anim_disabled = true
             end
 
@@ -131,6 +161,8 @@ function SpawnEnemy(EnemyName, EnemyType)
                 ""
             )
 
+            --print("Spawn", random_enemy_model_asset)
+
             if enemy_mats then
                 --print(NanosUtils.Dump(enemy_mats))
 
@@ -163,7 +195,11 @@ function SpawnEnemy(EnemyName, EnemyType)
             enemy:SetValue("EnemyTypeAtSpawn", EnemyType, false)
             enemy:SetValue("WeirdPunchNB", 0, false)
 
-            if enemy_table.Spawning_Config.type == "zombie_spawns" then
+            if enemy_table.Custom_Skeleton then
+                enemy:SetHitReactionEnabled(false)
+            end
+
+            if (enemy_table.Spawning_Config.type == "zombie_spawns" or enemy_table.Spawning_Config.type == "direct_zombie_spawns") then
                 if (not is_ground_anim_disabled) then
                     enemy:SetFlyingMode(true)
                     enemy:SetValue("GroundAnim", true, false)
@@ -198,7 +234,8 @@ function SpawnEnemy(EnemyName, EnemyType)
                 Events.Call("VZ_EnemySpawned", enemy)
             end
         else
-            Console.Error("VZombies : Can't select a zombie spawn")
+            --Console.Error("VZombies : Can't select a zombie spawn")
+            -- Can go there for bosses when there isn't spawns for them
         end
     end
 end
@@ -299,10 +336,6 @@ function SmartSpawnLogic(spawns_table)
     return selected_spawn
 end
 
-function ZombieSpawnSelection()
-    return selected_spawn
-end
-
 function SpawnEnemyIntervalFunc()
     if not GAME_PAUSED then
         if (REMAINING_ENEMIES_TO_SPAWN > 0 and table_count(ENEMY_CHARACTERS) < Max_enemies_spawned) then
@@ -326,6 +359,8 @@ function SpawnEnemyIntervalFunc()
                                                 boss_type = k2
                                                 break
                                             end
+
+                                            
                                             SpawnEnemy(k, boss_type)
                                         end
                                     end
@@ -722,7 +757,7 @@ VZ_EVENT_SUBSCRIBE("Character", "Death", function(char, last_damage_taken, last_
             if causer:IsValid() then
                 if not causer:IsA(Character) then
                     local instig_char
-                    if causer:IsA(Vehicle) then
+                    if IsAVehicle(causer) then
                         instig_char = causer:GetPassenger(0)
                     else
                         instig_char = causer:GetHandler()
@@ -780,6 +815,8 @@ VZ_EVENT_SUBSCRIBE("Character", "Death", function(char, last_damage_taken, last_
         SendEnemiesRemaining()
 
         if char:GetValue("EnemyType") == "napalm" then
+            --print("Grenade")
+
             local grenade = Grenade(
                 char:GetLocation(),
                 Rotator(0, 0, 0),
@@ -871,7 +908,7 @@ VZ_EVENT_SUBSCRIBE("Character", "TakeDamage", function(char, damage, bone, dtype
             if causer:IsValid() then
                 if not causer:IsA(Character) then
                     local instig_char
-                    if causer:IsA(Vehicle) then
+                    if IsAVehicle(causer) then
                         instig_char = causer:GetPassenger(0)
                     else
                         instig_char = causer:GetHandler()
@@ -907,7 +944,7 @@ VZ_EVENT_SUBSCRIBE("Character", "TakeDamage", function(char, damage, bone, dtype
                         KILL_COUNT = KILL_COUNT + 1
                     end
                 elseif (instig_char and not char:GetValue("ApplyingRepack")) then
-                    if (not causer or not causer:IsValid() or (not causer:IsA(Melee) and not causer:IsA(Grenade) and not causer:IsA(Vehicle))) then
+                    if (not causer or (not causer:IsValid()) or ((not causer:IsA(Melee)) and (not causer:IsA(Grenade)) and (not IsAVehicle(causer)))) then
                         local perks = instig_char:GetValue("OwnedPerks")
                         local mult = 1
                         local added_damage = 0
@@ -1185,11 +1222,11 @@ function ChangeEnemyType(char, new_type)
     char:SetValue("EnemyType", new_type, true)
 end
 
-function GetCustomSpawnsUnlocked(enemy_table)
+function GetCustomSpawnsUnlocked(spawning_config_data)
     local unlocked_spawns = {}
-    if _ENV[enemy_table.Spawning_Config.table_name] then
-        for k, v in pairs(_ENV[enemy_table.Spawning_Config.table_name]) do
-            if (ROOMS_UNLOCKED[v[enemy_table.Spawning_Config.room_key]] and not ROOMS_SPAWNS_DISABLED[v[enemy_table.Spawning_Config.room_key]]) then
+    if _ENV[spawning_config_data.table_name] then
+        for k, v in pairs(_ENV[spawning_config_data.table_name]) do
+            if (ROOMS_UNLOCKED[v[spawning_config_data.room_key]] and not ROOMS_SPAWNS_DISABLED[v[spawning_config_data.room_key]]) then
                 table.insert(unlocked_spawns, v)
             end
         end
@@ -1247,7 +1284,7 @@ Timer.SetInterval(function()
     end
 end, Napalm_Fire_Damage_Interval)
 
---if ZDEV_IsModeEnabled("ZDEV_COMMANDS") then
+if ZDEV_IsModeEnabled("ZDEV_COMMANDS") then
     VZ_EVENT_SUBSCRIBE("Chat", "PlayerSubmit", function(text, ply)
         local char = ply:GetControlledCharacter()
         if char then
@@ -1272,5 +1309,5 @@ end, Napalm_Fire_Damage_Interval)
             end
         end
     end)
---end
+end
 

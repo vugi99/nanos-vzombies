@@ -60,7 +60,11 @@ One_Time_Updates_Canvas:Subscribe("Update", function(self, width, height)
         )
     end
     if One_Time_Update_Data.WaitingPlayer then
-        self:DrawText("Game full, Waiting for free slot", Vector2D(135, math.floor(Viewport.GetViewportSize().Y * 0.06)), 0, 14, Color.ORANGE, 0, true, true, Color(0, 0, 0, 0), Vector2D(), false, Color.WHITE)
+        local text = "Game full, Waiting for free slot"
+        if One_Time_Update_Data.WaitingPlayer == "No_Players" then
+            text = "Bot only game"
+        end
+        self:DrawText(text, Vector2D(math.floor(Viewport.GetViewportSize().X * 0.5), 30), 0, 14, Color.ORANGE, 0, true, true, Color(0, 0, 0, 0), Vector2D(), false, Color.WHITE)
     end
     if (Spectating_Player and not Free_Cam and VZ_CL_Current_Settings.Spectating_Player_Showed) then
         local text = "Spectating : " .. Spectating_Player:GetAccountName()
@@ -101,6 +105,11 @@ Client.SetOutlineColor(Outline_Players_Color, 1)
 Chat.SetConfiguration(table.unpack(Chat_Config))
 
 Input.SetMouseEnabled(false)
+
+if VZ_GetFeatureValue("Levels", "script_loaded") then
+    GUI:CallEvent("AddTabTopCategory", "Level")
+end
+
 
 function IsSelfCharacter(char)
     local local_player = Client.GetLocalPlayer()
@@ -385,6 +394,24 @@ end
 function GUIStopRevive()
     GUI:CallEvent("StopRevive")
 end
+
+VZ_EVENT_SUBSCRIBE("Character", "ValueChange", function(char, key, value)
+    local local_ply = Client.GetLocalPlayer()
+    if local_ply then
+        local local_char = local_ply:GetControlledCharacter()
+        if local_char then
+            if local_char == char then
+                if key == "SoloQuickReviving" then
+                    if value then
+                        GUIStartRevive(PERKS_CONFIG.quick_revive.Solo_ReviveTime_ms)
+                    else
+                        GUIStopRevive()
+                    end
+                end
+            end
+        end
+    end
+end)
 
 function PowerupGrabbedGUI(powerup_name)
     PlayVZSound({basic_sound_tbl=Powerups_Config[powerup_name].sound})
@@ -806,7 +833,7 @@ if Ping_Enabled then
                         DrawPing(self, v.entity:GetLocation(), v.entity:GetValue("EnemyName"), v.color)
                     elseif (v.entity:IsA(Character) and v.entity:GetPlayer()) then
                         DrawPing(self, v.entity:GetLocation(), v.entity:GetPlayer():GetAccountName(), v.color)
-                    elseif (v.entity:IsA(Vehicle) and v.entity:GetValue("VehName")) then
+                    elseif (IsAVehicle(v.entity) and v.entity:GetValue("VehName")) then
                         DrawPing(self, v.entity:GetLocation(), v.entity:GetValue("VehName"), v.color)
                     else
                         DrawPing(self, v.location, "Ping", v.color)
@@ -903,8 +930,6 @@ function AddNotification(text, time)
 end
 VZ_EVENT_SUBSCRIBE_REMOTE("AddNotification", AddNotification)
 Package.Export("AddNotification", AddNotification)
-
-AddNotification("How To Play (" .. Input.GetMappedKeys("How to play")[1] .. ")", 15000)
 
 
 VZ_EVENT_SUBSCRIBE("Character", "PickUp", function(char, picked)

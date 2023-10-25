@@ -15,19 +15,23 @@ function Buy(ply, price)
 end
 Package.Export("Buy", Buy)
 
-function AddMoney(ply, added)
+function AddMoney(ply, added, only_money)
     local pmoney = ply:GetValue("ZMoney")
     if pmoney then
         if ACTIVE_POWERUPS.x2 then
             added = added * 2
         end
         ply:SetValue("ZMoney", pmoney + added, true)
-        if VZ_GetFeatureValue("Levels", "script_loaded") then
-            if AddPlayerXP then
-                AddPlayerXP(ply, math.floor(added*VZ_GetFeatureValue("Levels", "score_mult_into_xp")))
+        if (not only_money) then
+            if VZ_GetFeatureValue("Levels", "script_loaded") then
+                if AddPlayerXP then
+                    AddPlayerXP(ply, math.floor(added*VZ_GetFeatureValue("Levels", "score_mult_into_xp")))
+                end
             end
+            ply:SetValue("ZScore", ply:GetValue("ZScore") + added, false)
+        elseif VZ_GetFeatureValue("Levels", "script_loaded") then
+            Events.CallRemote("PlayerLevelXPUpdate", ply, ply:GetValue("PlayerLevel"), ply:GetValue("PlayerXP")) -- Prevent xp desync
         end
-        ply:SetValue("ZScore", ply:GetValue("ZScore") + added, false)
         return true
     end
 end

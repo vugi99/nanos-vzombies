@@ -32,6 +32,10 @@ VZ_Register_Input("Ping", "F")
 VZ_Register_Input("Free Cam", "J")
 VZ_Register_Input("Settings", "O")
 
+if Input.GetMappedKeys("How to play") then
+    AddNotification("How To Play (" .. tostring(Input.GetMappedKeys("How to play")[1]) .. ")", 15000)
+end
+
 
 local PlayerCanPause
 GAME_PAUSED = false

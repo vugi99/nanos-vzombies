@@ -96,3 +96,15 @@ VZ_EVENT_SUBSCRIBE("Player", "Destroy", function(ply)
         VZA_MutedVOIPPlayers[ply:GetSteamID()] = nil
     end
 end)
+
+VZ_EVENT_SUBSCRIBE_REMOTE("VZAM_Mapvote", function(ply)
+    if VZ_IsAdmin(ply) then
+        if WaitingMapvote == nil then
+            if StartMapVote then
+                WaitingMapvote = StartMapVote(Mapvote_tbl)
+            else
+                Events.CallRemote("AddNotification", ply, "mapvote package not started", 10000)
+            end
+        end
+    end
+end)

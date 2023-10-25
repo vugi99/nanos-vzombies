@@ -5,6 +5,7 @@ Custom_Anims_BP = Blueprint(
     "vzombies-assets::VZ_CustomAnims"
 )
 
+RegisterPreparedLoop("Enemies", Character, "EnemyName")
 
 function HandleEnemyType(char, value)
     local enemy_table = GetEnemyTable(char)
@@ -160,7 +161,7 @@ if ZDEV_IsModeEnabled("ZDEV_DEBUG_ENEMIES_PREDICTION") then
             local char = local_ply:GetControlledCharacter()
             if char then
                 local dir = char:GetVelocity():GetSafeNormal()
-                Client.DrawDebugLine(char:GetLocation(), char:GetLocation() + dir * (char:GetVelocity():Size() / Enemies_Damage_Prediction_Div), Color.GREEN, ds * 4, 1)
+                Debug.DrawLine(char:GetLocation(), char:GetLocation() + dir * (char:GetVelocity():Size() / Enemies_Damage_Prediction_Div), Color.GREEN, ds * 4, 1)
             end
         end
     end)

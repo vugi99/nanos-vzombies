@@ -29,6 +29,7 @@ VZ_EVENT_SUBSCRIBE("Events", "VZ_PlayerJoined", function(ply)
 end)
 
 function SavePlayerLevelData(ply, async_q)
+    --print("SavePlayerLevelData")
     if not ply.BOT then
         if ply:GetValue("PlayerStoredMoney") then
             local query = "UPDATE levels SET xp=" .. tostring(ply:GetValue("PlayerXP")) .. ", level=" .. tostring(ply:GetValue("PlayerLevel")) .. "  WHERE steamid = " .. tostring(ply:GetSteamID())
@@ -42,8 +43,11 @@ function SavePlayerLevelData(ply, async_q)
 end
 VZ_EVENT_SUBSCRIBE("Events", "VZ_PlayerLeft", SavePlayerLevelData)
 VZ_EVENT_SUBSCRIBE("Package", "Unload", function()
+    --print("Unload")
     for k, v in pairs(Player.GetPairs()) do
         SavePlayerLevelData(v)
+        v:SetValue("PlayerXP", nil, false)
+        v:SetValue("PlayerLevel", nil, false)
     end
     Levels_DB:Close()
 end)

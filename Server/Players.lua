@@ -62,7 +62,14 @@ function SpawnCharacterForPlayer(ply, spawn_id)
         end
     end
 
-    local new_char = Character(PLAYER_SPAWNS[spawn_id].location + Vector(0, 0, 105), PLAYER_SPAWNS[spawn_id].rotation, PM_Data.Model)
+    local pain_sound = "nanos-world::A_Male_01_Pain"
+    if PM_Data.gender == "male" then
+        pain_sound = Player_Pain_Sounds_Male[math.random(table_count(Player_Pain_Sounds_Male))]
+    elseif PM_Data.gender == "female" then
+        pain_sound = Player_Pain_Sounds_Female[math.random(table_count(Player_Pain_Sounds_Male))]
+    end
+
+    local new_char = Character(PLAYER_SPAWNS[spawn_id].location + Vector(0, 0, 105), PLAYER_SPAWNS[spawn_id].rotation, PM_Data.Model, CollisionType.Auto, true, 100, "nanos-world::A_Male_01_Death", pain_sound)
     if not ply.BOT then
         new_char:SetCameraMode(ply:GetValue("MM_CamMode") or CAMERA_MODE)
     end
@@ -157,7 +164,7 @@ function GetPlayersAliveNB()
     local nb = 0
     for k, v in pairs(PLAYING_PLAYERS) do
         local char = v:GetControlledCharacter()
-        if (char and not char:GetValue("PlayerDown")) then
+        if (char and (not char:GetValue("PlayerDown") or char:GetValue("SoloQuickReviving"))) then
             nb = nb + 1
         end
     end
@@ -180,7 +187,7 @@ function GetPlayersWOBotsAliveNB()
     for k, v in pairs(PLAYING_PLAYERS) do
         if not v.BOT then
             local char = v:GetControlledCharacter()
-            if (char and not char:GetValue("PlayerDown")) then
+            if (char and (not char:GetValue("PlayerDown") or char:GetValue("SoloQuickReviving"))) then
                 nb = nb + 1
             end
         end
@@ -300,7 +307,7 @@ VZ_EVENT_SUBSCRIBE("Character", "TakeDamage", function(char, damage, bone, type,
             if causer:IsValid() then
                 if not causer:IsA(Character) then
                     local instig_char
-                    if causer:IsA(Vehicle) then
+                    if IsAVehicle(causer) then
                         instig_char = causer:GetPassenger(0)
                     else
                         instig_char = causer:GetHandler()
@@ -334,6 +341,14 @@ VZ_EVENT_SUBSCRIBE("Character", "TakeDamage", function(char, damage, bone, type,
                 char:LeaveVehicle()
             end
 
+            local solo_quick_revive
+
+            if PLAYING_PLAYERS_NB == 1 then -- solo
+                solo_quick_revive = char:GetValue("OwnedPerks").quick_revive
+            end
+
+            char:SetValue("SoloQuickReviving", solo_quick_revive, true)
+
             char:SetValue("PlayerDown", true, true)
             Buy(ply, math.floor(ply:GetValue("ZMoney") * Down_MoneyLost / 100))
             char:SetValue("OwnedPerks", {}, true)
@@ -358,11 +373,13 @@ VZ_EVENT_SUBSCRIBE("Character", "TakeDamage", function(char, damage, bone, type,
                 char:SetValue("PlayerGrabbedBy", nil, true)
             end
 
-            char:SetValue(
-                "PlayerDownDieTimer",
-                Timer.SetTimeout(PlayerCharacterDie, PlayerDeadAfterTimerDown_ms, char),
-                false
-            )
+            if not solo_quick_revive then
+                char:SetValue(
+                    "PlayerDownDieTimer",
+                    Timer.SetTimeout(PlayerCharacterDie, PlayerDeadAfterTimerDown_ms, char),
+                    false
+                )
+            end
             char:SetSpeedMultiplier(PlayerSpeedMultiplier)
             if not ply.BOT then
                 char:SetInputEnabled(false)
@@ -409,6 +426,15 @@ VZ_EVENT_SUBSCRIBE("Character", "TakeDamage", function(char, damage, bone, type,
                 if not weap:IsA(Grenade) and not weap:IsA(Melee) then
                     weap:ActivateSpeedReload(false)
                 end
+            end
+
+            if solo_quick_revive then
+                Timer.SetTimeout(function()
+                    if char:IsValid() then
+                        char:SetValue("SoloQuickReviving", nil, true)
+                        RevivePlayerFinished_RevivedPart(char)
+                    end
+                end, PERKS_CONFIG.quick_revive.Solo_ReviveTime_ms)
             end
 
             Events.Call("VZ_CharacterDown", char)
@@ -493,7 +519,11 @@ function HandlePlayerJoin(ply, bot, waittostart)
                 ZPlayingPlayerInit(ply)
             else
                 table.insert(WAITING_PLAYERS, ply)
-                ply:SetValue("PlayerWaiting", true, true)
+                local waiting_val = true
+                if No_Players then
+                    waiting_val = "No_Players"
+                end
+                ply:SetValue("PlayerWaiting", waiting_val, true)
             end
             if ROUND_NB == 0 then
                 if not WaitingNewRound_Timer then
@@ -528,7 +558,11 @@ function HandlePlayerJoin(ply, bot, waittostart)
                 end
             else
                 table.insert(WAITING_PLAYERS, ply)
-                ply:SetValue("PlayerWaiting", true, true)
+                local waiting_val = true
+                if No_Players then
+                    waiting_val = "No_Players"
+                end
+                ply:SetValue("PlayerWaiting", waiting_val, true)
             end
         end
 
@@ -651,25 +685,34 @@ end
 VZ_EVENT_SUBSCRIBE_REMOTE("RevivePlayer", RevivePlayer)
 
 
+function RevivePlayerFinished_RevivedPart(revived_char)
+    revived_char:SetValue("RevivingPlayer", nil, true)
+
+    revived_char:SetValue("PlayerDown", nil, true)
+    if revived_char:GetValue("PlayerDownDieTimer") then
+        Timer.ClearTimeout(revived_char:GetValue("PlayerDownDieTimer"))
+    end
+    revived_char:SetValue("PlayerDownDieTimer", nil, false)
+    revived_char:SetInputEnabled(true)
+    revived_char:SetCanAim(true)
+    revived_char:StopAnimation("vzombies-assets::Death_Idle")
+    revived_char:SetHealth(1000 + PlayerHealth)
+    local revived_ply = revived_char:GetPlayer()
+    Events.CallRemote("UpdateGUIHealth", revived_ply)
+    if revived_ply.BOT then
+        RequestBotAction(revived_ply)
+        revived_ply:SetValue("BotAimPlayer", GetRandomPlayer():GetID(), true)
+    end
+end
+
+
 function RevivePlayerFinished(ply, revived_char)
     local reviving_char = ply:GetControlledCharacter()
     if (ply:IsValid() and revived_char:IsValid() and reviving_char) then
         if revived_char:GetValue("RevivingPlayer") == reviving_char:GetID() then
             revived_char:SetValue("RevivingPlayer", nil, true)
             if not reviving_char:GetValue("PlayerDown") then
-                revived_char:SetValue("PlayerDown", nil, true)
-                Timer.ClearTimeout(revived_char:GetValue("PlayerDownDieTimer"))
-                revived_char:SetValue("PlayerDownDieTimer", nil, false)
-                revived_char:SetInputEnabled(true)
-                revived_char:SetCanAim(true)
-                revived_char:StopAnimation("vzombies-assets::Death_Idle")
-                revived_char:SetHealth(1000 + PlayerHealth)
-                local revived_ply = revived_char:GetPlayer()
-                Events.CallRemote("UpdateGUIHealth", revived_ply)
-                if revived_ply.BOT then
-                    RequestBotAction(revived_ply)
-                    revived_ply:SetValue("BotAimPlayer", GetRandomPlayer():GetID(), true)
-                end
+                RevivePlayerFinished_RevivedPart(revived_char)
 
                 AddMoney(ply, Player_Revive_Money)
                 reviving_char:SetInputEnabled(true)
@@ -797,5 +840,6 @@ VZ_EVENT_SUBSCRIBE("Package", "Unload", function()
         v:SetValue("MM_InfGrenades", nil, false)
         v:SetValue("MM_CamMode", nil, false)
         v:SetValue("RepackCooldown", nil, false)
+        v:SetValue("PlayerWaiting", nil, true)
     end
 end)

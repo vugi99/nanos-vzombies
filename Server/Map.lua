@@ -70,7 +70,9 @@ function ResetMapPower()
     if MAP_POWER then
         POWER_ON = false
         Events.BroadcastRemote("SetClientPowerON", false)
-        MAP_POWER_SM_HANDLE:SetRotation(MAP_POWER.handle_rotation)
+        if MAP_POWER_SM_HANDLE:IsValid() then
+            MAP_POWER_SM_HANDLE:SetRotation(MAP_POWER.handle_rotation)
+        end
     end
 end
 

@@ -85,6 +85,17 @@ local function GiveInventoryPlayerWeapon(char, charInvID, i, v)
         weapon:ActivateSpeedReload(true)
     end
 
+    local ply = char:GetPlayer()
+    if ply then
+        if ply.BOT then
+            weapon:SetValue("RealRecoil", weapon:GetRecoil(), false)
+            weapon:SetValue("RealSpread", weapon:GetSpread(), false)
+            -- Remove for bots, consider calculated inaccuracy instead
+            weapon:SetRecoil(0)
+            weapon:SetSpread(0)
+        end
+    end
+
     char:PickUp(weapon)
 
     local ply = char:GetPlayer()
@@ -276,6 +287,17 @@ end)
 
 VZ_EVENT_SUBSCRIBE("Weapon", "Drop", function(weapon, char, was_triggered_by_player)
     --print("Drop", weapon, char, was_triggered_by_player, weapon:GetMesh())
+
+
+    -- Repair bot weapons before dropping
+    if weapon:GetValue("RealRecoil") then
+        weapon:SetRecoil(weapon:GetValue("RealRecoil"))
+    end
+
+    if weapon:GetValue("RealSpread") then
+        weapon:SetSpread(weapon:GetValue("RealSpread"))
+    end
+
     local charInvID = GetCharacterInventory(char)
     if charInvID then
         --print(NanosUtils.Dump(PlayersCharactersWeapons[charInvID]))
@@ -385,6 +407,8 @@ VZ_EVENT_SUBSCRIBE_REMOTE("PickupGrenade", function(ply)
 
                             char:PickUp(grenade)
 
+                            char:SetCanDrop(false)
+
                             grenade:PullUse()
                         end
                     end
@@ -450,6 +474,7 @@ VZ_EVENT_SUBSCRIBE_REMOTE("ThrowGrenade", function(ply)
             if char then
                 local grenade = char:GetPicked()
                 if (grenade and grenade:IsA(Grenade)) then
+                    char:SetCanDrop(true)
                     grenade:ReleaseUse()
                 end
             end
@@ -514,6 +539,7 @@ VZ_EVENT_SUBSCRIBE_REMOTE("UseKnife", function(ply)
 
                     local knife = SpawnKnife()
 
+                    char:SetCanDrop(false)
                     char:PickUp(knife)
 
                     knife:PullUse()
@@ -523,6 +549,7 @@ VZ_EVENT_SUBSCRIBE_REMOTE("UseKnife", function(ply)
                     Timer.SetTimeout(function()
                         if knife:IsValid() then
                             if char:IsValid() then
+                                char:SetCanDrop(true)
                                 knife:Destroy()
 
                                 local charInvID = GetCharacterInventory(char)

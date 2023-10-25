@@ -23,7 +23,7 @@ end
 
 
 function ResetPAP()
-    if MAP_PAP_SM then
+    if (MAP_PAP_SM and MAP_PAP_SM:IsValid()) then
         if PAP_Upgrade_Data then
             if PAP_Upgrade_Data.up_timeout then
                 Timer.ClearTimeout(PAP_Upgrade_Data.up_timeout)

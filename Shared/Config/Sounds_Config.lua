@@ -300,15 +300,15 @@ PAP_Ready_Sound = {
 
 Zombie_Behind_Sound_Trigger_Config = {
     Interval_ms = 1000,
-    Cooldown_ms = 19000,
+    Cooldown_ms = {500, 10000},
     max_distance_sq = 810000,
     Rel_Rot_Between = {-70, 70},
     max_z_dist = 200,
 }
 
 Zombie_Amb_Sounds = {
-    Interval_ms = 1000,
-    Cooldown_ms = 10000
+    Interval_ms = 500,
+    Cooldown_ms = {200, 2500},
 }
 
 LastStand_Enter_Sound = {
@@ -393,4 +393,26 @@ Napalm_Fire_Ambient_Sound = {
 Player_Grief_Sound = {
     asset = "vzombies-assets::Brutus_Steps_Cue",
     volume = 1,
+}
+
+Player_Pain_Sounds_Male = {
+    "nanos-world::A_Male_01_Pain",
+    "nanos-world::A_Male_02_Pain",
+    "nanos-world::A_Male_03_Pain",
+    "nanos-world::A_Male_04_Pain",
+    "nanos-world::A_Male_05_Pain",
+    "nanos-world::A_Male_06_Pain",
+    "nanos-world::A_Male_07_Pain",
+    "nanos-world::A_Male_08_Pain",
+}
+
+Player_Pain_Sounds_Female = {
+    "nanos-world::A_Female_01_Pain",
+    "nanos-world::A_Female_02_Pain",
+    "nanos-world::A_Female_03_Pain",
+    "nanos-world::A_Female_04_Pain",
+    "nanos-world::A_Female_05_Pain",
+    "nanos-world::A_Female_06_Pain",
+    "nanos-world::A_Female_07_Pain",
+    "nanos-world::A_Female_08_Pain",
 }

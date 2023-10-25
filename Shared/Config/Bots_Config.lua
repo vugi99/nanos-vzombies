@@ -8,9 +8,10 @@ Max_Bots = 1
 Bots_Move_Max_Radius = 2500
 
 Bots_Acceptance_Radius = 80
-Bots_Reach_Acceptance_Radius_sq = 300^2
+Bots_Reach_Acceptance_Radius_sq = (Bots_Acceptance_Radius*4)^2 -- Reach check
+Bots_PreReach_Trigger_Radius = Bots_Acceptance_Radius*7 -- Prepare next order
 
-Bots_Remaining_Ammo_Bag_Buy_Refill = 30
+Bots_Remaining_Ammo_Bag_Buy_Refill = 60
 
 Bots_CheckTarget_Interval = 2500
 Bots_Target_MaxDistance3D_Sq = 36000000
@@ -22,14 +23,17 @@ Bots_Reach_Door_Around = 125
 
 Bots_Ragdoll_Get_Up_Timeout_ms = 10000
 
-Bots_Zombies_Dangerous_Point_Distance_sq = 6250000
-Bots_Flee_Zombies_Move_Distance = 750
-Bots_Flee_Zombies_Move_Radius = 500
+Bots_Zombies_Dangerous_Point_Distance_sq = 3000^2
+Bots_Flee_Zombies_Move_Distance = 1500
+Bots_Flee_Zombies_Move_Radius = 1250
 Bots_Flee_Point_Retry_Number = 3
 
 Bots_Smart_Reload_Check_Interval_ms = 2500
 
 Weird_Attack_On_Bots_Unique_Count_Kill = 50 -- If x unique characters do a weird punch on them, they get killed (if they entered ragdoll before that)
+
+Bots_Min_Nearest_Zombie_Distance_To_Revive_sq = 1000^2 -- (reviving if nearest_z_dist >= min+dist(player_char, bot_char))
+Bots_Approaching_Down_Character_Radius = 2500 -- Will try to get in this radius and move inside it to attempt to revive the char later
 
 Bots_Behavior_Config = {
     "REVIVE",
@@ -40,6 +44,15 @@ Bots_Behavior_Config = {
     "PACKAPUNCH",
     "DOORS",
     "MOVE",
+}
+
+Bots_Actions_Can_Prereach = {
+    POWER = true,
+    POWERUPS = true,
+    WEAPONS = true,
+    PERKS = true,
+    DOORS = true,
+    MOVE = true,
 }
 
 Bots_Weapons_Ranks = {

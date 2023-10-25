@@ -164,7 +164,10 @@ VZ_EVENT_SUBSCRIBE_REMOTE("VZMM_OpenAllDoors", function(ply)
 end)
 
 VZ_EVENT_SUBSCRIBE_REMOTE("VZMM_SetMoney", function(ply, money)
-    ply:SetValue("ZMoney", money, true)
+    --ply:SetValue("ZMoney", money, true)
+    if ply:GetValue("ZMoney") then
+        AddMoney(ply, money - ply:GetValue("ZMoney"), true)
+    end
 end)
 
 VZ_EVENT_SUBSCRIBE_REMOTE("VZMM_InfiniteMoney", function(ply, enable)

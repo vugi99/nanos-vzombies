@@ -4,7 +4,7 @@ Mapvote_tbl = {
     time = 20,
     maps = {
         BlankMap = {
-            path = "nanos-world::BlankMap",
+            path = "default-blank-map",
             UI_name = "BlankMap",
             image = "images/missing.png",
         },

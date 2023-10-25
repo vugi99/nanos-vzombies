@@ -54,10 +54,8 @@ AddTabCheckbox("Mod_Menu", "Enemies", "Highlight Enemies", function(checked)
     else
         Character.Unsubscribe("ValueChange", _MM_hle_vc)
     end
-    for k, v in pairs(Character.GetPairs()) do
-        if v:GetValue("EnemyType") then
-            v:SetHighlightEnabled(checked, 0)
-        end
+    for k, v in pairs(PreparedLoops.Enemies) do
+        v:SetHighlightEnabled(checked, 0)
     end
 end, false, false)
 

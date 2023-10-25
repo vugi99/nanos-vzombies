@@ -78,7 +78,8 @@ VZ_EVENT_SUBSCRIBE_REMOTE("BankAction", function(ply, bank, action)
                                 amount = ply:GetValue("PlayerStoredMoney")
                             end
                             ply:SetValue("PlayerStoredMoney", ply:GetValue("PlayerStoredMoney") - amount, true)
-                            ply:SetValue("ZMoney", ply:GetValue("ZMoney") + amount, true)
+                            --ply:SetValue("ZMoney", ply:GetValue("ZMoney") + amount, true)
+                            AddMoney(ply, amount, true)
                         end
                     end
                 end

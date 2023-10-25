@@ -1,11 +1,19 @@
 
 
 Package.Require("Config/Config.lua")
+Package.Require("Config/cl_Config.lua")
 Package.Require("Sh_Funcs.lua")
 Package.Require("Prepare_Loops.lua")
 
 local Packages_Loaded = false
 local _CallVZ_Loaded_Event = false
+
+local Pre_Game_Canvas = Canvas(true, 	Color.TRANSPARENT, -1, true, true)
+Pre_Game_Canvas:Subscribe("Update", function(self, width, height)
+    self:DrawText("MISSING VZOMBIES MAP CONFIGURATION", Vector2D(math.floor(Viewport.GetViewportSize().X * 0.5), 10), FontType.OpenSans, 16, Color.RED, 0, true, true, Color(0, 0, 0, 0), Vector2D(), false, Color.WHITE)
+end)
+Pre_Game_Canvas:Repaint()
+
 
 CLIENT_RECEIVED_SERVER_SETTINGS = nil
 
@@ -33,6 +41,7 @@ end
 
 Events.SubscribeRemote("LoadMapConfig", function(MAP_CONFIG)
     --print("LoadMapConfig")
+    Pre_Game_Canvas:SetVisibility(false)
 
     for k, v in pairs(MAP_CONFIG) do
         _ENV[k] = v
@@ -82,6 +91,8 @@ Events.SubscribeRemote("LoadMapConfig", function(MAP_CONFIG)
     else
         _CallVZ_Loaded_Event = true
     end
+
+    Cl_Gamemode_Loaded = true
 end)
 
 
@@ -98,3 +109,5 @@ Events.SubscribeRemote("SendCustomSettingsToClient", function(settings)
     CLIENT_RECEIVED_SERVER_SETTINGS = settings
     ApplyCustomSettings(CLIENT_RECEIVED_SERVER_SETTINGS)
 end)
+
+Client.SetEscapeMenuText(Escape_Menu_Text)

@@ -20,53 +20,56 @@ function CL_VZ_SpawnGib(char, bone, goingtodie, instigator)
             char:SetValue("HeadGibSpawned", true)
         end
 
-        local self_char = Client.GetLocalPlayer():GetControlledCharacter()
+        if VZ_CL_Current_Settings["Clientside_Gibs"] then
 
-        local dist
-        if self_char then
-            dist = char:GetLocation():DistanceSquared(self_char:GetLocation())
-        else
-            dist = 0
-        end
+            local self_char = Client.GetLocalPlayer():GetControlledCharacter()
 
-        --print(math.sqrt(dist))
-        --if dist < Enemies_Gibs_Max_Spawn_Distance_sq then
-
-        if (instigator == Client.GetLocalPlayer() or (dist < Enemies_Gibs_Max_Spawn_Distance_sq)) then
-
-            local gib_asset = GetRealGibAsset(char, enemy_table.Gibs[bone].asset)
-
-            local gib = Prop(
-                bone_transform.Location,
-                bone_transform.Rotation,
-                gib_asset,
-                CollisionType.IgnoreOnlyPawn,
-                true,
-                GrabMode.Disabled
-            )
-            gib:SetValue("GibData", {char:GetValue("EnemyName"), bone})
-            --print(gib:GetID())
-
-            local enemy_mats = char:GetValue("EnemyMaterials")
-
-            if (enemy_mats) then
-                if enemy_table.Gibs[bone].materials then
-                    gib:SetValue("GibData", {char:GetValue("EnemyName"), bone, enemy_mats, gib_asset})
-                    SetGibMaterials(gib, bone, enemy_table, enemy_mats)
-                end
+            local dist
+            if self_char then
+                dist = char:GetLocation():DistanceSquared(self_char:GetLocation())
+            else
+                dist = 0
             end
 
-            Timer.SetTimeout(function()
-                if gib:IsValid() then
-                    gib:Destroy()
-                end
-            end, Enemies_Gibs_Destroy_Timeout_ms)
+            --print(math.sqrt(dist))
+            --if dist < Enemies_Gibs_Max_Spawn_Distance_sq then
 
-            if bone == enemy_table.Gibs_heart_bone then
-                gib:SetMaterialScalarParameter("Emissive_value", 0.0)
+            if (instigator == Client.GetLocalPlayer() or (dist < Enemies_Gibs_Max_Spawn_Distance_sq)) then
+
+                local gib_asset = GetRealGibAsset(char, enemy_table.Gibs[bone].asset)
+
+                local gib = Prop(
+                    bone_transform.Location,
+                    bone_transform.Rotation,
+                    gib_asset,
+                    CollisionType.IgnoreOnlyPawn,
+                    true,
+                    GrabMode.Disabled
+                )
+                gib:SetValue("GibData", {char:GetValue("EnemyName"), bone})
+                --print(gib:GetID())
+
+                local enemy_mats = char:GetValue("EnemyMaterials")
+
+                if (enemy_mats) then
+                    if enemy_table.Gibs[bone].materials then
+                        gib:SetValue("GibData", {char:GetValue("EnemyName"), bone, enemy_mats, gib_asset})
+                        SetGibMaterials(gib, bone, enemy_table, enemy_mats)
+                    end
+                end
+
+                Timer.SetTimeout(function()
+                    if gib:IsValid() then
+                        gib:Destroy()
+                    end
+                end, Enemies_Gibs_Destroy_Timeout_ms)
+
+                if bone == enemy_table.Gibs_heart_bone then
+                    gib:SetMaterialScalarParameter("Emissive_value", 0.0)
+                end
+            else
+                --print("Gib aborted")
             end
-        else
-            --print("Gib aborted")
         end
     end
 end

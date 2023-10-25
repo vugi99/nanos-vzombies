@@ -148,6 +148,18 @@ function CalculateMiddle(...)
     return middle / table_count({...})
 end
 
+function CalculateMiddlePonderedByDistanceSq(from_loc, ...)
+    local middle = Vector(0, 0, 0)
+    local pondered_sum = 0
+    local tbl = {...}
+    for i, v in ipairs(tbl) do
+        local dist_sq = from_loc:DistanceSquared(v)
+        middle = middle + v*dist_sq
+        pondered_sum = pondered_sum + dist_sq
+    end
+    return middle / pondered_sum
+end
+
 function CallENVFunc_NoError(name, ...)
     if _ENV[name] then
         return _ENV[name](...)
@@ -243,6 +255,29 @@ function VZ_IsAdmin(ply)
 end
 Package.Export("VZ_IsAdmin", VZ_IsAdmin)
 
+
+function DebugFullPrint(txt)
+    local step = 1000
+
+    local len = string.len(txt)
+    local chunks = {}
+    local cur = 1
+    while cur < len do
+        table.insert(chunks, string.sub(txt, cur, cur + step))
+        cur = cur + step + 1
+    end
+
+    for i, v in ipairs(chunks) do
+        print(v)
+    end
+end
+
+
+function IsAVehicle(entity)
+    return (entity:IsA(VehicleWheeled) or entity:IsA(VehicleWater))
+end
+
+
 if ZDEV_IsModeEnabled("ZDEV_DEBUG_FUNCTION_CALLS") then
     debug.sethook(function()
         local info = debug.getinfo(2)
@@ -270,7 +305,7 @@ if ZDEV_IsModeEnabled("ZDEV_DEBUG_FUNCTION_CALLS") then
                         end
                     end
 
-                    Package.Log("[Function Call]\n " .. info.name .. "(" .. args_str .. ")\n line : " .. tostring(info.linedefined) .. "\n source : " .. tostring(info.source))
+                    Console.Log("[Function Call]\n " .. info.name .. "(" .. args_str .. ")\n line : " .. tostring(info.linedefined) .. "\n source : " .. tostring(info.source))
                 end
             end
         end

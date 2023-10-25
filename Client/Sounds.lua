@@ -198,29 +198,27 @@ function CreateZBehindInterval()
 
             local nearest_zombie_for_sound
             local nearest_zombie_dist_sq
-            for k, v in pairs(Character.GetPairs()) do
+            for k, v in pairs(PreparedLoops.Enemies) do
                 if v:IsValid() then
-                    if v:GetValue("EnemyName") then
-                        if not v:GetPlayer() then
-                            if v:GetHealth() > 0 then
-                                local zombie_velocity = v:GetVelocity()
-                                if (zombie_velocity.X ~= 0 or zombie_velocity.Y ~= 0) then
-                                    local zombie_loc = v:GetLocation()
-                                    local dist_sq = char_loc:DistanceSquared(zombie_loc)
-                                    if dist_sq <= Zombie_Behind_Sound_Trigger_Config.max_distance_sq then
-                                        local dist_z = zombie_loc.Z - char_loc.Z
-                                        if dist_z < 0 then
-                                            dist_z = dist_z * -1
-                                        end
-                                        if dist_z <= Zombie_Behind_Sound_Trigger_Config.max_z_dist then
-                                            local zombie_rot = v:GetRotation()
-                                            local relrot = RelRot1(char_rot.Yaw, zombie_rot.Yaw)
-                                            --print(relrot)
-                                            if (relrot > Zombie_Behind_Sound_Trigger_Config.Rel_Rot_Between[1] and relrot < Zombie_Behind_Sound_Trigger_Config.Rel_Rot_Between[2]) then
-                                                if (not nearest_zombie_for_sound or nearest_zombie_dist_sq > dist_sq) then
-                                                    nearest_zombie_for_sound = v
-                                                    nearest_zombie_dist_sq = dist_sq
-                                                end
+                    if not v:GetPlayer() then
+                        if v:GetHealth() > 0 then
+                            local zombie_velocity = v:GetVelocity()
+                            if (zombie_velocity.X ~= 0 or zombie_velocity.Y ~= 0) then
+                                local zombie_loc = v:GetLocation()
+                                local dist_sq = char_loc:DistanceSquared(zombie_loc)
+                                if dist_sq <= Zombie_Behind_Sound_Trigger_Config.max_distance_sq then
+                                    local dist_z = zombie_loc.Z - char_loc.Z
+                                    if dist_z < 0 then
+                                        dist_z = dist_z * -1
+                                    end
+                                    if dist_z <= Zombie_Behind_Sound_Trigger_Config.max_z_dist then
+                                        local zombie_rot = v:GetRotation()
+                                        local relrot = RelRot1(char_rot.Yaw, zombie_rot.Yaw)
+                                        --print(relrot)
+                                        if (relrot > Zombie_Behind_Sound_Trigger_Config.Rel_Rot_Between[1] and relrot < Zombie_Behind_Sound_Trigger_Config.Rel_Rot_Between[2]) then
+                                            if (not nearest_zombie_for_sound or nearest_zombie_dist_sq > dist_sq) then
+                                                nearest_zombie_for_sound = v
+                                                nearest_zombie_dist_sq = dist_sq
                                             end
                                         end
                                     end
@@ -252,7 +250,7 @@ function CreateZBehindInterval()
                     Z_Behind_Interval = nil
                     Timer.SetTimeout(function()
                         CreateZBehindInterval()
-                    end, Zombie_Behind_Sound_Trigger_Config.Cooldown_ms)
+                    end, math.random(Zombie_Behind_Sound_Trigger_Config.Cooldown_ms[1], Zombie_Behind_Sound_Trigger_Config.Cooldown_ms[2]))
                 end
             end
         end
@@ -261,56 +259,81 @@ end
 CreateZBehindInterval()
 
 
-
+local amb_sound_in_cooldown = false
 local Z_Amb_Sounds_Interval
 function CreateZAmbInterval()
     Z_Amb_Sounds_Interval = Timer.SetInterval(function()
-        local ply = Client.GetLocalPlayer()
-        local char = ply:GetControlledCharacter()
-        if char then
-            local char_loc = char:GetLocation()
+        if not amb_sound_in_cooldown then
+            local ply = Client.GetLocalPlayer()
+            local char = ply:GetControlledCharacter()
+            if char then
+                local char_loc = char:GetLocation()
 
-            for k, v in pairs(Character.GetPairs()) do
-                if v:IsValid() then
-                    if not v:GetPlayer() then
-                        if v:GetHealth() > 0 then
-                            local zombie_velocity = v:GetVelocity()
-                            if (zombie_velocity.X ~= 0 or zombie_velocity.Y ~= 0) then
-                                local enemy_type = v:GetValue("EnemyType")
-                                if enemy_type then
+                local selected_zs = {}
 
-                                    local Random_Sounds_tbl = GetEnemyTable(v).Types[enemy_type].Ambient_Sounds
+                for k, v in pairs(PreparedLoops.Enemies) do
+                    if v:IsValid() then
+                        if not v:GetPlayer() then
+                            if v:GetHealth() > 0 then
+                                if (not v:GetValue("PlayingAmbSound") or (not v:GetValue("PlayingAmbSound"):IsValid())) then
+                                    local zombie_velocity = v:GetVelocity()
+                                    if (zombie_velocity.X ~= 0 or zombie_velocity.Y ~= 0) then
+                                        local enemy_type = v:GetValue("EnemyType")
+                                        if enemy_type then
 
-                                    if Random_Sounds_tbl then
-                                        local zombie_loc = v:GetLocation()
-                                        local dist_sq = char_loc:DistanceSquared(zombie_loc)
+                                            local Random_Sounds_tbl = GetEnemyTable(v).Types[enemy_type].Ambient_Sounds
 
-                                        if dist_sq <= Random_Sounds_tbl.falloff_distance ^ 2 then
-                                            --print("AMB SOUND CREATED")
-                                            local z_amb_sound = Sound(
-                                                zombie_loc,
-                                                VZ_RandomSound(Random_Sounds_tbl),
-                                                false,
-                                                true,
-                                                SoundType.SFX,
-                                                Random_Sounds_tbl.volume,
-                                                1,
-                                                Random_Sounds_tbl.radius,
-                                                Random_Sounds_tbl.falloff_distance,
-                                                AttenuationFunction.NaturalSound
-                                            )
-                                            z_amb_sound:AttachTo(v)
+                                            if Random_Sounds_tbl then
+                                                local zombie_loc = v:GetLocation()
+                                                local dist_sq = char_loc:DistanceSquared(zombie_loc)
 
-                                            Timer.ClearInterval(Z_Amb_Sounds_Interval)
-                                            Z_Amb_Sounds_Interval = nil
-                                            Timer.SetTimeout(function()
-                                                CreateZAmbInterval()
-                                            end, Zombie_Amb_Sounds.Cooldown_ms)
-                                            break
+                                                if dist_sq <= Random_Sounds_tbl.falloff_distance ^ 2 then
+                                                    table.insert(selected_zs, v)
+                                                end
+                                            end
                                         end
                                     end
                                 end
                             end
+                        end
+                    end
+                end
+
+                if selected_zs[1] then
+                    local v = selected_zs[math.random(table_count(selected_zs))]
+                    local enemy_type = v:GetValue("EnemyType")
+                    if enemy_type then
+
+                        local Random_Sounds_tbl = GetEnemyTable(v).Types[enemy_type].Ambient_Sounds
+
+                        if Random_Sounds_tbl then
+                            local zombie_loc = v:GetLocation()
+
+                            --print("AMB SOUND CREATED")
+                            local z_amb_sound = Sound(
+                                zombie_loc,
+                                VZ_RandomSound(Random_Sounds_tbl),
+                                false,
+                                true,
+                                SoundType.SFX,
+                                Random_Sounds_tbl.volume,
+                                1,
+                                Random_Sounds_tbl.radius,
+                                Random_Sounds_tbl.falloff_distance,
+                                AttenuationFunction.NaturalSound
+                            )
+                            z_amb_sound:AttachTo(v)
+
+                            v:SetValue("PlayingAmbSound", z_amb_sound, false)
+
+                            amb_sound_in_cooldown = true
+
+                            --Timer.ClearInterval(Z_Amb_Sounds_Interval)
+                            --Z_Amb_Sounds_Interval = nil
+                            Timer.SetTimeout(function()
+                                amb_sound_in_cooldown = false
+                                --CreateZAmbInterval()
+                            end, math.random(Zombie_Amb_Sounds.Cooldown_ms[1], Zombie_Amb_Sounds.Cooldown_ms[2]))
                         end
                     end
                 end

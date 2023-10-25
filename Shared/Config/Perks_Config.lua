@@ -18,6 +18,7 @@ PERKS_CONFIG = {
     quick_revive = {
         price = 1500,
         ReviveTime_ms = 2500,
+        Solo_ReviveTime_ms = 10000,
         Asset = "vzombies-assets::revive",
         scale = Vector(0.01, 0.01, 0.01),
         bottle_asset = "vzombies-assets::revive_bottle",

@@ -7,18 +7,19 @@ OpenedMysteryBox_Data = nil
 
 
 function SpawnBearForMBOX(SM)
-    local Bear_SM = StaticMesh(
-        Vector(0, 0, 0),
-        Rotator(0, 0, 0),
-        "vzombies-assets::mystery_box_fake_bear"
-    )
-    Bear_SM:SetScale(Vector(0.01, 0.01, 0.01))
-    Bear_SM:AttachTo(SM, AttachmentRule.SnapToTarget, "")
-    Bear_SM:SetRelativeLocation(Vector(0, 0, 5000))
-    Bear_SM:SetRelativeRotation(Rotator(0, 0, 0))
-    Bear_SM:SetCollision(CollisionType.NoCollision)
-
-    return Bear_SM
+    if SM:IsValid() then
+        local Bear_SM = StaticMesh(
+            Vector(0, 0, 0),
+            Rotator(0, 0, 0),
+            "vzombies-assets::mystery_box_fake_bear"
+        )
+        Bear_SM:SetScale(Vector(0.01, 0.01, 0.01))
+        Bear_SM:AttachTo(SM, AttachmentRule.SnapToTarget, "")
+        Bear_SM:SetRelativeLocation(Vector(0, 0, 5000))
+        Bear_SM:SetRelativeRotation(Rotator(0, 0, 0))
+        Bear_SM:SetCollision(CollisionType.NoCollision)
+        return Bear_SM
+    end
 end
 
 if MAP_MYSTERY_BOXES then
@@ -56,29 +57,33 @@ end
 
 function OpenedMBOXResetStage3(real_reset)
     OpenedMysteryBox_Data.SM_Attach:Destroy()
-    OpenedMysteryBox_Data.bear:Destroy()
+    if OpenedMysteryBox_Data.bear then
+        OpenedMysteryBox_Data.bear:Destroy()
+    end
     if real_reset then
         Timer.ClearTimeout(OpenedMysteryBox_Data.bearTimeout)
     end
 end
 
 function ResetMBOX(id)
-    if OpenedMysteryBox_Data then
-        if OpenedMysteryBox_Data.FakeInterval then
-            OpenedMBOXResetStage1()
-        elseif OpenedMysteryBox_Data.realweap then
-            OpenedMBOXResetStage2()
-        elseif OpenedMysteryBox_Data.bear then
-            OpenedMBOXResetStage3(true)
+    if SM_MysteryBoxes[id].mbox:IsValid() then
+        if OpenedMysteryBox_Data then
+            if OpenedMysteryBox_Data.FakeInterval then
+                OpenedMBOXResetStage1()
+            elseif OpenedMysteryBox_Data.realweap then
+                OpenedMBOXResetStage2()
+            elseif OpenedMysteryBox_Data.bear then
+                OpenedMBOXResetStage3(true)
+            end
+            OpenedMysteryBox_Data = nil
         end
-        OpenedMysteryBox_Data = nil
+        SM_MysteryBoxes[id].mbox:SetValue("CanBuyMysteryBox", nil, true)
+        SM_MysteryBoxes[id].bear = SpawnBearForMBOX(SM_MysteryBoxes[id].mbox)
+        if (SM_MysteryBoxes[id].active_particle and SM_MysteryBoxes[id].active_particle:IsValid()) then
+            SM_MysteryBoxes[id].active_particle:Destroy()
+        end
+        Active_MysteryBox_ID = nil
     end
-    SM_MysteryBoxes[id].mbox:SetValue("CanBuyMysteryBox", nil, true)
-    SM_MysteryBoxes[id].bear = SpawnBearForMBOX(SM_MysteryBoxes[id].mbox)
-    if (SM_MysteryBoxes[id].active_particle and SM_MysteryBoxes[id].active_particle:IsValid()) then
-        SM_MysteryBoxes[id].active_particle:Destroy()
-    end
-    Active_MysteryBox_ID = nil
 end
 
 function ResetMysteryBoxes()

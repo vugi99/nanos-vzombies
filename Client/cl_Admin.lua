@@ -15,6 +15,10 @@ AddTabTextInput("Admin_Menu", "Admin", "Unban", function(text)
     end
 end, "nanos account id", false)
 
+AddTabButton("Admin_Menu", "Admin", "Start Mapvote", function()
+    Events.CallRemote("VZAM_Mapvote")
+end, "Start Mapvote")
+
 AddTabText("Admin_Menu", "Admin", "", true)
 AddTabText("Admin_Menu", "Admin", "Player")
 

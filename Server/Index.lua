@@ -7,6 +7,7 @@ MAP_CONFIG_TO_SEND = MAP_CONFIG_TO_SEND or {}
 MAX_PLAYERS = MAX_PLAYERS or 0
 
 Package.Require("Config/Config.lua")
+Package.Require("Config/sv_Config.lua")
 Package.Require("Sh_Funcs.lua")
 Package.Require("CustomWeapons.lua")
 Package.Require("WonderWeapons.lua")
@@ -14,13 +15,6 @@ Package.Require("Prepare_Loops.lua")
 
 if ZDEV_CONFIG.ENABLED then
     print("VZombies : DEV MODE ENABLED")
-end
-
-local function split_str(str, sep)
-    local sep, fields = sep or ":", {}
-    local pattern = string.format("([^%s]+)", sep)
-    str:gsub(pattern, function(c) fields[#fields+1] = c end)
-    return fields
 end
 
 local Config_Data = {
@@ -36,11 +30,13 @@ Events.Subscribe("VZOMBIES_MAP_CONFIG", function(...)
             _ENV[Config_Data[i]] = v
         end
 
+        --DebugFullPrint(NanosTable.Dump(MAP_CONFIG_TO_SEND))
+
         MAP_CONFIG_LOADED = true
 
         MAX_PLAYERS = table_count(PLAYER_SPAWNS)
 
-        if (MAP_SETTINGS and MAP_SETTINGS.Multi_Spawns) then
+        if ((MAP_SETTINGS and MAP_SETTINGS.Multi_Spawns) or Force_Spawns_Multiplier) then
             if Players_Spawns_Multiplier > 1 then
                 local new_count = math.floor(MAX_PLAYERS * Players_Spawns_Multiplier + 0.5)
                 --print(new_count)
@@ -154,7 +150,7 @@ if not MAP_CONFIG_LOADED then
         end
     end
 else
-    Package.Log("VZombies : HotReload")
+    Console.Log("VZombies : HotReload")
 end
 
 Package.Subscribe("Load", function()

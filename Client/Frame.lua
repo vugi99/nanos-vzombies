@@ -4,7 +4,7 @@
 VZFrames = {}
 
 function CreateVZFrame(webui, frame_id, width, height, header_text, bind_name, main_frame)
-    --Package.Log("CreateVZFrame " .. frame_id .. ", " .. tostring(width) .. ", " .. tostring(height) .. ", " .. tostring(header_text) .. ", " .. tostring(bind_name) .. ", " .. tostring(main_frame))
+    --Console.Log("CreateVZFrame " .. frame_id .. ", " .. tostring(width) .. ", " .. tostring(height) .. ", " .. tostring(header_text) .. ", " .. tostring(bind_name) .. ", " .. tostring(main_frame))
 
     webui:CallEvent("CreateVZFrame", frame_id, width, height, header_text)
 

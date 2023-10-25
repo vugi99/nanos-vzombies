@@ -49,17 +49,19 @@ function ResetRunningWunderfizzStage2()
 end
 
 function ResetWunderfizz(id)
-    SM_Wunderfizzes[id].body:SetValue("CanBuyWunder", nil, true)
-    SM_Wunderfizzes[id].ball:Destroy()
-    SM_Wunderfizzes[id].ball = nil
+    if SM_Wunderfizzes[id].body:IsValid() then
+        SM_Wunderfizzes[id].body:SetValue("CanBuyWunder", nil, true)
+        SM_Wunderfizzes[id].ball:Destroy()
+        SM_Wunderfizzes[id].ball = nil
 
-    if Wunderfizz_Bought_Timeout then
-        ResetRunningWunderfizzStage1()
-    elseif Wunderfizz_Finished_Waiting_Timeout then
-        ResetRunningWunderfizzStage2()
+        if Wunderfizz_Bought_Timeout then
+            ResetRunningWunderfizzStage1()
+        elseif Wunderfizz_Finished_Waiting_Timeout then
+            ResetRunningWunderfizzStage2()
+        end
+
+        Active_Wunderfizz_ID = nil
     end
-
-    Active_Wunderfizz_ID = nil
 end
 
 function ResetWunderfizzes()

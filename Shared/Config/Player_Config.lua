@@ -30,6 +30,7 @@ Player_Models = {
         Models = {
             "nanos-world::SK_Mannequin"
         },
+        gender = "male",
     },
 }
 

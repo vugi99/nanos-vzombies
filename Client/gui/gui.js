@@ -210,6 +210,13 @@ Events.Subscribe("HideTab", function() {
     tab_container.classList.add("hidden");
 })
 
+Events.Subscribe("AddTabTopCategory", function(category) {
+    let div_item = document.createElement("div");
+    div_item.classList.add("tab_item");
+    div_item.innerText = category;
+    tab_top.appendChild(div_item);
+})
+
 
 const grenades_container = document.getElementById("grenades_container");
 

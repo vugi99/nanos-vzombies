@@ -67,6 +67,7 @@ function RoundFinished(reset_all, restart_game, ply_left)
         DestroyMapGrenades()
 
         for k, v in pairs(VZ_GLOBAL_FEATURES) do
+            --print(k)
             if v.destroy_func then
                 CallENVFunc_NoError(v.destroy_func)
             elseif v.reset_func then
@@ -111,6 +112,10 @@ function RoundFinished(reset_all, restart_game, ply_left)
             DestroyVehicles()
         end
 
+        if DestroyPreReachTriggers then
+            DestroyPreReachTriggers()
+        end
+
         Events.Call("VZ_GameEnded", restart_game)
     end
     if not reset_all then
@@ -126,8 +131,10 @@ function RoundFinished(reset_all, restart_game, ply_left)
                 end
             else
                 Events.BroadcastRemote("PlayVZSound", {basic_sound_tbl=GameOver_Sound})
-                if StartMapVote then
-                    WaitingMapvote = StartMapVote(Mapvote_tbl)
+                if WaitingMapvote == nil then
+                    if StartMapVote then
+                        WaitingMapvote = StartMapVote(Mapvote_tbl)
+                    end
                 end
                 --print(WaitingMapvote)
             end
@@ -248,18 +255,18 @@ function StartRound()
                 SpawningPercentages[k][k2] = SpawningPercentages[k][k2] + calculated
             end
         end
-        --print(NanosUtils.Dump(SpawningPercentages))
+        --print(NanosTable.Dump(SpawningPercentages))
 
         local SpawningCount = {}
         for k, v in pairs(SpawningPercentages) do
             SpawningCount[k] = {}
             for k2, v2 in pairs(v) do
                 if v2 > 0 then
-                    SpawningCount[k][k2] = math.floor(REMAINING_ENEMIES_TO_SPAWN * v2/100)
+                    SpawningCount[k][k2] = math.floor((REMAINING_ENEMIES_TO_SPAWN * v2/100) + 0.5)
                 end
             end
         end
-        --print(NanosUtils.Dump(SpawningCount))
+        --print(NanosTable.Dump(SpawningCount))
 
 
         --local FastZombiesToSpawnNB = math.floor((Running_Zombies_Percentage_Start + (Added_Running_Zombies_Percentage_At_Each_Wave * (ROUND_NB - 1))) * REMAINING_ENEMIES_TO_SPAWN / 100)
@@ -273,6 +280,7 @@ function StartRound()
         end
 
         local tbl_cnt = table_count(ENEMIES_TO_SPAWN_TBL)
+        --print(tbl_cnt, REMAINING_ENEMIES_TO_SPAWN)
         if tbl_cnt < REMAINING_ENEMIES_TO_SPAWN then
             local added_per_wave_names = {}
             for k, v in pairs(Added_Per_Wave_Percentage) do
@@ -281,11 +289,20 @@ function StartRound()
                 end
             end
             local added_per_wave_names_c = table_count(added_per_wave_names)
-            for i = tbl_cnt, REMAINING_ENEMIES_TO_SPAWN do
+            for i = tbl_cnt, (REMAINING_ENEMIES_TO_SPAWN-1) do
                 local selected_id = math.random(added_per_wave_names_c)
                 table.insert(ENEMIES_TO_SPAWN_TBL, {added_per_wave_names[selected_id][1], added_per_wave_names[selected_id][2]})
             end
         end
+
+        if tbl_cnt > REMAINING_ENEMIES_TO_SPAWN then
+            for i = REMAINING_ENEMIES_TO_SPAWN, (tbl_cnt-1) do
+                local selected_id = math.random(tbl_cnt-i + REMAINING_ENEMIES_TO_SPAWN)
+                table.remove(ENEMIES_TO_SPAWN_TBL, selected_id)
+            end
+        end
+
+        --print(table_count(ENEMIES_TO_SPAWN_TBL))
     else
         for i = 1, REMAINING_ENEMIES_TO_SPAWN do
             table.insert(ENEMIES_TO_SPAWN_TBL, {"Hellhound", "hellhound"})

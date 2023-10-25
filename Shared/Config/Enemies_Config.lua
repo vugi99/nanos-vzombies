@@ -375,6 +375,8 @@ Enemies_Config = {
             char:AddActorTag("vzanimoverwrite")
             Custom_Anims_BP:CallBlueprintEvent("SetHellhound")
         end,
+
+        Custom_Skeleton = true, -- Whether to disable hit reaction to avoid ragdoll issues
     },
 
     Brutus = {
@@ -408,9 +410,16 @@ Enemies_Config = {
         },
 
         Spawning_Config = {
-            type = "custom_spawns",
-            table_name = "HELLHOUND_SPAWNS",
-            room_key = "room",
+            types = {
+                {
+                    type = "custom_spawns",
+                    table_name = "HELLHOUND_SPAWNS",
+                    room_key = "room",
+                },
+                {
+                    type = "direct_zombie_spawns",
+                },
+            },
 
             minimum_round_to_spawn = 10,
             spawn_chance_per_zombie = 2, -- out of 1000
@@ -420,6 +429,8 @@ Enemies_Config = {
             char:AddActorTag("vzanimoverwrite")
             Custom_Anims_BP:CallBlueprintEvent("SetBrutus")
         end,
+
+        Custom_Skeleton = true,
     },
 
     Napalm = {
@@ -455,9 +466,16 @@ Enemies_Config = {
         },
 
         Spawning_Config = {
-            type = "custom_spawns",
-            table_name = "HELLHOUND_SPAWNS",
-            room_key = "room",
+            types = {
+                {
+                    type = "custom_spawns",
+                    table_name = "HELLHOUND_SPAWNS",
+                    room_key = "room",
+                },
+                {
+                    type = "direct_zombie_spawns",
+                },
+            },
 
             minimum_round_to_spawn = 10,
             spawn_chance_per_zombie = 2, -- out of 1000
@@ -467,6 +485,8 @@ Enemies_Config = {
             char:AddActorTag("vzanimoverwrite")
             Custom_Anims_BP:CallBlueprintEvent("SetNapalm")
         end,
+
+        Custom_Skeleton = true,
     },
 
     BusinessGraber = {
@@ -496,8 +516,6 @@ Enemies_Config = {
 
         Health_Mult_By = 2,
 
-        Boss = true,
-
         Models = {
             "vzombies-assets::SK_Zombie_M04_01",
             "vzombies-assets::SK_Zombie_M04_02",
@@ -514,6 +532,8 @@ Enemies_Config = {
             Grab_Time_ms = 3500,
         },
 
+        Boss = true,
+
         Spawning_Config = {
             type = "zombie_spawns",
 
@@ -528,6 +548,8 @@ Enemies_Config = {
                 Custom_Anims_BP:CallBlueprintEvent("SetZombieCrawl", char:GetID())
             end
         end,
+
+        Custom_Skeleton = true, -- This one also have the bug
     },
 }
 Enemies_Config.BusinessGraber.Attack_Anims = {

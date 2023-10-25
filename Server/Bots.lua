@@ -122,7 +122,7 @@ DEFAULT_EREMOTE = Events.CallRemote
 
 function Events.CallRemote(event_name, ply, ...)
     if ZDEV_IsModeEnabled("ZDEV_DEBUG_SERVER_REMOTE_CALLS") then
-        print("Events.CallRemote", event_name)
+        print("Events.CallRemote", event_name, NanosTable.Dump({...}))
     end
 
     if ply.BOT then
@@ -137,7 +137,7 @@ DEFAULT_EBROADCAST = Events.BroadcastRemote
 
 function Events.BroadcastRemote(event_name, ...)
     if ZDEV_IsModeEnabled("ZDEV_DEBUG_SERVER_REMOTE_CALLS") then
-        print("Events.BroadcastRemote", event_name)
+        print("Events.BroadcastRemote", event_name, NanosTable.Dump({...}))
     end
 
     for k, v in pairs(ALL_BOTS) do
@@ -187,15 +187,22 @@ function GetBotFromNanosBotID(bot_id)
     end
 end
 
-function RequestBotAction(bot, wo_ply)
-    if (bot:GetControlledCharacter() and not bot:GetControlledCharacter():GetValue("BotStayHere") and not bot:GetControlledCharacter():GetValue("BotFollowing")) then
+function RequestBotAction(bot, wo_ply, prereach)
+    --print("RequestBotAction")
+    local char = bot:GetControlledCharacter()
+    if (char and not bot:GetControlledCharacter():GetValue("BotStayHere") and not bot:GetControlledCharacter():GetValue("BotFollowing")) then
+        if char:GetValue("PrereachTrigger") then
+            if char:GetValue("PrereachTrigger"):IsValid() then
+                char:GetValue("PrereachTrigger"):Destroy()
+            end
+        end
         local ply = GetRandomPlayer()
         if wo_ply then
             ply = GetRandomPlayerWOOne(wo_ply)
         end
         if ply then
             bot:SetValue("RequestedActionFromPlayer", ply:GetID(), false)
-            Events.CallRemote("RequestBotAction", ply, bot.ID, bot.Stored, GetPlayerInventoryTable(bot), ROOMS_UNLOCKED)
+            Events.CallRemote("RequestBotAction", ply, bot.ID, bot.Stored, GetPlayerInventoryTable(bot), ROOMS_UNLOCKED, prereach)
         end
     end
 end
@@ -221,19 +228,23 @@ function GetNearestZombieInTargets(char, targets)
     return nearest_z, nearest_dist_sq
 end
 
-VZ_EVENT_SUBSCRIBE_REMOTE("BotAction", function(ply, bot_id, action, to_reach, target)
+VZ_EVENT_SUBSCRIBE_REMOTE("BotAction", function(ply, bot_id, action, to_reach, target, prereach)
     local Bot = GetBotFromBotID(bot_id)
     if Bot then
         if Bot:GetValue("RequestedActionFromPlayer") == ply:GetID() then
+            Bot:SetValue("RequestedActionFromPlayer", nil, false)
             local char = Bot:GetControlledCharacter()
             if char then
                 if char:IsValid() then
                     if not char:GetValue("PlayerDown") then
                         if not char:IsInRagdollMode() then
-                            if ZDEV_IsModeEnabled("ZDEV_DEBUG_BOTS_MOVEMENT") then
-                                print("BotAction", bot_id, action, to_reach)
+                            if ZDEV_IsModeEnabled("ZDEV_DEBUG_BOTS_ACTIONS") then
+                                print("BotAction", bot_id, action, to_reach, target, prereach)
                             end
                             if action ~= "FAILED" then
+                                if prereach then
+                                    BotMoveComplete(char, true, true)
+                                end
                                 char:SetValue("DoingAction", {action, target, to_reach}, false)
                                 local acceptance_r = Bots_Acceptance_Radius
                                 char:MoveTo(to_reach, acceptance_r)
@@ -241,16 +252,41 @@ VZ_EVENT_SUBSCRIBE_REMOTE("BotAction", function(ply, bot_id, action, to_reach, t
                                     char:SetWeaponAimMode(AimMode.None)
                                     char:LookAt(to_reach + Vector(0, 0, 100))
                                 end
-                            else
-                                Timer.SetTimeout(function()
-                                    if char:IsValid() then
-                                        if not char:GetValue("PlayerDown") then
-                                            if not char:IsInRagdollMode() then
-                                                RequestBotAction(Bot)
+                                if char:GetValue("PrereachTrigger") then
+                                    if char:GetValue("PrereachTrigger"):IsValid() then
+                                        char:GetValue("PrereachTrigger"):Destroy()
+                                    end
+                                end
+
+                                if Bots_Actions_Can_Prereach[action] then
+                                    local prereach_trigger = Trigger(to_reach, Rotator(), Bots_PreReach_Trigger_Radius, TriggerType.Sphere, ZDEV_IsModeEnabled("ZDEV_DEBUG_BOTS_ACTIONS"), Color.YELLOW, {"Character"})
+                                    prereach_trigger:SetValue("PrereachTrigger", true, false)
+                                    char:SetValue("PrereachTrigger", prereach_trigger, false)
+                                    prereach_trigger:Subscribe("BeginOverlap", function(self, entity)
+                                        if (entity == char) then
+                                            local pp = char:GetPlayer()
+                                            if (pp.BOT and pp.Valid and pp.ID == bot_id) then
+                                                if char:GetValue("DoingAction") then
+                                                    RequestBotAction(Bot, nil, char:GetValue("DoingAction"))
+                                                else
+                                                    prereach_trigger:Destroy()
+                                                end
                                             end
                                         end
-                                    end
-                                end, 300)
+                                    end)
+                                end
+                            else
+                                if not prereach then
+                                    Timer.SetTimeout(function()
+                                        if char:IsValid() then
+                                            if not char:GetValue("PlayerDown") then
+                                                if not char:IsInRagdollMode() then
+                                                    RequestBotAction(Bot)
+                                                end
+                                            end
+                                        end
+                                    end, 300)
+                                end
                             end
                         end
                     end
@@ -274,24 +310,34 @@ function CheckToStopBotReviveTimer(char, revived_dead)
     end
 end
 
-VZ_EVENT_SUBSCRIBE("Character", "MoveComplete", function(char, success)
+function BotMoveComplete(char, success, prereach)
     local bot = char:GetPlayer()
     if (bot and bot.BOT) then
+        if not prereach then
+            if char:GetValue("PrereachTrigger") then
+                if char:GetValue("PrereachTrigger"):IsValid() then
+                    char:GetValue("PrereachTrigger"):Destroy()
+                end
+            end
+        end
+
         local action = char:GetValue("DoingAction")
         if action then
 
-            if action[3] then
-                local dist_sq = char:GetLocation():DistanceSquared(action[3])
+            if not prereach then
+                if action[3] then
+                    local dist_sq = char:GetLocation():DistanceSquared(action[3])
 
-                --print(math.sqrt(dist_sq))
+                    --print(math.sqrt(dist_sq))
 
-                if dist_sq > Bots_Reach_Acceptance_Radius_sq then
-                    success = false
+                    if dist_sq > Bots_Reach_Acceptance_Radius_sq then
+                        success = false
+                    end
                 end
             end
 
-            if ZDEV_IsModeEnabled("ZDEV_DEBUG_BOTS_MOVEMENT") then
-                print("BOT", bot.ID, "MoveComplete", success, action[1])
+            if ZDEV_IsModeEnabled("ZDEV_DEBUG_BOTS_ACTIONS") then
+                print("BOT", bot.ID, "MoveComplete", success, action[1], prereach)
             end
             if success then
                 local WaitingSomething
@@ -304,9 +350,12 @@ VZ_EVENT_SUBSCRIBE("Character", "MoveComplete", function(char, success)
                     local k, v = GetPowerupPickupFromPowerupID(action[2])
                     if k then
                         if v.SM_Powerup:IsValid() then
-                            Events.Call("VZ_PowerupGrabbed", char, v.SM_Powerup:GetValue("GrabPowerup"), v.powerup_name)
+                            local id = v.SM_Powerup:GetValue("GrabPowerup")
+                            local p_name = v.powerup_name
+                            Events.Call("VZ_PowerupGrabbed", char, id, p_name)
                             DestroyPowerup(v)
                             PowerupGrabbed(v.powerup_name, char)
+                            Events.Call("VZ_PowerupGrabbed_AfterDestroy", char, id, p_name)
                         end
                         POWERUPS_PICKUPS[k] = nil
                     end
@@ -355,7 +404,7 @@ VZ_EVENT_SUBSCRIBE("Character", "MoveComplete", function(char, success)
                     end
                 end
 
-                if not WaitingSomething then
+                if (not WaitingSomething and (not prereach)) then
                     RequestBotAction(bot)
                 end
             elseif (char:IsValid() and not char:GetValue("PlayerDown") and not char:IsInRagdollMode()) then
@@ -370,7 +419,8 @@ VZ_EVENT_SUBSCRIBE("Character", "MoveComplete", function(char, success)
             end
         end
     end
-end)
+end
+VZ_EVENT_SUBSCRIBE("Character", "MoveComplete", BotMoveComplete)
 
 VZ_EVENT_SUBSCRIBE("Events", "VZ_PAPUpgradedWeapon", function()
     for k, v in pairs(Character.GetPairs()) do
@@ -552,7 +602,7 @@ VZ_EVENT_SUBSCRIBE("Weapon", "Reload", function(weapon, char, ammo_to_reload)
     end
 end)
 
-VZ_EVENT_SUBSCRIBE("Events", "VZ_PowerupGrabbed", function(char, powerup_id, p_name)
+VZ_EVENT_SUBSCRIBE("Events", "VZ_PowerupGrabbed_AfterDestroy", function(char, powerup_id, p_name)
     for k, v in pairs(Character.GetPairs()) do
         if v:IsValid() then
             if v ~= char then
@@ -689,3 +739,11 @@ VZ_EVENT_SUBSCRIBE_REMOTE("BotOrder", function(ply, char, order, moveto_location
         end
     end
 end)
+
+function DestroyPreReachTriggers()
+    for k, v in pairs(Trigger.GetAll()) do
+        if v:GetValue("PrereachTrigger") then
+            v:Destroy()
+        end
+    end
+end

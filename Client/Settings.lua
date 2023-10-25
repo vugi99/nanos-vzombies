@@ -57,6 +57,33 @@ if VZ_GetFeatureValue("Levels", "script_loaded") then
 end
 Add_WebUI_Setting("Notifications", "Notifications_Showed", "Notifications-container")
 
+AddTabText("Settings", "HUD", "", true)
+AddTabText("Settings", "HUD", "Game")
+
+VZ_CL_Current_Settings["Chat_Visibility"] = AddTabCheckbox("Settings", "HUD", "Chat Visibility", function(checked)
+    VZ_CL_Current_Settings["Chat_Visibility"] = checked
+    Chat.SetVisibility(VZ_CL_Current_Settings["Chat_Visibility"])
+end, VZ_CL_Current_Settings["Chat_Visibility"], true)
+Chat.SetVisibility(VZ_CL_Current_Settings["Chat_Visibility"])
+
+
+
+
+VZ_CL_Current_Settings["Clientside_Gibs"] = AddTabCheckbox("Settings", "Other", "Clientside Gibs", function(checked)
+    VZ_CL_Current_Settings["Clientside_Gibs"] = checked
+    if not checked then
+        for k, v in pairs(Prop.GetAll()) do
+            if v:GetValue("GibData") then
+                if v:HasAuthority() then
+                    --print("Destroy Gib")
+                    v:Destroy()
+                end
+            end
+        end
+    end
+end, VZ_CL_Current_Settings["Clientside_Gibs"], true)
+
+
 AddTabButton("Settings", "Other", "Reset Settings", function()
     ResetVZFrameSaved("Settings")
     VZ_CL_Current_Settings = TableDeepCopy(VZ_CL_Default_Settings)
@@ -69,12 +96,3 @@ AddTabButton("Settings", "Other", "Reset Settings", function()
     end
     Chat.SetVisibility(VZ_CL_Current_Settings["Chat_Visibility"])
 end, "Reset")
-
-AddTabText("Settings", "HUD", "", true)
-AddTabText("Settings", "HUD", "Game")
-
-VZ_CL_Current_Settings["Chat_Visibility"] = AddTabCheckbox("Settings", "HUD", "Chat Visibility", function(checked)
-    VZ_CL_Current_Settings["Chat_Visibility"] = checked
-    Chat.SetVisibility(VZ_CL_Current_Settings["Chat_Visibility"])
-end, VZ_CL_Current_Settings["Chat_Visibility"], true)
-Chat.SetVisibility(VZ_CL_Current_Settings["Chat_Visibility"])

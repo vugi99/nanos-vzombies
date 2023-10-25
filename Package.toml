@@ -5,7 +5,7 @@
     # contributors
     author =                "Voltaism"
     # version
-    version =               "3.0.1"
+    version =               "3.0.2"
 
 # game-mode configurations
 [game_mode]
@@ -16,7 +16,7 @@
     # whether to load all level entities on client - only enable it if your package needs to use level static meshes entities
     load_level_entities =   false
     # the game version (major.minor) at the time this package was created, for granting compatibility between breaking changes
-    compatibility_version = "1.58"
+    compatibility_version = "1.61"
     # packages requirements
     packages_requirements = [
                             "default-weapons",
@@ -27,7 +27,18 @@
     ]
     # compatible maps - maps to be highlighted when starting a new game through main menu
     compatible_maps = [
-                            
+                            "bigoffice",
+                            "bigoffice-extended",
+                            "zm-cheese-cube",
+                            "zm-etrika",
+                            "zm-freefall",
+                            "zm-kino-der-toten",
+                            "zm-nacht-der-untoten",
+                            "zm-nuketown",
+                            "zm-soul",
+                            "zm-spiral",
+                            "zm-supermarket",
+                            "zm-town",
     ]
 
 # game-mode custom settings configurations

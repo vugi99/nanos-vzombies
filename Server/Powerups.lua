@@ -227,9 +227,12 @@ Timer.SetInterval(function()
                     local char_loc = v2:GetLocation()
                     if powerup_loc:DistanceSquared(char_loc) <= Powerup_Grab_Distance_Squared then
                         if v.SM_Powerup:IsValid() then
-                            Events.Call("VZ_PowerupGrabbed", v2, v.SM_Powerup:GetValue("GrabPowerup"), v.powerup_name)
+                            local id = v.SM_Powerup:GetValue("GrabPowerup")
+                            local p_name = v.powerup_name
+                            Events.Call("VZ_PowerupGrabbed", v2, id, p_name)
                             DestroyPowerup(v)
                             PowerupGrabbed(v.powerup_name, v2)
+                            Events.Call("VZ_PowerupGrabbed_AfterDestroy", v2, id, p_name)
                         end
                         POWERUPS_PICKUPS[k] = nil
                     end
