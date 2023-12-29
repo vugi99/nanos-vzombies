@@ -28,14 +28,26 @@ function InitializeMapLeaderboard()
             end
         end
     end
+    --print("InitializeMapLeaderboard", NanosTable.Dump(Current_Map_Leaderboard))
 end
 InitializeMapLeaderboard()
 
 
 function SaveMapLeaderboard()
-    Leaderboads_DB:Execute("UPDATE maps SET leaderboard = '" .. JSON.stringify(Current_Map_Leaderboard) .. "' WHERE map_asset = '" .. Server.GetMap() .. "'")
-    --print(JSON.stringify(Current_Map_Leaderboard))
-    Events.BroadcastRemote("SendMapLeaderboard", Current_Map_Leaderboard)
+    --print("SaveMapLeaderboard", NanosTable.Dump(Current_Map_Leaderboard), Server.GetMap())
+    local stringified_ldb = JSON.stringify(Current_Map_Leaderboard)
+    if type(stringified_ldb) == "string" then
+        local ldb_sanitized = stringified_ldb:gsub("'", "")
+        if type(ldb_sanitized) == "string" then
+            Leaderboads_DB:Execute("UPDATE maps SET leaderboard = '" .. ldb_sanitized .. "' WHERE map_asset = '" .. Server.GetMap() .. "'")
+            --print(JSON.stringify(Current_Map_Leaderboard))
+            Events.BroadcastRemote("SendMapLeaderboard", Current_Map_Leaderboard, Server.GetMap())
+        else
+            Console.Error("Cannot save leaderboard (2)")
+        end
+    else
+        Console.Error("Cannot save leaderboard (1)")
+    end
 end
 
 
@@ -72,6 +84,7 @@ end
 VZ_EVENT_SUBSCRIBE("Events", "VZ_GameEnding", function(restart_game)
     if VZ_GetFeatureValue("Leaderboards", "records_saved") > 0 then
         if ROUND_NB > 0 then
+            --print("VZ_GameEnding Bef", NanosTable.Dump(Current_Map_Leaderboard))
             local count = table_count(Current_Map_Leaderboard)
             if count < VZ_GetFeatureValue("Leaderboards", "records_saved") then
                 InsertMapRecordInLB()
@@ -85,10 +98,11 @@ VZ_EVENT_SUBSCRIBE("Events", "VZ_GameEnding", function(restart_game)
                     SaveMapLeaderboard()
                 end
             end
+            --print("VZ_GameEnding After", NanosTable.Dump(Current_Map_Leaderboard))
         end
     end
 end)
 
 VZ_EVENT_SUBSCRIBE("Events", "VZ_PlayerJoined", function(ply)
-    Events.CallRemote("SendMapLeaderboard", ply, Current_Map_Leaderboard)
+    Events.CallRemote("SendMapLeaderboard", ply, Current_Map_Leaderboard, Server.GetMap())
 end)

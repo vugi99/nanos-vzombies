@@ -53,12 +53,20 @@ function UpgradeWeapon(ply, pap_sm)
                                     local selected_weap
                                     local is_pap
                                     local repack_effect
+
+                                    local ammo_clip
+                                    local ammo_bag
                                     for i, v in ipairs(Inv.weapons) do
                                         if (v.slot == Inv.selected_slot and v.weapon) then
                                             if v.weapon:IsValid() then
                                                 selected_weap = v.weapon_name
                                                 is_pap = v.pap
                                                 repack_effect = v.pap_repack_effect
+
+                                                if is_pap then -- repack don't give ammo again
+                                                    ammo_clip = v.weapon:GetAmmoClip()
+                                                    ammo_bag = v.weapon:GetAmmoBag()
+                                                end
                                             end
                                             break
                                         end
@@ -86,7 +94,7 @@ function UpgradeWeapon(ply, pap_sm)
                                                 PAP_Upgrade_Data.upgraded_weapon:SetCollision(CollisionType.NoCollision)
                                                 PAP_Upgrade_Data.upgraded_weapon:SetGravityEnabled(false)
                                                 PAP_Upgrade_Data.upgraded_weapon:SetMaterial(Pack_a_punch_weapon_material, Pack_a_punch_weapon_material_index)
-                                                PAP_Upgrade_Data.upgraded_weapon:SetValue("PAPWeaponForCharacterID", {char:GetID(), selected_weap, is_pap, repack_effect}, false)
+                                                PAP_Upgrade_Data.upgraded_weapon:SetValue("PAPWeaponForCharacterID", {char:GetID(), selected_weap, is_pap, repack_effect, ammo_clip, ammo_bag}, false)
 
                                                 Events.BroadcastRemote("PlayVZSound", {basic_sound_tbl=PAP_Ready_Sound}, MAP_PACK_A_PUNCH.location)
                                                 PAP_Upgrade_Data.del_timeout = Timer.SetTimeout(function()
@@ -120,7 +128,7 @@ function InteractPAPWeapon(weapon, char)
         local pap_weapon_for_char = weapon:GetValue("PAPWeaponForCharacterID")
         if pap_weapon_for_char then
             if pap_weapon_for_char[1] == char:GetID() then
-                local max_ammo = GetWeaponNameMaxAmmo(pap_weapon_for_char[2])
+                local max_ammo = pap_weapon_for_char[6] or GetWeaponNameMaxAmmo(pap_weapon_for_char[2])
                 if max_ammo then
                     weapon:Destroy()
                     local repack_effect
@@ -134,7 +142,7 @@ function InteractPAPWeapon(weapon, char)
                         repack_effect = CanSelectEffects[math.random(table_count(CanSelectEffects))]
                     end
 
-                    AddCharacterWeapon(char, pap_weapon_for_char[2], max_ammo, true, nil, true, repack_effect)
+                    AddCharacterWeapon(char, pap_weapon_for_char[2], max_ammo, true, pap_weapon_for_char[5], true, repack_effect)
                     Timer.ClearTimeout(PAP_Upgrade_Data.del_timeout)
                     PAP_Upgrade_Data = nil
                     MAP_PAP_SM:SetValue("CanBuyPackAPunch", true, true)

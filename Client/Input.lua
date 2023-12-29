@@ -384,7 +384,7 @@ if Ping_Enabled then
         local ply = Client.GetLocalPlayer()
         local char = ply:GetControlledCharacter()
         if char then
-            if not char:GetValue("PlayerDown") then
+            --if not char:GetValue("PlayerDown") then
                 local cam_rot = ply:GetCameraRotation()
                 local forward = cam_rot:GetForwardVector()
 
@@ -405,7 +405,7 @@ if Ping_Enabled then
                         Events.CallRemote("ServerPing", trace.Location)
                     end
                 end
-            end
+            --end
         end
     end)
 end

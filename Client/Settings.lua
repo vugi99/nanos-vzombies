@@ -41,7 +41,7 @@ function Add_WebUI_Setting(item_name, setting_key, html_id)
     GUI:CallEvent("ShowElementByID", html_id, VZ_CL_Current_Settings[setting_key])
 end
 
-AddTabText("Settings", "HUD", "", true)
+AddTabEmptySpace("Settings", "HUD", 35, true)
 AddTabText("Settings", "HUD", "WebUI")
 
 Add_WebUI_Setting("Ammo", "Ammo_Showed", "ammo")
@@ -57,7 +57,7 @@ if VZ_GetFeatureValue("Levels", "script_loaded") then
 end
 Add_WebUI_Setting("Notifications", "Notifications_Showed", "Notifications-container")
 
-AddTabText("Settings", "HUD", "", true)
+AddTabEmptySpace("Settings", "HUD", 35, true)
 AddTabText("Settings", "HUD", "Game")
 
 VZ_CL_Current_Settings["Chat_Visibility"] = AddTabCheckbox("Settings", "HUD", "Chat Visibility", function(checked)

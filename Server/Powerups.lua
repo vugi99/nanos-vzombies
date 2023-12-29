@@ -7,23 +7,6 @@ ACTIVE_POWERUPS = {}
 Carpenter_Interval_ID = nil
 Carpenter_Repair_Index = nil
 
-function GetWeaponNameMaxAmmo(weapon_name)
-    if Player_Start_Weapon.weapon_name == weapon_name then
-        return Player_Start_Weapon.ammo
-    end
-    for i, v in ipairs(MAP_WEAPONS) do
-        if v.weapon_name == weapon_name then
-            return v.max_ammo
-        end
-    end
-    for i, v in ipairs(Mystery_box_weapons) do
-        if v.weapon_name == weapon_name then
-            return v.max_ammo
-        end
-    end
-    return 10666
-end
-
 function GetPowerupsOnMapCopy()
     local tbl = {}
     for k, v in pairs(POWERUPS_PICKUPS) do

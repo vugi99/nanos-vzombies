@@ -21,11 +21,16 @@ Frozen_Canvas:Subscribe("Update", function(self, width, height)
     if ZDEV_CONFIG.ENABLED then
         self:DrawText("VZ DEV MODE", Vector2D(math.floor(Viewport.GetViewportSize().X * 0.5), 10), 0, 16, Color.RED, 0, true, true, Color(0, 0, 0, 0), Vector2D(), false, Color.WHITE)
     end
-    self:DrawText("VZombies " .. Package.GetVersion(), Vector2D(string.len("VZombies " .. Package.GetVersion()) * 4, math.floor(Viewport.GetViewportSize().Y * 0.99)), 0, 12, Color.WHITE, 0, true, true, Color(0, 0, 0, 0), Vector2D(), false, Color.WHITE)
 
+    local left_bottom_corner_text = "VZombies " .. Package.GetVersion()
     if VZ_CL_Current_Settings.Selected_Gamemode_Showed then
-        self:DrawText(VZ_SELECTED_GAMEMODE .. " Mode", Vector2D(math.floor(Viewport.GetViewportSize().X * 0.78), math.floor(Viewport.GetViewportSize().Y * 0.96)), 0, 12, Color.WHITE, 0, true, true, Color(0, 0, 0, 0), Vector2D(), true, Color.BLACK)
+        left_bottom_corner_text = left_bottom_corner_text .. ", " .. VZ_SELECTED_GAMEMODE .. " Mode"
     end
+    self:DrawText(left_bottom_corner_text, Vector2D(1, math.max(0, Viewport.GetViewportSize().Y-11)), FontType.Roboto, 11, Color.WHITE, 0, false, true, Color(0, 0, 0, 0), Vector2D(), false, Color.WHITE)
+
+    --if VZ_CL_Current_Settings.Selected_Gamemode_Showed then
+        --self:DrawText(VZ_SELECTED_GAMEMODE .. " Mode", Vector2D(math.max(0, Viewport.GetViewportSize().X - 440), math.max(0, Viewport.GetViewportSize().Y-65)), 0, 12, Color.WHITE, 0, true, true, Color(0, 0, 0, 0), Vector2D(), true, Color.BLACK)
+    --end
 end)
 Frozen_Canvas:Repaint()
 
@@ -68,7 +73,7 @@ One_Time_Updates_Canvas:Subscribe("Update", function(self, width, height)
     end
     if (Spectating_Player and not Free_Cam and VZ_CL_Current_Settings.Spectating_Player_Showed) then
         local text = "Spectating : " .. Spectating_Player:GetAccountName()
-        self:DrawText(text, Vector2D(math.floor(Viewport.GetViewportSize().X * 0.5), 30), 0, 14, Color.WHITE, 0, true, true, Color(0, 0, 0, 0), Vector2D(), false, Color.WHITE)
+        self:DrawText(text, Vector2D(math.floor(Viewport.GetViewportSize().X * 0.5), 50), 0, 14, Color.WHITE, 0, true, true, Color(0, 0, 0, 0), Vector2D(), false, Color.WHITE)
     end
     if GAME_PAUSED then
         self:DrawText("PAUSE", Vector2D(math.floor(Viewport.GetViewportSize().X * 0.5), math.floor(Viewport.GetViewportSize().Y * 0.5)), FontType.OpenSans, 120, Color.WHITE, 0, true, true, Color(0, 0, 0, 0), Vector2D(), true, Color.BLACK)
@@ -110,18 +115,6 @@ if VZ_GetFeatureValue("Levels", "script_loaded") then
     GUI:CallEvent("AddTabTopCategory", "Level")
 end
 
-
-function IsSelfCharacter(char)
-    local local_player = Client.GetLocalPlayer()
-    local local_char = local_player:GetControlledCharacter()
-    if local_char then
-        if local_char == char then
-            return true
-        end
-    end
-    return false
-end
-
 function GetPlayersMoneyCopy()
     local tbl = {}
     for i, v in ipairs(PlayersMoney) do
@@ -130,6 +123,16 @@ function GetPlayersMoneyCopy()
         tbl[i].ply = v.ply
     end
     return tbl
+end
+
+function SetWeaponNameText(text)
+    if type(text) == "string" then
+        local splited = split_str(text, " ")
+        if splited[2] then
+            text = table.concat(splited, " ", 2) -- remove first text before space (eg : modern_weapons text)
+        end
+    end
+    GUI:CallEvent("SetWeaponNameText", text)
 end
 
 function NeedToUpdateAmmoText(char, weapon)
@@ -141,7 +144,12 @@ function NeedToUpdateAmmoText(char, weapon)
 end
 VZ_EVENT_SUBSCRIBE("Character", "Fire", NeedToUpdateAmmoText)
 VZ_EVENT_SUBSCRIBE("Character", "Reload", NeedToUpdateAmmoText)
-VZ_EVENT_SUBSCRIBE("Character", "PickUp", NeedToUpdateAmmoText)
+VZ_EVENT_SUBSCRIBE("Character", "PickUp", function(char, weapon)
+    NeedToUpdateAmmoText(char, weapon)
+    if (IsSelfCharacter(char) or IsSpectatingPlayerCharacter(char)) then
+        SetWeaponNameText(weapon:GetValue("WeaponName"))
+    end
+end)
 VZ_EVENT_SUBSCRIBE("Character", "Drop", function(char)
     local local_player = Client.GetLocalPlayer()
     local local_char = local_player:GetControlledCharacter()
@@ -149,9 +157,12 @@ VZ_EVENT_SUBSCRIBE("Character", "Drop", function(char)
         if (local_char == char) then
             GUI:CallEvent("SetAmmoText", "0", "0")
             GUI:CallEvent("ShowRepackIcon")
+            SetWeaponNameText()
         end
     elseif IsSpectatingPlayerCharacter(char) then
         GUI:CallEvent("SetAmmoText", "0", "0")
+        GUI:CallEvent("ShowRepackIcon")
+        SetWeaponNameText()
     end
 end)
 VZ_EVENT_SUBSCRIBE_REMOTE("UpdateAmmoText", function()
@@ -161,6 +172,7 @@ VZ_EVENT_SUBSCRIBE_REMOTE("UpdateAmmoText", function()
         local weap = local_char:GetPicked()
         if weap then
             GUI:CallEvent("SetAmmoText", tostring(weap:GetAmmoClip()), tostring(weap:GetAmmoBag()))
+            SetWeaponNameText(weap:GetValue("WeaponName"))
         end
     end
 end)
@@ -169,6 +181,7 @@ if Client.GetLocalPlayer() then
         local weap = Client.GetLocalPlayer():GetControlledCharacter():GetPicked()
         if weap then
             NeedToUpdateAmmoText(Client.GetLocalPlayer():GetControlledCharacter(), weap)
+            SetWeaponNameText(weap:GetValue("WeaponName"))
         end
     end
 end
@@ -456,7 +469,7 @@ function GUINewPerk(perk_name)
 end
 
 VZ_EVENT_SUBSCRIBE("Character", "ValueChange", function(char, key, value)
-    if IsSelfCharacter(char) then
+    if (IsSelfCharacter(char) or IsSpectatingPlayerCharacter(char)) then
         if key == "OwnedPerks" then
             for k, v in pairs(value) do
                 local found
@@ -479,7 +492,7 @@ VZ_EVENT_SUBSCRIBE("Character", "ValueChange", function(char, key, value)
 end)
 
 VZ_EVENT_SUBSCRIBE("Character", "Destroy", function(char)
-    if IsSelfCharacter(char) then
+    if (IsSelfCharacter(char) or IsSpectatingPlayerCharacter(char)) then
         CurPerks = {}
         GUI:CallEvent("ResetPerks")
     end
@@ -502,8 +515,18 @@ if Client.GetLocalPlayer() then
     end
 end
 
+VZ_EVENT_SUBSCRIBE("Player", "Possess", function(ply, char)
+    if ply == Client.GetLocalPlayer() then
+        if char:GetValue("ZGrenadesNB") then
+            UpdateGrenadesNB(char:GetValue("ZGrenadesNB"))
+        else
+            UpdateGrenadesNB(0)
+        end
+    end
+end)
+
 VZ_EVENT_SUBSCRIBE("Character", "ValueChange", function(char, key, value)
-    if IsSelfCharacter(char) then
+    if (IsSelfCharacter(char) or IsSpectatingPlayerCharacter(char)) then
         if key == "ZGrenadesNB" then
             UpdateGrenadesNB(value)
         end
@@ -511,7 +534,7 @@ VZ_EVENT_SUBSCRIBE("Character", "ValueChange", function(char, key, value)
 end)
 
 VZ_EVENT_SUBSCRIBE("Character", "Destroy", function(char)
-    if IsSelfCharacter(char) then
+    if (IsSelfCharacter(char) or IsSpectatingPlayerCharacter(char)) then
         UpdateGrenadesNB(0)
     end
 end)
@@ -784,7 +807,7 @@ if Game_Time_On_Screen then
             if seconds < 10 then
                 seconds_text = "0" .. seconds_text
             end
-            self:DrawText(minutes_text .. ":" .. seconds_text, Vector2D(150, Viewport.GetViewportSize().Y * 0.97), FontType.Oswald, 15, Color.WHITE, 0, false, true, Color.TRANSPARENT, Vector2D(), false, Color.TRANSPARENT)
+            self:DrawText(minutes_text .. ":" .. seconds_text, Vector2D(150, math.max(0, Viewport.GetViewportSize().Y-45)), FontType.Oswald, 15, Color.WHITE, 0, false, true, Color.TRANSPARENT, Vector2D(), false, Color.TRANSPARENT)
         end
     end)
 end
@@ -934,13 +957,11 @@ Package.Export("AddNotification", AddNotification)
 
 VZ_EVENT_SUBSCRIBE("Character", "PickUp", function(char, picked)
     if char then
-        if Client.GetLocalPlayer() and Client.GetLocalPlayer():GetControlledCharacter() then
-            if Client.GetLocalPlayer():GetControlledCharacter() == char then
-                if picked:GetValue("PAPRepackEffect") then
-                    local config = PAP_Repack_Config[picked:GetValue("PAPRepackEffect")]
-                    if config then
-                        GUI:CallEvent("ShowRepackIcon", config.icon)
-                    end
+        if (Client.GetLocalPlayer():GetControlledCharacter() == char or (IsSpectatingPlayerCharacter(char))) then
+            if picked:GetValue("PAPRepackEffect") then
+                local config = PAP_Repack_Config[picked:GetValue("PAPRepackEffect")]
+                if (config and config.icon) then
+                    GUI:CallEvent("ShowRepackIcon", config.icon)
                 end
             end
         end
@@ -948,7 +969,7 @@ VZ_EVENT_SUBSCRIBE("Character", "PickUp", function(char, picked)
 end)
 
 VZ_EVENT_SUBSCRIBE("Player", "UnPossess", function(ply, char)
-    if ply == Client.GetLocalPlayer() then
+    if (ply == Client.GetLocalPlayer() or ply == Spectating_Player) then
         GUI:CallEvent("ShowRepackIcon")
     end
 end)
@@ -960,10 +981,11 @@ VZ_EVENT_SUBSCRIBE("Weapon", "ValueChange", function(weap, key, value)
             if handler then
                 local handler_ply = handler:GetPlayer()
                 if handler_ply then
-                    if handler_ply == Client.GetLocalPlayer() then
+                    --print(handler_ply == Client.GetLocalPlayer() or handler_ply == Spectating_Player)
+                    if (handler_ply == Client.GetLocalPlayer() or handler_ply == Spectating_Player) then
                         if value then
                             local config = PAP_Repack_Config[value]
-                            if config then
+                            if (config and config.icon) then
                                 GUI:CallEvent("ShowRepackIcon", config.icon)
                             else
                                 GUI:CallEvent("ShowRepackIcon")

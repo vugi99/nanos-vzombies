@@ -10,8 +10,7 @@ Weapons_Dropped_Destroyed_After_ms = 60000
 
 Map_Z_Limits_Check_Interval_ms = 20000
 
-
-Parse_Custom_Settings = true
+Allow_Player_Spawn_When_Game_Time_Is_Less_Than_s = 45
 
 
 

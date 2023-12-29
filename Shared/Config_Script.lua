@@ -1,6 +1,7 @@
 
 function ApplyCustomSettings(tbl)
     for k, v in pairs(tbl) do
+        --print(k, v)
         if k == "Max_Bots" then
             if v >= 1 then
                 Bots_Enabled = true

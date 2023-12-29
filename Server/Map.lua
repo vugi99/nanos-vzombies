@@ -200,10 +200,10 @@ end
 if MAP_LIGHT_ZONES then
     for i, v in ipairs(MAP_LIGHT_ZONES) do
         --print(ZDEV_IsModeEnabled("ZDEV_DEBUG_TRIGGERS"))
-        local trigger = Trigger(v.location, v.rotation, v.scale * 31.5, TriggerType.Box, ZDEV_IsModeEnabled("ZDEV_DEBUG_TRIGGERS"), Color.RED)
+        local trigger = Trigger(v.location, v.rotation, v.scale * 31.5, TriggerType.Box, ZDEV_IsModeEnabled("ZDEV_DEBUG_TRIGGERS"), Color.RED, {"Character"})
 
         VZ_ENT_EVENT_SUBSCRIBE(trigger, "BeginOverlap", function(self, triggered_by)
-            if triggered_by:IsA(Character) then
+            if (triggered_by and triggered_by:IsValid() and triggered_by:IsA(Character)) then
                 local ply = triggered_by:GetPlayer()
                 if ply then
                     --print("FL Zone BeginOverlap")
@@ -220,7 +220,7 @@ if MAP_LIGHT_ZONES then
         end)
 
         VZ_ENT_EVENT_SUBSCRIBE(trigger, "EndOverlap", function(self, triggered_by)
-            if triggered_by:IsA(Character) then
+            if (triggered_by and triggered_by:IsValid() and triggered_by:IsA(Character)) then
                 local ply = triggered_by:GetPlayer()
                 if ply then
                     --print("FL Zone EndOverlap")

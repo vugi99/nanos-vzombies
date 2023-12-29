@@ -47,11 +47,9 @@ Bots_Behavior_Config = {
 }
 
 Bots_Actions_Can_Prereach = {
-    POWER = true,
     POWERUPS = true,
     WEAPONS = true,
     PERKS = true,
-    DOORS = true,
     MOVE = true,
 }
 

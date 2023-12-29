@@ -71,6 +71,13 @@ body {
     font-weight: unset;
 }
 
+#weapon_name {
+    font-size: 37px;
+    position: absolute;
+    right: 430px;
+    bottom: 110px;
+}
+
 #players_money {
     display: grid;
     grid-template-rows: repeat(var(--players), 1fr);
@@ -468,7 +475,9 @@ button:hover {
 .Item_Text_Solo {
     font-size: 25px;
     font-family: Helvetica;
-    height: 35px;
+    padding-top: 3px;
+    padding-bottom: 3px;
+    /*height: 35px;*/
 }
 
 .Item_Text_Solo_Bottom {

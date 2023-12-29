@@ -19,7 +19,7 @@ AddTabButton("Admin_Menu", "Admin", "Start Mapvote", function()
     Events.CallRemote("VZAM_Mapvote")
 end, "Start Mapvote")
 
-AddTabText("Admin_Menu", "Admin", "", true)
+AddTabEmptySpace("Admin_Menu", "Admin", 35, true)
 AddTabText("Admin_Menu", "Admin", "Player")
 
 

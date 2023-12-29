@@ -47,16 +47,6 @@ function GetNewPlayerToSpec(old_ply_id, prev_ply)
     return new_ply
 end
 
-function IsSpectatingPlayerCharacter(char)
-    if Spectating_Player then
-        local spec_char = Spectating_Player:GetControlledCharacter()
-        --print("IsSpectatingPlayerCharacter", spec_char, char, Spectating_Player:GetID())
-        if spec_char == char then
-            return true
-        end
-    end
-end
-
 function SpectatePlayer(to_spec)
     --print("SpectatePlayer", to_spec)
     if to_spec then
@@ -67,9 +57,32 @@ function SpectatePlayer(to_spec)
         local picked = char:GetPicked()
         if picked then
             NeedToUpdateAmmoText(char, picked)
+            SetWeaponNameText(picked:GetValue("WeaponName"))
+
+            if picked:GetValue("PAPRepackEffect") then
+                local config = PAP_Repack_Config[picked:GetValue("PAPRepackEffect")]
+                if (config and config.icon) then
+                    GUI:CallEvent("ShowRepackIcon", config.icon)
+                else
+                    GUI:CallEvent("ShowRepackIcon")
+                end
+            else
+                GUI:CallEvent("ShowRepackIcon")
+            end
         end
 
         One_Time_Updates_Canvas:Repaint()
+
+        if char:GetValue("ZGrenadesNB") then
+            UpdateGrenadesNB(char:GetValue("ZGrenadesNB"))
+        else
+            UpdateGrenadesNB(0)
+        end
+
+        CurPerks = char:GetValue("OwnedPerks")
+        for k, v in pairs(CurPerks) do
+            GUINewPerk(k)
+        end
     end
 end
 
@@ -79,6 +92,11 @@ function StopSpectate()
     Spectating_Player = nil
     One_Time_Updates_Canvas:Repaint()
     Free_Cam = nil
+
+    GUI:CallEvent("ShowRepackIcon")
+
+    CurPerks = {}
+    GUI:CallEvent("ResetPerks")
 end
 
 VZ_EVENT_SUBSCRIBE("Player", "Possess", function(ply, char)

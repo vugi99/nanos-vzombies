@@ -21,6 +21,25 @@ function ZPlayingPlayerInit(ply)
     ply:SetValue("ZScore", ZScore, false)
     ply:SetValue("ZKills", ZKills, false)
     ply:SetValue("playing", true, false)
+
+    if (not ply.BOT and ROUND_NB > 0) then
+        if ((not WaitingNewRound_Timer) and (not WaitingMapvote) and (not WaitingNewWave)) then
+            if (not GAME_LEFT_PLAYERS_STATS[ply:GetSteamID()]) then
+                if GAME_TIMER_SECONDS < Allow_Player_Spawn_When_Game_Time_Is_Less_Than_s then
+                    local p_id
+                    for k, v in pairs(PLAYING_PLAYERS) do
+                        if v == ply then
+                            p_id = k
+                            break
+                        end
+                    end
+                    if p_id then
+                        SpawnCharacterForPlayer(ply, p_id)
+                    end
+                end
+            end
+        end
+    end
 end
 
 function SpawnCharacterForPlayer(ply, spawn_id)
@@ -111,6 +130,8 @@ function SpawnCharacterForPlayer(ply, spawn_id)
     end
 
     Events.Call("VZ_PlayerCharacterSpawned", new_char)
+
+    return new_char
 end
 
 function GetPlayersInRadius(loc, radius)
@@ -825,9 +846,9 @@ VZ_EVENT_SUBSCRIBE_REMOTE("ServerPing", function(ply, location, entity)
     if ply:IsValid() then
         local char = ply:GetControlledCharacter()
         if char then
-            if not char:GetValue("PlayerDown") then
+            --if not char:GetValue("PlayerDown") then
                 Events.BroadcastRemote("SyncPing", ply:GetValue("CharacterColor"), location, entity)
-            end
+            --end
         end
     end
 end)

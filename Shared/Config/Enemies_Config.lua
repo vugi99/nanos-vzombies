@@ -236,7 +236,7 @@ Enemies_Config = {
                 Speed_Multiplier = 0.6,
                 Vault_Anim = Vault_Animations.VaultOverBox,
                 Ambient_Sounds = RANDOM_SOUNDS.zombie_crawl,
-                Bot_Aim_Offset = Vector(0, 0, -30),
+                Bot_Aim_Offset = Vector(0, 0, -92),
 
                 New_Attack_Anims = {
                     {"vzombies-assets::AS_NAAT_Zombie_Attack_LH_Crawl", 725, 1400},

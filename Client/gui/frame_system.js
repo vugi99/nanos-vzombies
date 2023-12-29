@@ -202,6 +202,20 @@ Events.Subscribe("AddTabImage", function(frame_id, tab_id, image, width, height)
     }
 })
 
+Events.Subscribe("AddTabEmptySpace", function(frame_id, tab_id, height, bottom_disabled) {
+    if (VZ_Frames[frame_id]) {
+        if (VZ_Frames[frame_id].Items_Containers[tab_id]) {
+            let item_empty_space = document.createElement("div");
+            item_empty_space.style.height = height + "px";
+            if (!bottom_disabled) {
+                item_empty_space.classList.add("Item_Text_Solo_Bottom")
+            }
+
+            VZ_Frames[frame_id].Items_Containers[tab_id].appendChild(item_empty_space)
+        }
+    }
+})
+
 
 /*testFuncs.CreateVZFrame("Settings", "50%", "55%", "Settings")
 testFuncs.ShowVZFrame("Settings", true)

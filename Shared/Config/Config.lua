@@ -17,6 +17,9 @@ Package.Require("Config/Vehicles_Config.lua")
 
 Weapons_Ammo_Price_Percentage = 50
 
+
+Parse_Custom_Settings = true
+
 -------------------------------------------------------------------------------------------------
 -- Pack a punch config
 

@@ -349,7 +349,7 @@ function CanStartHellhoundRound()
     if Hellhounds_Each_x_Rounds > 0 then
         if not IsEnemyDisabled("Hellhound") then
             if HELLHOUND_SPAWNS and table_count(HELLHOUND_SPAWNS) > 0 then
-                if table_count(GetCustomSpawnsUnlocked(Enemies_Config["Hellhound"])) > 0 then
+                if table_count(GetCustomSpawnsUnlocked(Enemies_Config["Hellhound"].Spawning_Config)) > 0 then
                     if ROUND_NB % Hellhounds_Each_x_Rounds == 0 then
                         return true
                     end

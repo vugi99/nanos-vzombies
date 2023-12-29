@@ -47,6 +47,7 @@ VZ_EVENT_SUBSCRIBE("Package", "Unload", function()
     for k, v in pairs(Player.GetPairs()) do
         if not v.BOT then
             SaveBankData(v)
+            v:SetValue("PlayerStoredMoney", nil, true)
         end
     end
     Banks_DB:Close()

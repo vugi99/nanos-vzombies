@@ -25,6 +25,16 @@ Events.Subscribe("SetAmmoText", function(ammo_in_mag, ammo_without_mag) {
 })
 //testFuncs.SetAmmoText("30", "270")
 
+const weapon_name = document.getElementById("weapon_name");
+
+Events.Subscribe("SetWeaponNameText", function(weap_name) {
+    if (weap_name != null && weap_name != "nil") {
+        weapon_name.innerHTML = weap_name;
+    } else {
+        weapon_name.innerHTML = "";
+    }
+})
+
 const players_money = document.getElementById("players_money");
 let money_players_count = 0
 

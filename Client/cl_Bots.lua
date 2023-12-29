@@ -585,24 +585,22 @@ local Clientside_Bot_Actions = {
     PACKAPUNCH = function(Bot, bot_id, bot_inv, ROOMS_UNLOCKED, char, v, prereach)
         if POWER_ON then
             local money = GetBotMoneyConsideringPrereach(Bot, prereach)
-            if money >= Pack_a_punch_price then
-                local pack_a_punch = GetPAPSM()
-                if pack_a_punch then
-                    local Best_Inv_Weapon, Best_Inv_Weapon_Rank = GetBestInvWeapon(bot_inv)
-                    if Best_Inv_Weapon then
-                        if not Best_Inv_Weapon.pap then
-                            local loc = pack_a_punch:GetLocation()
-                            local point_around = Navigation.GetRandomPointInNavigableRadius(loc, Bots_Reach_PAP_Around)
-                            if (point_around and point_around ~= Vector(0, 0, 0)) then
-                                local path = Navigation.FindPathToLocation(char:GetLocation(), point_around)
-                                --print(NanosUtils.Dump(path))
-                                if (path.IsValid and not path.IsPartial) then
-                                    if ZDEV_IsModeEnabled("ZDEV_DEBUG_BOTS_ACTIONS") then
-                                        DrawBotMovementCylinder(char:GetLocation(), point_around, Color.GREEN, v)
-                                    end
-                                    Events.CallRemote("BotAction", bot_id, v, point_around, pack_a_punch, prereach)
-                                    return true
+            local Best_Inv_Weapon, Best_Inv_Weapon_Rank = GetBestInvWeapon(bot_inv)
+            if Best_Inv_Weapon then
+                if ((money >= Pack_a_punch_price and (not Best_Inv_Weapon.pap)) or (money >= Pack_a_punch_repack_price and (not Best_Inv_Weapon.pap_repack_effect) and Best_Inv_Weapon.pap)) then -- Either raw weapon or just 1 pap weapon
+                    local pack_a_punch = GetPAPSM()
+                    if pack_a_punch then
+                        local loc = pack_a_punch:GetLocation()
+                        local point_around = Navigation.GetRandomPointInNavigableRadius(loc, Bots_Reach_PAP_Around)
+                        if (point_around and point_around ~= Vector(0, 0, 0)) then
+                            local path = Navigation.FindPathToLocation(char:GetLocation(), point_around)
+                            --print(NanosUtils.Dump(path))
+                            if (path.IsValid and not path.IsPartial) then
+                                if ZDEV_IsModeEnabled("ZDEV_DEBUG_BOTS_ACTIONS") then
+                                    DrawBotMovementCylinder(char:GetLocation(), point_around, Color.GREEN, v)
                                 end
+                                Events.CallRemote("BotAction", bot_id, v, point_around, pack_a_punch, prereach)
+                                return true
                             end
                         end
                     end

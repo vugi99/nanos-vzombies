@@ -1,6 +1,6 @@
 
 
-Powerup_Check_Grab_Interval_ms = 200
+Powerup_Check_Grab_Interval_ms = 180
 Powerup_Grab_Distance_Squared = 5625
 
 Powerup_Delete_after_ms = 20000

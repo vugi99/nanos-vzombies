@@ -5,6 +5,33 @@ Package.Require("Config/cl_Config.lua")
 Package.Require("Sh_Funcs.lua")
 Package.Require("Prepare_Loops.lua")
 
+
+
+function IsSelfCharacter(char)
+    local local_player = Client.GetLocalPlayer()
+    local local_char = local_player:GetControlledCharacter()
+    if local_char then
+        if local_char == char then
+            return true
+        end
+    end
+    return false
+end
+
+function IsSpectatingPlayerCharacter(char)
+    if Spectating_Player then
+        local spec_char = Spectating_Player:GetControlledCharacter()
+        --print("IsSpectatingPlayerCharacter", spec_char, char, Spectating_Player:GetID())
+        if spec_char == char then
+            return true
+        end
+    end
+end
+
+
+
+
+
 local Packages_Loaded = false
 local _CallVZ_Loaded_Event = false
 

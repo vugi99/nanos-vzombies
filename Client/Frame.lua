@@ -203,3 +203,9 @@ function AddTabImage(frame_id, tab_id, image, width, height)
     VZFrames[frame_id].webui:CallEvent("AddTabImage", frame_id, tab_id, image, width, height)
 end
 Package.Export("AddTabImage", AddTabImage)
+
+function AddTabEmptySpace(frame_id, tab_id, height, bottom_disabled)
+    height = height or 35
+    VZFrames[frame_id].webui:CallEvent("AddTabEmptySpace", frame_id, tab_id, height, bottom_disabled)
+end
+Package.Export("AddTabEmptySpace", AddTabEmptySpace)

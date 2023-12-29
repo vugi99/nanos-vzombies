@@ -17,7 +17,7 @@ function BuildVehiclePadUI(frame_id, pad_id)
                 Events.CallRemote("BuyVehicle", pad_id, k)
             end
         end, "Buy " .. k .. " (" .. tostring(v.price) .. "$)")
-        AddTabText(frame_id, "Vehicles", "", true)
+        AddTabEmptySpace(frame_id, "Vehicles", 35, true)
     end
 end
 

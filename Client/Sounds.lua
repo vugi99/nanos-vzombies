@@ -133,12 +133,16 @@ VZ_EVENT_SUBSCRIBE("Character", "ValueChange", function(char, key, value)
                     SoundType.SFX,
                     LastStand_Enter_Sound.volume
                 )
-                down_sound:Play(0)
+                if (down_sound and down_sound:IsValid()) then
+                    down_sound:Play(0) -- Someone got an error here (this ent destroyed)
+                end
                 if Playing_LowHealth_Sound then
                     StopLowHealthLoop()
                 end
             else
-                down_sound:Stop()
+                if (down_sound and down_sound:IsValid()) then
+                    down_sound:Stop()
+                end
                 LastStandExitSound()
             end
         end

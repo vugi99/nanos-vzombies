@@ -29,20 +29,24 @@ end
 
 function DestroyEnemies()
     for k, v in pairs(ENEMY_CHARACTERS) do
-        if v:GetValue("AttackB") then
-            Timer.ClearInterval(v:GetValue("AttackBInterval"))
+        if v:IsValid() then
+            if v:GetValue("AttackB") then
+                Timer.ClearInterval(v:GetValue("AttackBInterval"))
+            end
+            if type(v:GetValue("RefreshTargetInterval")) == "number" then
+                Timer.ClearInterval(v:GetValue("RefreshTargetInterval"))
+            end
+            v:Destroy()
         end
-        if type(v:GetValue("RefreshTargetInterval")) == "number" then
-            Timer.ClearInterval(v:GetValue("RefreshTargetInterval"))
-        end
-        v:Destroy()
     end
     ENEMY_CHARACTERS = {}
 end
 
 function DestroyBosses()
     for k, v in pairs(BOSS_CHARACTERS) do
-        v:Destroy()
+        if v:IsValid() then
+            v:Destroy()
+        end
     end
     BOSS_CHARACTERS = {}
 end
@@ -359,8 +363,6 @@ function SpawnEnemyIntervalFunc()
                                                 boss_type = k2
                                                 break
                                             end
-
-                                            
                                             SpawnEnemy(k, boss_type)
                                         end
                                     end
@@ -979,7 +981,11 @@ VZ_EVENT_SUBSCRIBE("Character", "TakeDamage", function(char, damage, bone, dtype
                                                                 if (dist_sq > 0 and dist_sq < PAP_Repack_Config[v.pap_repack_effect].radius_sq) then
                                                                     v2:SetValue("ApplyingRepack", true, false)
                                                                     AttachRepackParticle(v2, v.pap_repack_effect)
-                                                                    v2:ApplyDamage(math.max(1, math.floor(PAP_Repack_Config[v.pap_repack_effect].damage_func(dist_sq) + 0.5)), bone, DamageType.Unknown, Vector(), instigator, causer)
+                                                                    local ap_dam_instig = instigator
+                                                                    if instigator.BOT then
+                                                                        ap_dam_instig = nil
+                                                                    end
+                                                                    v2:ApplyDamage(math.max(1, math.floor(PAP_Repack_Config[v.pap_repack_effect].damage_func(dist_sq) + 0.5)), bone, DamageType.Unknown, Vector(), ap_dam_instig, causer)
                                                                 end
                                                             end
                                                         end
@@ -1223,6 +1229,10 @@ function ChangeEnemyType(char, new_type)
 end
 
 function GetCustomSpawnsUnlocked(spawning_config_data)
+    if ((not spawning_config_data) or (not spawning_config_data.table_name)) then
+        Console.Error("Missing table_name in spawning_config_data passed in GetCustomSpawnsUnlocked")
+    end
+
     local unlocked_spawns = {}
     if _ENV[spawning_config_data.table_name] then
         for k, v in pairs(_ENV[spawning_config_data.table_name]) do

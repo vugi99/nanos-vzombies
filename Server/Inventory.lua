@@ -34,6 +34,23 @@ function GenerateWeaponToInsert(weapon_name, ammo_bag, slot, ammo_clip, pap, pap
     }
 end
 
+function GetWeaponNameMaxAmmo(weapon_name)
+    if Player_Start_Weapon.weapon_name == weapon_name then
+        return Player_Start_Weapon.ammo
+    end
+    for i, v in ipairs(MAP_WEAPONS) do
+        if v.weapon_name == weapon_name then
+            return v.max_ammo
+        end
+    end
+    for i, v in ipairs(Mystery_box_weapons) do
+        if v.weapon_name == weapon_name then
+            return v.max_ammo
+        end
+    end
+    return 10666
+end
+
 function GetInsertSlot(char, Inv)
     local has_three_gun = char:GetValue("OwnedPerks").three_gun
     if (Inv.weapons[1] and not has_three_gun) then
@@ -60,10 +77,11 @@ function GetInsertSlot(char, Inv)
     return Inv.selected_slot
 end
 
-local function GiveInventoryPlayerWeapon(char, charInvID, i, v)
-    --print("GiveInventoryPlayerWeapon", char, charInvID, i, NanosUtils.Dump(v))
-    local weapon = NanosWorldWeapons[v.weapon_name](Vector(), Rotator())
-    weapon:SetValue("WeaponName", v.weapon_name, false)
+local function CreateWeaponToGiveToPlayer(char, charInvID, i, v, loc, rot)
+    loc = loc or Vector()
+    rot = rot or Rotator()
+    local weapon = NanosWorldWeapons[v.weapon_name](loc, rot)
+    weapon:SetValue("WeaponName", v.weapon_name, true)
     weapon:SetAmmoBag(v.ammo_bag)
     if v.ammo_clip then
         weapon:SetAmmoClip(v.ammo_clip)
@@ -85,6 +103,13 @@ local function GiveInventoryPlayerWeapon(char, charInvID, i, v)
         weapon:ActivateSpeedReload(true)
     end
 
+    return weapon
+end
+
+local function GiveInventoryPlayerWeapon(char, charInvID, i, v)
+    --print("GiveInventoryPlayerWeapon", char, charInvID, i, NanosUtils.Dump(v))
+    local weapon = CreateWeaponToGiveToPlayer(char, charInvID, i, v)
+
     local ply = char:GetPlayer()
     if ply then
         if ply.BOT then
@@ -98,7 +123,6 @@ local function GiveInventoryPlayerWeapon(char, charInvID, i, v)
 
     char:PickUp(weapon)
 
-    local ply = char:GetPlayer()
     if ply then
         if not ply.BOT then
             if ply:GetValue("AimLocked") then
@@ -187,8 +211,41 @@ function EquipSlot(char, slot)
             end
             Events.Call("VZ_EquippedInventorySlot", char, slot)
         else
+            Inv.selected_slot = slot
             --print("EquipSlot Locked Because He has Grenade")
         end
+    end
+end
+
+function DropSlot(charInvID, char, i, v)
+    if v.weapon then
+        --print("bef char:Drop()")
+        --print("Dropping Weapon Because Slots Full", char:GetPicked())
+        if not v.just_dropped then
+            if char:GetPicked() then
+                v.Dropping = true
+                char:Drop()
+                v.Dropping = nil
+            else
+                table.remove(PlayersCharactersWeapons[charInvID].weapons, i)
+            end
+        else
+            table.remove(PlayersCharactersWeapons[charInvID].weapons, i)
+        end
+        --print("Dropped ? ", char:GetPicked())
+        --print("after char:Drop()")
+    else
+
+        -- Fix holding other weapon not in inv when buying weapon (knife, grenade, death_machine, ...)
+        --[[local picked = char:GetPicked()
+        if picked then
+            picked:Destroy()
+        end]]--
+
+        local weapon = CreateWeaponToGiveToPlayer(char, charInvID, i, v, char:GetLocation(), char:GetRotation())
+        WeaponDropLogic(v, weapon)
+
+        table.remove(PlayersCharactersWeapons[charInvID].weapons, i)
     end
 end
 
@@ -199,16 +256,12 @@ function AddCharacterWeapon(char, weapon_name, ammo_bag, equip, ammo_clip, pap, 
     if charInvID then
         --print(NanosUtils.Dump(PlayersCharactersWeapons[charInvID].weapons))
 
-        -- If the player already have this weapon, don't give a new one
-        local already_have = false
+        -- If the player already have this weapon, drop the current one
         for i, v in ipairs(PlayersCharactersWeapons[charInvID].weapons) do
             if v.weapon_name == weapon_name then
-                already_have = true
+                DropSlot(charInvID, char, i, v)
+                break
             end
-        end
-        if already_have then
-            EquipSlot(char, PlayersCharactersWeapons[charInvID].selected_slot)
-            return false
         end
 
 
@@ -220,23 +273,7 @@ function AddCharacterWeapon(char, weapon_name, ammo_bag, equip, ammo_clip, pap, 
         if ((inv_w_count >= 2 and not has_three_gun) or (inv_w_count >= 3 and has_three_gun)) then
             for i, v in ipairs(PlayersCharactersWeapons[charInvID].weapons) do
                 if v.slot == PlayersCharactersWeapons[charInvID].selected_slot then
-                    if v.weapon then
-                        --print("bef char:Drop()")
-                        --print("Dropping Weapon Because Slots Full", char:GetPicked())
-                        if not v.just_dropped then
-                            if char:GetPicked() then
-                                v.Dropping = true
-                                char:Drop()
-                                v.Dropping = nil
-                            else
-                                table.remove(PlayersCharactersWeapons[charInvID].weapons, i)
-                            end
-                        else
-                            table.remove(PlayersCharactersWeapons[charInvID].weapons, i)
-                        end
-                        --print("Dropped ? ", char:GetPicked())
-                        --print("after char:Drop()")
-                    end
+                    DropSlot(charInvID, char, i, v)
                     break
                 end
             end
@@ -260,6 +297,8 @@ function AddCharacterWeapon(char, weapon_name, ammo_bag, equip, ammo_clip, pap, 
         else
             EquipSlot(char, PlayersCharactersWeapons[charInvID].selected_slot)
         end
+
+        --print(NanosTable.Dump(PlayersCharactersWeapons[charInvID]))
     else
         table.insert(PlayersCharactersWeapons, {
             char = char,
@@ -285,6 +324,17 @@ VZ_EVENT_SUBSCRIBE("Character", "Destroy", function(char)
     end
 end)
 
+function WeaponDropLogic(v, weapon)
+    DetachFlashLightFromWeapon(weapon)
+    weapon:SetValue("DroppedWeaponName", v.weapon_name, false)
+    weapon:SetValue("DroppedWeaponPAP", {v.pap, v.pap_repack_effect}, false)
+    weapon:SetValue("DroppedWeaponDTimeout", Timer.SetTimeout(function()
+        if weapon:IsValid() then
+            weapon:Destroy()
+        end
+    end, Weapons_Dropped_Destroyed_After_ms), false)
+end
+
 VZ_EVENT_SUBSCRIBE("Weapon", "Drop", function(weapon, char, was_triggered_by_player)
     --print("Drop", weapon, char, was_triggered_by_player, weapon:GetMesh())
 
@@ -304,14 +354,7 @@ VZ_EVENT_SUBSCRIBE("Weapon", "Drop", function(weapon, char, was_triggered_by_pla
         for i, v in ipairs(PlayersCharactersWeapons[charInvID].weapons) do
             if (v.weapon and v.weapon == weapon) then
                 if not v.destroying then
-                    DetachFlashLightFromWeapon(weapon)
-                    weapon:SetValue("DroppedWeaponName", v.weapon_name, false)
-                    weapon:SetValue("DroppedWeaponPAP", {v.pap, v.pap_repack_effect}, false)
-                    weapon:SetValue("DroppedWeaponDTimeout", Timer.SetTimeout(function()
-                        if weapon:IsValid() then
-                            weapon:Destroy()
-                        end
-                    end, Weapons_Dropped_Destroyed_After_ms), false)
+                    WeaponDropLogic(v, weapon)
                     --print("Drop Weapon")
                     if (was_triggered_by_player or v.Dropping) then
                         table.remove(PlayersCharactersWeapons[charInvID].weapons, i)
@@ -474,9 +517,9 @@ VZ_EVENT_SUBSCRIBE_REMOTE("ThrowGrenade", function(ply)
             if char then
                 local grenade = char:GetPicked()
                 if (grenade and grenade:IsA(Grenade)) then
-                    char:SetCanDrop(true)
                     grenade:ReleaseUse()
                 end
+                char:SetCanDrop(true)
             end
         end
     end
@@ -549,7 +592,6 @@ VZ_EVENT_SUBSCRIBE_REMOTE("UseKnife", function(ply)
                     Timer.SetTimeout(function()
                         if knife:IsValid() then
                             if char:IsValid() then
-                                char:SetCanDrop(true)
                                 knife:Destroy()
 
                                 local charInvID = GetCharacterInventory(char)
@@ -560,6 +602,7 @@ VZ_EVENT_SUBSCRIBE_REMOTE("UseKnife", function(ply)
                                 end
                             end
                         end
+                        char:SetCanDrop(true)
                     end, Knife_Switch_ms)
 
                     Timer.SetTimeout(function()
