@@ -7,13 +7,17 @@ AddVZFrameTab("Settings", "Other", "Other")
 
 
 
-function Add_Canvas_Setting(item_name, setting_key, frozen)
+function Add_Canvas_Setting(item_name, setting_key, frozen, both)
     VZ_CL_Current_Settings[setting_key] = AddTabCheckbox("Settings", "HUD", item_name, function(checked)
         VZ_CL_Current_Settings[setting_key] = checked
         if not frozen then
             One_Time_Updates_Canvas:Repaint()
         else
             Frozen_Canvas:Repaint()
+        end
+        if both then
+            Frozen_Canvas:Repaint()
+            One_Time_Updates_Canvas:Repaint()
         end
     end, VZ_CL_Current_Settings[setting_key], true)
 end
@@ -24,6 +28,9 @@ Add_Canvas_Setting("Selected Submode", "Selected_Gamemode_Showed", true)
 Add_Canvas_Setting("Spectating Player", "Spectating_Player_Showed")
 Add_Canvas_Setting("Game Time", "Game_Time_Showed")
 --Add_Canvas_Setting("Player Names On Heads", "Player_Names_On_Heads")
+if Drawn_Text_Screen_Scaling then
+    Add_Canvas_Setting("GUI Auto Scaling", "GUI_Auto_Scaling", nil, true)
+end
 
 Frozen_Canvas:Repaint()
 One_Time_Updates_Canvas:Repaint()

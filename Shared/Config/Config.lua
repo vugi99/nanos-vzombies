@@ -4,6 +4,7 @@ Package.Require("Config/Dev_Config.lua")
 Package.Require("Config/Features_Config.lua")
 Package.Require("Config/Server_Config.lua")
 Package.Require("Config/Player_Config.lua")
+Package.Require("Config/Rounds_Config.lua")
 Package.Require("Config/GUI_Config.lua")
 Package.Require("Config/Sounds_Config.lua")
 Package.Require("Config/Enemies_Config.lua")
@@ -13,12 +14,15 @@ Package.Require("Config/Powerups_Config.lua")
 Package.Require("Config/Bots_Config.lua")
 Package.Require("Config/Admin_Config.lua")
 Package.Require("Config/Vehicles_Config.lua")
+Package.Require("Config/Gamemodes_Config.lua")
+Package.Require("Config/Noise_Config.lua")
+Package.Require("Config/Pumpongus_Config.lua")
 
 
 Weapons_Ammo_Price_Percentage = 50
 
 
-Parse_Custom_Settings = true
+Parse_Custom_Settings = false
 
 -------------------------------------------------------------------------------------------------
 -- Pack a punch config
@@ -75,11 +79,6 @@ Wonderfizz_Bottles_Offset = Vector(0, 0, 130)
 
 Wonderfizz_Particle = "vzombies-assets::P_ky_cutter1"
 Wonderfizz_Particle_Offset = Vector(0, 0, 115)
-
-
-
-
-
 
 
 

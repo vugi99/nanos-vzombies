@@ -30,7 +30,11 @@ function SpawnMapPerks()
 end
 
 function BuyPerk(ply, perk_sm)
-    if (perk_sm and perk_sm:IsValid()) then
+    if (IsValid(perk_sm)) then
+        if perk_sm:GetValue("PPG_Sabotaged") then
+            return
+        end
+
         local char = ply:GetControlledCharacter()
         if char then
             if not char:GetValue("PlayerDown") then
@@ -58,7 +62,9 @@ function GiveCharacterPerk(char, perk_name)
             char:SetValue("OwnedPerks", char_perks, true)
             if perk_name == "juggernog" then
                 ClearRegenTimeouts(char)
-                char:SetHealth(1000 + PERKS_CONFIG.juggernog.PlayerHealth)
+                local new_h = 1000 + PERKS_CONFIG.juggernog.PlayerHealth
+                char:SetHealth(new_h)
+                char:SetMaxHealth(new_h)
                 Events.CallRemote("UpdateGUIHealth", ply)
             elseif perk_name == "stamin_up" then
                 char:SetSpeedMultiplier(PERKS_CONFIG.stamin_up.Speed_Multiplier)

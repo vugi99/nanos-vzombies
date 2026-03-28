@@ -28,7 +28,7 @@ for k, v in pairs(CustomWeaponsPackagesLoad) do
                 if mystery_box_add_table then
                     mystery_box_add_table.weapon_name = k .. " " .. k2
                     table.insert(Mystery_box_weapons, mystery_box_add_table)
-                    --print(NanosUtils.Dump(mystery_box_add_table))
+                    --print(NanosTable.Dump(mystery_box_add_table))
                 end
             end
         end

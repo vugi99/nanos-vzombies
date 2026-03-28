@@ -1,7 +1,7 @@
 
 
 ZDEV_CONFIG = {
-    ENABLED = false,
+    ENABLED = true,
     DEV_MODES = {
         ZDEV_MOD_MENU = true,
         ZDEV_COMMANDS = true,
@@ -15,5 +15,8 @@ ZDEV_CONFIG = {
         ZDEV_DEBUG_SERVER_REMOTE_CALLS = false,
         ZDEV_DEBUG_INTERACT = false,
         ZDEV_DEBUG_ENEMIES_PREDICTION = false,
+        ZDEV_DEBUG_WEBUIS_DEVTOOLS = false,
+        ZDEV_DEBUG_NOISE = false,
+        ZDEV_DEBUG_CUSTOM_CALLED_EVENTS = true,
     }
 }

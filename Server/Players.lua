@@ -20,7 +20,7 @@ function ZPlayingPlayerInit(ply)
     ply:SetValue("ZMoney", ZMoney, true)
     ply:SetValue("ZScore", ZScore, false)
     ply:SetValue("ZKills", ZKills, false)
-    ply:SetValue("playing", true, false)
+    ply:SetValue("playing", true, true)
 
     if (not ply.BOT and ROUND_NB > 0) then
         if ((not WaitingNewRound_Timer) and (not WaitingMapvote) and (not WaitingNewWave)) then
@@ -94,7 +94,9 @@ function SpawnCharacterForPlayer(ply, spawn_id)
     end
     new_char:SetFallDamageTaken(0)
     ply:Possess(new_char)
-    new_char:SetHealth(1000 + PlayerHealth)
+    local health = 1000 + PlayerHealth
+    new_char:SetHealth(health)
+    new_char:SetMaxHealth(health)
     new_char:SetTeam(1)
     new_char:SetSpeedMultiplier(PlayerSpeedMultiplier)
     new_char:SetAccelerationSettings(1152, 512, 768, 128, 256, 256, 1024)
@@ -107,6 +109,8 @@ function SpawnCharacterForPlayer(ply, spawn_id)
     new_char:SetValue("CanUseKnife", true, true)
     new_char:SetValue("InFlashlightZones", {}, false)
     new_char:SetValue("WeirdPunchCount", 0, false)
+    new_char:SetValue("CanPickupGibs", true, true)
+    new_char:SetValue("CanThrowGrenades", true, true)
 
 
     if ply.BOT then
@@ -124,12 +128,15 @@ function SpawnCharacterForPlayer(ply, spawn_id)
     AddCharacterWeapon(new_char, Player_Start_Weapon.weapon_name, Player_Start_Weapon.ammo)
 
     if not ply.BOT then
+        ply:SetVOIPGlobalChannelSetting(2, VOIPSetting.None)
         if (not VZA_MutedVOIPPlayers or not VZA_MutedVOIPPlayers[ply:GetSteamID()]) then
-            ply:SetVOIPSetting(Player_VOIP_Setting_Alive)
+            ply:SetVOIPLocalSetting(Player_Local_VOIP_Setting_Alive)
         end
     end
 
-    Events.Call("VZ_PlayerCharacterSpawned", new_char)
+    if IsValid(new_char) then
+        VZ_EVENT_CALL("Events", "VZ_PlayerCharacterSpawned", new_char)
+    end
 
     return new_char
 end
@@ -203,6 +210,19 @@ function GetPlayersAlive()
     return tbl
 end
 
+function GetPlayersAliveWO(wo_ply)
+    local tbl = {}
+    for k, v in pairs(PLAYING_PLAYERS) do
+        if v ~= wo_ply then
+            local char = v:GetControlledCharacter()
+            if (char and not char:GetValue("PlayerDown")) then
+                table.insert(tbl, v)
+            end
+        end
+    end
+    return tbl
+end
+
 function GetPlayersWOBotsAliveNB()
     local nb = 0
     for k, v in pairs(PLAYING_PLAYERS) do
@@ -226,22 +246,17 @@ function GetPlayingPlayersWOBots()
     return nb
 end
 
-function PlayerCharacterDie(char)
+function PlayerCharacterDie(char, force_die)
     --[[if char:GetValue("PlayerDown") then
         Timer.ClearTimeout(char:GetValue("PlayerDownDieTimer"))
     end]]--
     if char:IsValid() then
         local ply = char:GetPlayer()
-        --[[if char:GetValue("RevivingPlayer") then
-            local reviving_char = GetCharacterFromId(char:GetValue("RevivingPlayer"))
-            if reviving_char then
-                reviving_char:SetInputEnabled(true)
-                reviving_char:SetCanAim(true)
-                CheckToStopBotReviveTimer(reviving_char, true)
-            end
-        end]]--
-        if not char:GetValue("RevivingPlayer") then
-            ply:SetVOIPSetting(VOIPSetting.Muted)
+        if (not char:GetValue("RevivingPlayer")) or force_die then
+            --ply:SetVOIPSetting(VOIPSetting.Muted)
+            --ply:SetVOIPMuted(true)
+            ply:SetVOIPLocalSetting(VOIPSetting.None)
+            ply:SetVOIPGlobalChannelSetting(2, VOIPSetting.Both)
 
             char:Destroy()
             Buy(ply, math.floor(ply:GetValue("ZMoney") * Dead_MoneyLost / 100))
@@ -253,15 +268,16 @@ function PlayerCharacterDie(char)
             end
 
             -- For When the character is destroyed because of Z Limits
-            local al_nb = GetPlayersAliveNB()
-            if al_nb == 0 then
-                RoundFinished(false, true)
-            end
+            --local al_nb = GetPlayersAliveNB()
+            --if al_nb == 0 then
+            CheckRoundFinished()
+            --end
         else
             char:SetValue("RevivingLastChance", true, false)
         end
     end
 end
+Package.Export("PlayerCharacterDie", PlayerCharacterDie)
 
 function ClearRegenTimeouts(char)
     if char:GetValue("RegenTimeout") then
@@ -318,11 +334,27 @@ function ApplyGriefFreeze(ply, char)
     end
 end
 
+function SetCharacterNotTargeted(char, enable)
+    if IsValid(char) then
+        --print("SetCharacterNotTargeted", char, enable)
+
+        char:SetValue("EnemiesDontTarget", enable, false)
+
+        if enable then
+            for k, v in pairs(GetMergedEnemiesChars()) do
+                if (v:GetValue("Target_type") == "player" and v:GetValue("Target") == char) then
+                    EnemyRefreshTarget(v)
+                end
+            end
+        end
+    end
+end
+Package.Export("SetCharacterNotTargeted", SetCharacterNotTargeted)
+
 VZ_EVENT_SUBSCRIBE("Character", "TakeDamage", function(char, damage, bone, type, from_direction, instigator, causer)
     local ply = char:GetPlayer()
     if ply then
-
-        --print(ply, causer, "TakeDamage")
+        --print("Player's char TakeDamage", char, damage, instigator, causer)
 
         if causer then
             if causer:IsValid() then
@@ -349,8 +381,14 @@ VZ_EVENT_SUBSCRIBE("Character", "TakeDamage", function(char, damage, bone, type,
 
         if instigator then
             --print("FALSE TakeDamage")
-            if not VZ_GetGamemodeConfigValue("Friendly_Damage") then
+            --print(IsValid(causer), causer.GetHandlingMode, causer:GetValue("CanDamagePlayers"))
+            local can_damage_players = IsValid(causer) and causer.GetHandlingMode and causer:GetValue("CanDamagePlayers")
+
+            local players_in_diff_teams = IsValid(instigator) and IsValid(instigator:GetControlledCharacter()) and char:GetTeam() ~= instigator:GetControlledCharacter():GetTeam()
+
+            if (not VZ_GetGamemodeConfigValue("Friendly_Damage") and (not can_damage_players)) and (not players_in_diff_teams) then
                 ApplyGriefFreeze(ply, char)
+                --print("Prevent Player's Character Damage", char, damage, instigator, causer)
                 return false
             end
         end
@@ -374,7 +412,7 @@ VZ_EVENT_SUBSCRIBE("Character", "TakeDamage", function(char, damage, bone, type,
             Buy(ply, math.floor(ply:GetValue("ZMoney") * Down_MoneyLost / 100))
             char:SetValue("OwnedPerks", {}, true)
             for k, v in pairs(GetMergedEnemiesChars()) do
-                if (v:GetValue("Target_type") == "player" and v:GetValue("Target") == char) then
+                if (v:GetValue("Target_type") == "player" and v:GetValue("Target")) then
                     EnemyRefreshTarget(v)
                 end
             end
@@ -406,7 +444,7 @@ VZ_EVENT_SUBSCRIBE("Character", "TakeDamage", function(char, damage, bone, type,
                 char:SetInputEnabled(false)
                 char:SetCanAim(false)
             end
-            char:PlayAnimation("vzombies-assets::Death_Idle", AnimationSlotType.FullBody, true)
+            char:PlayAnimation(Player_Down_Animation, AnimationSlotType.FullBody, true)
 
             CheckToStopBotReviveTimer(char, false)
             if ply.BOT then
@@ -458,12 +496,9 @@ VZ_EVENT_SUBSCRIBE("Character", "TakeDamage", function(char, damage, bone, type,
                 end, PERKS_CONFIG.quick_revive.Solo_ReviveTime_ms)
             end
 
-            Events.Call("VZ_CharacterDown", char)
+            VZ_EVENT_CALL("Events", "VZ_CharacterDown", char)
 
-            local al_nb = GetPlayersAliveNB()
-            if al_nb == 0 then
-                RoundFinished(false, true)
-            end
+            CheckRoundFinished()
         else
             if instigator then
                 ApplyGriefFreeze(ply, char)
@@ -513,8 +548,9 @@ function HandlePlayerJoin(ply, bot, waittostart)
 
         Events.CallRemote("LoadMapConfig", ply, MAP_CONFIG_TO_SEND)
         if ROUND_NB > 0 then
-            Events.CallRemote("SetClientRoundNumber", ply, ROUND_NB)
+            Events.CallRemote("SetClientRoundNumber", ply, ROUND_NB, In_Hellhound_Round)
             SendEnemiesRemaining(ply)
+            SendWaveTimeRemaining(ply)
             if Game_Time_On_Screen then
                 Events.CallRemote("UpdateGameTime", ply, math.floor(GAME_TIMER_SECONDS))
             end
@@ -532,7 +568,11 @@ function HandlePlayerJoin(ply, bot, waittostart)
             Events.CallRemote("PlayerCanPause", ply, true)
         end
 
-        ply:SetVOIPSetting(VOIPSetting.Muted)
+        --ply:SetVOIPSetting(VOIPSetting.Muted)
+        --ply:SetVOIPMuted(true)
+        ply:SetVOIPGlobalAllChannelsSetting(VOIPSetting.None)
+        ply:SetVOIPLocalSetting(VOIPSetting.None)
+        ply:SetVOIPGlobalChannelSetting(2, VOIPSetting.Both)
 
         -- Players join handle
         if PLAYING_PLAYERS_NB < MAX_PLAYERS then
@@ -575,7 +615,7 @@ function HandlePlayerJoin(ply, bot, waittostart)
             if ((game_restart or found_bot) and not No_Players) then
                 ZPlayingPlayerInit(ply)
                 if game_restart then
-                    RoundFinished(false, true)
+                    CheckRoundFinished(false, true)
                 end
             else
                 table.insert(WAITING_PLAYERS, ply)
@@ -587,7 +627,7 @@ function HandlePlayerJoin(ply, bot, waittostart)
             end
         end
 
-        Events.Call("VZ_PlayerJoined", ply, waittostart)
+        VZ_EVENT_CALL("Events", "VZ_PlayerJoined", ply, waittostart)
     else
         ZPlayingPlayerInit(ply)
     end
@@ -604,6 +644,18 @@ VZ_EVENT_SUBSCRIBE("Events", "VZOMBIES_GAMEMODE_LOADED", function()
     end
 end)
 
+VZ_EVENT_SUBSCRIBE("Character", "Destroy", function(char)
+    -- Gives back control to player reviving him : Occurs when he left or when he Dies (with force_die)
+    if char:GetValue("RevivingPlayer") then
+        local reviving_char = GetCharacterFromId(char:GetValue("RevivingPlayer"))
+        if reviving_char then
+            reviving_char:SetInputEnabled(true)
+            reviving_char:SetCanAim(true)
+            CheckToStopBotReviveTimer(reviving_char, true)
+        end
+    end
+end)
+
 VZ_EVENT_SUBSCRIBE("Player", "Destroy", function(ply)
     print("Player Left", ply:GetAccountName())
     local char = ply:GetControlledCharacter()
@@ -611,19 +663,12 @@ VZ_EVENT_SUBSCRIBE("Player", "Destroy", function(ply)
         if char:GetValue("PlayerDown") then
             Timer.ClearTimeout(char:GetValue("PlayerDownDieTimer"))
         end
-        if char:GetValue("RevivingPlayer") then
-            local reviving_char = GetCharacterFromId(char:GetValue("RevivingPlayer"))
-            if reviving_char then
-                reviving_char:SetInputEnabled(true)
-                reviving_char:SetCanAim(true)
-                CheckToStopBotReviveTimer(reviving_char, true)
-            end
-        end
         for k, v in pairs(PLAYING_PLAYERS) do
             local ochar = v:GetControlledCharacter()
             if ochar then
                 if ochar:GetValue("RevivingPlayer") == char:GetID() then
                     if ochar:GetValue("RevivingLastChance") then
+                        -- TODO: check if this really works (is RevivingPlayer stopping him from dying inside the func, if so force_die)
                         PlayerCharacterDie(ochar)
                     end
                     break
@@ -651,9 +696,9 @@ VZ_EVENT_SUBSCRIBE("Player", "Destroy", function(ply)
         end
         if GetPlayersWOBotsAliveNB() == 0 then
             if GetPlayingPlayersWOBots() == 0 then
-                RoundFinished(true, false, ply)
+                CheckRoundFinished(true, false, ply)
             else
-                RoundFinished(false, true, ply)
+                CheckRoundFinished(false, true, ply)
             end
         elseif (Bots_Enabled and not player_was_waiting) then
             local bot_count = table_count(VZBot.GetPairs())
@@ -671,7 +716,7 @@ VZ_EVENT_SUBSCRIBE("Player", "Destroy", function(ply)
         end
         if No_Players then
             if table_count(Player.GetAll()) - 1 == 0 then
-                RoundFinished(true, false, ply)
+                CheckRoundFinished(true, false, ply)
             end
         end
     end
@@ -685,7 +730,7 @@ VZ_EVENT_SUBSCRIBE("Player", "Destroy", function(ply)
         }
     end
 
-    Events.Call("VZ_PlayerLeft", ply)
+    VZ_EVENT_CALL("Events", "VZ_PlayerLeft", ply)
 end)
 
 function RevivePlayer(ply, revive_char)
@@ -717,12 +762,15 @@ function RevivePlayerFinished_RevivedPart(revived_char)
     revived_char:SetInputEnabled(true)
     revived_char:SetCanAim(true)
     revived_char:StopAnimation("vzombies-assets::Death_Idle")
-    revived_char:SetHealth(1000 + PlayerHealth)
+    local health = 1000 + PlayerHealth
+    revived_char:SetHealth(health)
+    revived_char:SetMaxHealth(health)
     local revived_ply = revived_char:GetPlayer()
     Events.CallRemote("UpdateGUIHealth", revived_ply)
     if revived_ply.BOT then
         RequestBotAction(revived_ply)
         revived_ply:SetValue("BotAimPlayer", GetRandomPlayer():GetID(), true)
+        revived_char:SetValue("BOTReloading", nil, false) -- fix bot not shooting after death while reloading
     end
 end
 
@@ -764,21 +812,27 @@ VZ_EVENT_SUBSCRIBE_REMOTE("RevivePlayerStopped", RevivePlayerStopped)
 VZ_EVENT_SUBSCRIBE_REMOTE("RequestTabData", function(ply)
     if ply:IsValid() then
         local tblToSend = {}
+        local id_line_highlight = -1
         for k, v in pairs(PLAYING_PLAYERS) do
-            local level = tostring(v:GetValue("PlayerLevel"))
-            if (v.BOT and VZ_GetFeatureValue("Levels", "script_loaded")) then
-                level = "0"
+            if v:IsValid() then
+                local level = tostring(v:GetValue("PlayerLevel"))
+                if (v.BOT and VZ_GetFeatureValue("Levels", "script_loaded")) then
+                    level = "0"
+                end
+                table.insert(tblToSend, {
+                    v:GetAccountName(),
+                    tostring(v:GetValue("ZKills")),
+                    tostring(v:GetValue("ZMoney")),
+                    tostring(v:GetValue("ZScore")),
+                    tostring(v:GetPing()),
+                    level,
+                })
+                if (id_line_highlight == -1 and v == ply) then
+                    id_line_highlight = #tblToSend
+                end
             end
-            table.insert(tblToSend, {
-                v:GetAccountName(),
-                tostring(v:GetValue("ZKills")),
-                tostring(v:GetValue("ZMoney")),
-                tostring(v:GetValue("ZScore")),
-                tostring(v:GetPing()),
-                level,
-            })
         end
-        Events.CallRemote("TabData", ply, tblToSend)
+        Events.CallRemote("TabData", ply, tblToSend, id_line_highlight)
     end
 end)
 
@@ -813,20 +867,37 @@ if ZDEV_IsModeEnabled("ZDEV_COMMANDS") then
 end
 
 VZ_EVENT_SUBSCRIBE_REMOTE("CustomMapInteract", function(ply, InteractThing)
-    Events.Call(InteractThing.event_name, ply, InteractThing)
+    VZ_EVENT_CALL("Events", InteractThing.event_name, ply, InteractThing)
 end)
 
 local last_sent_value = -1
 
 function SendEnemiesRemaining(ply)
     if Remaining_Enemies_Text then
-        local remaining = REMAINING_ENEMIES_TO_SPAWN + table_count(ENEMY_CHARACTERS)
-        if not ply then
-            if last_sent_value ~= remaining then
-                Events.BroadcastRemote("SetClientRemainingZombies", remaining)
+        if not Timed_Waves then
+            local remaining = REMAINING_ENEMIES_TO_SPAWN + table_count(ENEMY_CHARACTERS)
+            if not ply then
+                if last_sent_value ~= remaining then
+                    Events.BroadcastRemote("SetClientRemainingZombies", remaining)
+                end
+            else
+                Events.CallRemote("SetClientRemainingZombies", ply, remaining)
             end
-        else
-            Events.CallRemote("SetClientRemainingZombies", ply, remaining)
+        end
+    end
+end
+
+function SendWaveTimeRemaining(ply)
+    if Remaining_Enemies_Text then
+        if Timed_Waves then
+            local remaining = REMAINING_ENEMIES_TO_SPAWN*(SPAWN_ENEMY_INTERVAL_TIME or 0)
+            if remaining > 0 then
+                if not ply then
+                    Events.BroadcastRemote("SetClientRemainingWaveTime", remaining)
+                else
+                    Events.CallRemote("SetClientRemainingWaveTime", ply, remaining)
+                end
+            end
         end
     end
 end
@@ -855,6 +926,12 @@ end)
 
 VZ_EVENT_SUBSCRIBE("Package", "Unload", function()
     for k, v in pairs(Player.GetPairs()) do
+        v:SetValue("playing", nil, true)
+        v:SetValue("ZMoney", nil, true)
+        v:SetValue("ZScore", nil, false)
+        v:SetValue("ZKills", nil, false)
+        v:SetValue("PlayerWaiting", nil, true)
+
         v:SetValue("PM_Data", nil, false)
         v:SetValue("MM_GodMode", nil, false)
         v:SetValue("MM_InfMoney", nil, false)
@@ -862,5 +939,6 @@ VZ_EVENT_SUBSCRIBE("Package", "Unload", function()
         v:SetValue("MM_CamMode", nil, false)
         v:SetValue("RepackCooldown", nil, false)
         v:SetValue("PlayerWaiting", nil, true)
+        v:SetValue("MM_EnemiesDontTarget", nil, false)
     end
 end)

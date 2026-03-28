@@ -58,7 +58,7 @@ VZ_EVENT_SUBSCRIBE_REMOTE("BankAction", function(ply, bank, action)
         local char = ply:GetControlledCharacter()
         if (char and char:IsValid()) then
             if not char:GetValue("PlayerDown") then
-                if (bank and bank:IsValid() and bank:GetValue("MapBank")) then
+                if (IsValid(bank) and bank:GetValue("MapBank") and (not bank:GetValue("PPG_Sabotaged"))) then
                     local amount = VZ_GetFeatureValue("Banks", "Money_WD_Amount")
                     if action == "Deposit" then
                         local d_fees = VZ_GetFeatureValue("Banks", "D_Fees")

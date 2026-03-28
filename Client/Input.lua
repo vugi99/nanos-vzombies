@@ -13,10 +13,10 @@ VZ_Register_Input("SpectatePrev", "Left")
 VZ_Register_Input("SpectateNext", "Right")
 VZ_Register_Input("VZ Switch Weapon", "X")
 
---print(NanosUtils.Dump(Input.GetGameKeyBindings()))
+--print(NanosTable.Dump(Input.GetGameKeyBindings()))
 local set_grenade_key = "A"
-for k, v in pairs(Input.GetMappedKeys("MoveRight")) do
-    --print(v)
+for k, v in pairs(Input.GetMappedKeys("MoveLeft") or {}) do
+    --print("GetMappedKeys MoveLeft", v)
     if v == "A" then
         set_grenade_key = "Q"
     end
@@ -60,7 +60,7 @@ end)
 
 
 Interact_Actions_TBL = {
-    MapDoor = {true, "BuyDoor"},
+    MapDoor = {true, "BuyDoor", true},
     MapBarricade = function()
         if RepairBarricadeInterval then
             Timer.ClearInterval(RepairBarricadeInterval)
@@ -69,21 +69,22 @@ Interact_Actions_TBL = {
         PlayStartRepairBarricade()
         RepairBarricadeInterval = Timer.SetInterval(RepairBarricadeIFunc, Repair_Barricade_Interval_ms)
     end,
-    RevivePlayer = {false, "RevivePlayer"},
-    MapMBOX = {false, "BuyMBOX"},
-    MapPower = {false, "TurnPowerON"},
-    MapPerk = {true, "BuyPerk"},
+    RevivePlayer = {false, "RevivePlayer", true},
+    MapMBOX = {false, "BuyMBOX", true},
+    MapPower = {false, "TurnPowerON", true},
+    MapPerk = {true, "BuyPerk", true},
     MapPAP = {true, "UpgradeWeap"},
-    MapWunder = {true, "BuyWunderfizz"},
+    MapWunder = {true, "BuyWunderfizz", true},
     WunderBottle = {false, "TakeWunderfizzPerk", true}, -- CheckNoPower, event_name, check_valid
+    MapCharger = {false, "ChargerChargeModule", true},
     MapCustom = function()
         --print("MAP CUSTOM CALL", InteractThing.event_name)
-        Events.Call(InteractThing.event_name, InteractThing)
+        VZ_EVENT_CALL("Events", InteractThing.event_name, InteractThing)
         Events.CallRemote("CustomMapInteract", InteractThing)
     end,
     MapTeleporter = function()
         if InteractThing ~= "NoPower" then
-            if InteractThing:IsValid() then
+            if IsValid(InteractThing) then
                 if InteractThing:GetValue("CanTeleport") then
                     Events.CallRemote("BuyTeleport", InteractThing)
                 end
@@ -91,19 +92,21 @@ Interact_Actions_TBL = {
         end
     end,
     Gib = function()
-        if InteractThing:IsValid() then
-            Events.CallRemote("PickupGib", InteractThing:GetValue("GibData"))
-            InteractThing:Destroy()
+        if IsValid(InteractThing) then
+            if IsValid(GetLocalCharacter()) and GetLocalCharacter():GetValue("CanPickupGibs") then
+                Events.CallRemote("PickupGib", InteractThing:GetValue("GibData"))
+                InteractThing:Destroy()
+            end
         end
     end,
     MapBank = function()
-        if InteractThing[1]:IsValid() then
+        if IsValid(InteractThing) and IsValid(InteractThing[1]) then
             Events.CallRemote("BankAction", InteractThing[1], InteractThing[2])
         end
     end,
     MapVPad = function()
         if InteractThing ~= "NoPower" then
-            if InteractThing:IsValid() then
+            if IsValid(InteractThing) then
                 ShowVZFrame("Vehicle_Spawn", true)
                 Input.SetMouseEnabled(true)
             end
@@ -291,8 +294,8 @@ VZ_BIND("Lock Aim", InputEvent.Pressed, function()
 end)
 
 
-VZ_BIND("How to play", InputEvent.Pressed, function()
-    HTP_Showed = not HTP_Showed
+function VZ_ShowHowToPlayFrame(show)
+    HTP_Showed = show
     Input.SetMouseEnabled(HTP_Showed)
     if not GAME_PAUSED then
         Input.SetInputEnabled(not HTP_Showed)
@@ -303,6 +306,19 @@ VZ_BIND("How to play", InputEvent.Pressed, function()
         --GUI:SetFocus()
     else
         GUI:CallEvent("HideHTPFrame")
+    end
+end
+Package.Export("VZ_ShowHowToPlayFrame", VZ_ShowHowToPlayFrame)
+
+VZ_BIND("How to play", InputEvent.Pressed, function()
+    VZ_ShowHowToPlayFrame(not HTP_Showed)
+end)
+
+GUI:Subscribe("HTPCloseButtonPressed", function()
+    HTP_Showed = false
+    Input.SetMouseEnabled(false)
+    if not GAME_PAUSED then
+        Input.SetInputEnabled(true)
     end
 end)
 
@@ -393,7 +409,7 @@ if Ping_Enabled then
                     trace_mode = trace_mode | TraceMode.DrawDebug
                 end
 
-                local trace = Trace.LineSingle(char:GetBoneTransform("head").Location, char:GetBoneTransform("head").Location + forward * Ping_Max_Distance, CollisionChannel.WorldStatic | CollisionChannel.WorldDynamic | CollisionChannel.Pawn | CollisionChannel.PhysicsBody | CollisionChannel.Vehicle, trace_mode, {char})
+                local trace = Trace.LineSingle(char:GetSocketTransform("head").Location, char:GetSocketTransform("head").Location + forward * Ping_Max_Distance, CollisionChannel.WorldStatic | CollisionChannel.WorldDynamic | CollisionChannel.Pawn | CollisionChannel.PhysicsBody | CollisionChannel.Vehicle, trace_mode, {char})
                 if trace.Success then
                     if trace.Entity then
                         if trace.Entity:GetID() > 0 then -- Check if serverside entity

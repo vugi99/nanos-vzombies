@@ -1,4 +1,12 @@
 
+function IsValid(ent)
+    if not ent then return false end
+
+    if type(ent) == "userdata" or type(ent) == "table" then
+        return ent.IsValid and ent:IsValid()
+    end
+    return false
+end
 
 function table_count(ta)
     local count = 0
@@ -24,15 +32,12 @@ function GetCharacterFromId(id)
     end
 end
 
-function clamp(val, minval, maxval, valadded)
-    if val + valadded <= maxval then
-        if val + valadded >= minval then
-            val = val + valadded
-        else
-            val = minval
-        end
-    else
-        val = maxval
+function clamp(val, minval, maxval)
+    if val > maxval then
+        return maxval
+    end
+    if val < minval then
+        return minval
     end
     return val
 end
@@ -86,13 +91,58 @@ else
 end
 
 function VZ_EVENT_SUBSCRIBE(class, ...)
-    table.insert(VZ_SUBSCRIBED_EVENTS, {class = class, params = {...}})
-    return _ENV[class].Subscribe(...)
+    local cback = _ENV[class].Subscribe(...)
+    table.insert(VZ_SUBSCRIBED_EVENTS, {class = class, params = table.pack(...), callback = cback})
+    return cback
+end
+
+function VZ_EVENT_UNSUBSCRIBE(class, event_name, callback)
+    local i = 1
+    local s_events_length = table_count(VZ_SUBSCRIBED_EVENTS)
+    while i <= s_events_length do
+        local v = VZ_SUBSCRIBED_EVENTS[i]
+        if v.params[1] == event_name then
+            if (not callback) or v.callback == callback then
+                table.remove(VZ_SUBSCRIBED_EVENTS, i)
+                i = i - 1
+                s_events_length = s_events_length - 1
+            end
+        end
+        i = i + 1
+    end
+    return _ENV[class].Unsubscribe(event_name, callback)
+end
+
+function VZ_EVENT_CALL(classname, ...)
+    classname = classname or "Events"
+    -- TODO: Call into VZ_EVENT_SUBSCRIBE stuff when it's not "Events"
+    if ZDEV_IsModeEnabled("ZDEV_DEBUG_CUSTOM_CALLED_EVENTS") then
+        print("VZ_EVENT_CALL", classname, ...)
+    end
+    return _ENV[classname].Call(...)
 end
 
 function VZ_EVENT_SUBSCRIBE_REMOTE(...)
-    table.insert(VZ_REMOTE_SUBSCRIBED_EVENTS, {params = {...}})
-    return Events.SubscribeRemote(...)
+    local cback = Events.SubscribeRemote(...)
+    table.insert(VZ_REMOTE_SUBSCRIBED_EVENTS, {params = table.pack(...), callback = cback})
+    return cback
+end
+
+function VZ_EVENT_UNSUBSCRIBE_REMOTE(event_name, callback)
+    local i = 1
+    local s_events_length = table_count(VZ_REMOTE_SUBSCRIBED_EVENTS)
+    while i <= s_events_length do
+        local v = VZ_REMOTE_SUBSCRIBED_EVENTS[i]
+        if v.params[1] == event_name then
+            if (not callback) or v.callback == callback then
+                table.remove(VZ_REMOTE_SUBSCRIBED_EVENTS, i)
+                i = i - 1
+                s_events_length = s_events_length - 1
+            end
+        end
+        i = i + 1
+    end
+    return Events.UnsubscribeRemote(event_name, callback)
 end
 
 
@@ -275,6 +325,16 @@ end
 
 function IsAVehicle(entity)
     return (entity:IsA(VehicleWheeled) or entity:IsA(VehicleWater))
+end
+
+function CalculateEnemiesToSpawn(round_nb)
+    return math.floor(Zombies_Number_Mult_Func(First_Wave_Enemies + (Add_at_each_wave * (round_nb - 1)) + (Add_at_each_wave_per_player * (round_nb - 1) * PLAYING_PLAYERS_NB), round_nb) + 0.5)
+end
+
+function SecondsToMinutesAndSeconds(time_s)
+    local minutes = math.floor(time_s/60)
+    local seconds = time_s - (minutes * 60)
+    return minutes, seconds
 end
 
 

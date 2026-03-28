@@ -1,7 +1,7 @@
 
 function CL_VZ_SpawnGib(char, bone, goingtodie, instigator)
     if char:IsValid() then
-        local bone_transform = char:GetBoneTransform(bone)
+        local bone_transform = char:GetSocketTransform(bone)
 
         char:HideBone(bone)
 
@@ -21,6 +21,7 @@ function CL_VZ_SpawnGib(char, bone, goingtodie, instigator)
         end
 
         if VZ_CL_Current_Settings["Clientside_Gibs"] then
+            if not enemy_table.Gibs then return end
 
             local self_char = Client.GetLocalPlayer():GetControlledCharacter()
 
@@ -35,6 +36,7 @@ function CL_VZ_SpawnGib(char, bone, goingtodie, instigator)
             --if dist < Enemies_Gibs_Max_Spawn_Distance_sq then
 
             if (instigator == Client.GetLocalPlayer() or (dist < Enemies_Gibs_Max_Spawn_Distance_sq)) then
+                if not enemy_table.Gibs[bone] then return end
 
                 local gib_asset = GetRealGibAsset(char, enemy_table.Gibs[bone].asset)
 
@@ -64,8 +66,8 @@ function CL_VZ_SpawnGib(char, bone, goingtodie, instigator)
                     end
                 end, Enemies_Gibs_Destroy_Timeout_ms)
 
-                if bone == enemy_table.Gibs_heart_bone then
-                    gib:SetMaterialScalarParameter("Emissive_value", 0.0)
+                if enemy_table.Gibs[bone].emissive_key then
+                    gib:SetMaterialScalarParameter(enemy_table.Gibs[bone].emissive_key, 0.0)
                 end
             else
                 --print("Gib aborted")
@@ -86,7 +88,7 @@ VZ_EVENT_SUBSCRIBE("Character", "Death", function(char, last_damage_taken, last_
             --print("Zombie Death", last_bone_damage)
             if (last_bone_damage == enemy_table.Gibs_heart_bone and damage_type_reason == DamageType.Shot) then
                 if not char:GetValue("HeadGibSpawned") then
-                    Events.Call("VZ_SpawnGib", char, last_bone_damage)
+                    VZ_EVENT_CALL("Events", "VZ_SpawnGib", char, last_bone_damage)
                 end
             end
         end

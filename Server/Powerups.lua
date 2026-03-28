@@ -212,10 +212,10 @@ Timer.SetInterval(function()
                         if v.SM_Powerup:IsValid() then
                             local id = v.SM_Powerup:GetValue("GrabPowerup")
                             local p_name = v.powerup_name
-                            Events.Call("VZ_PowerupGrabbed", v2, id, p_name)
+                            VZ_EVENT_CALL("Events", "VZ_PowerupGrabbed", v2, id, p_name)
                             DestroyPowerup(v)
                             PowerupGrabbed(v.powerup_name, v2)
-                            Events.Call("VZ_PowerupGrabbed_AfterDestroy", v2, id, p_name)
+                            VZ_EVENT_CALL("Events", "VZ_PowerupGrabbed_AfterDestroy", v2, id, p_name)
                         end
                         POWERUPS_PICKUPS[k] = nil
                     end

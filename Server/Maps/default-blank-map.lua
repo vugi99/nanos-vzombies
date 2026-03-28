@@ -42,6 +42,13 @@ table.insert(MAP_DOORS, {
 
 MAP_WEAPONS = {}
 table.insert(MAP_WEAPONS, {
+    location = Vector(394.000, 812.000, 110.000),
+    rotation = Rotator(0.000000, 0.000000, 0.000000),
+    price = 500,
+    weapon_name = "AK47",
+    max_ammo = 400
+})
+table.insert(MAP_WEAPONS, {
     location = Vector(-88.000, 1799.000, 110.000),
     rotation = Rotator(0.000000, 0.000000, 0.000000),
     price = 500,
@@ -53,13 +60,6 @@ table.insert(MAP_WEAPONS, {
     rotation = Rotator(0.000000, 179.999435, 0.000000),
     price = 500,
     weapon_name = "GE3",
-    max_ammo = 400
-})
-table.insert(MAP_WEAPONS, {
-    location = Vector(394.000, 812.000, 110.000),
-    rotation = Rotator(0.000000, 0.000000, 0.000000),
-    price = 500,
-    weapon_name = "AK47",
     max_ammo = 400
 })
 
@@ -205,6 +205,7 @@ table.insert(MAP_TELEPORTERS, {
     distance_sq = 90000.0,
     instant_teleporter = false,
     bots_allowed = false,
+    set_no_target = false,
     teleport_to = {
         {
             location = Vector(3101.000, 2954.000, 1.000),
@@ -222,6 +223,7 @@ table.insert(MAP_TELEPORTERS, {
     distance_sq = 90000.0,
     instant_teleporter = false,
     bots_allowed = false,
+    set_no_target = false,
     teleport_to = {
         {
             location = Vector(4077.000, 2920.000, 1.000),
@@ -239,6 +241,7 @@ table.insert(MAP_TELEPORTERS, {
     distance_sq = 90000.0,
     instant_teleporter = false,
     bots_allowed = false,
+    set_no_target = false,
     teleport_to = {
         {
             location = Vector(4975.000, 2974.000, 1.000),
@@ -260,6 +263,7 @@ table.insert(MAP_TELEPORTERS, {
     distance_sq = 90000.0,
     instant_teleporter = false,
     bots_allowed = false,
+    set_no_target = true,
     teleport_to = {
         {
             location = Vector(6146.000, 2891.000, 0.000),
@@ -321,6 +325,12 @@ MAP_SETTINGS = {
 
 MAP_STATIC_MESHES = {}
 table.insert(MAP_STATIC_MESHES, {
+    location = Vector(-80.000, 1900.000, 149.000),
+    rotation = Rotator(0.000000, 0.000000, 0.000000),
+    scale = Vector(2.000, 2.000, 3.000),
+    model = "nanos-world::SM_Cube"
+})
+table.insert(MAP_STATIC_MESHES, {
     location = Vector(3810.000, -3203.000, 149.000),
     rotation = Rotator(0.000000, 0.000000, 0.000000),
     scale = Vector(100.000, 2.000, 3.000),
@@ -342,12 +352,6 @@ table.insert(MAP_STATIC_MESHES, {
     location = Vector(8860.000, 1857.000, 149.000),
     rotation = Rotator(0.000000, 0.000000, 0.000000),
     scale = Vector(2.000, 100.000, 3.000),
-    model = "nanos-world::SM_Cube"
-})
-table.insert(MAP_STATIC_MESHES, {
-    location = Vector(-80.000, 1900.000, 149.000),
-    rotation = Rotator(0.000000, 0.000000, 0.000000),
-    scale = Vector(2.000, 2.000, 3.000),
     model = "nanos-world::SM_Cube"
 })
 
@@ -388,6 +392,43 @@ table.insert(VEHICLES_PADS, {
     rotation = Rotator(0.000000, 89.999748, 0.000000),
     screen_location = Vector(6739.000, 1512.001, 151.000),
     screen_rotation = Rotator(0.000000, 89.999748, 89.999999)
+})
+
+
+MAP_CHARGERS = {}
+table.insert(MAP_CHARGERS, {
+    location = Vector(4419.000, 1838.000, 1.000),
+    rotation = Rotator(0.000000, 0.000000, 0.000000),
+    zone_distance = 1500.0,
+    attempt_price = 0,
+    cooldown_attempt_ms = 60000,
+    force_keep_players_inside = true,
+    is_soulbox = false,
+    soulbox_params = {
+        feed_max_distance = 1000.0,
+        feed_count = 25,
+        sphere_offset = Vector(0.000, 0.000, 0.000)
+    },
+    charge_time_ms = 45000,
+    sphere_offset = Vector(0.000, 0.000, 0.000),
+    wait_all_alive_players = false
+})
+table.insert(MAP_CHARGERS, {
+    location = Vector(4420.000, 5816.000, 1.000),
+    rotation = Rotator(0.000000, 0.000000, 0.000000),
+    zone_distance = 1500.0,
+    attempt_price = 0,
+    cooldown_attempt_ms = 60000,
+    force_keep_players_inside = false,
+    is_soulbox = true,
+    soulbox_params = {
+        feed_max_distance = 1000.0,
+        feed_count = 25,
+        sphere_offset = Vector(0.000, 0.000, 0.000)
+    },
+    charge_time_ms = 45000,
+    sphere_offset = Vector(0.000, 0.000, 0.000),
+    wait_all_alive_players = false
 })
 
 
@@ -449,5 +490,5 @@ table.insert(MAP_ROOMS[1][2].z_spawns, {
 
 
 Package.Subscribe("Load", function()
-	Events.Call("VZOMBIES_MAP_CONFIG", MAP_ROOMS, PLAYER_SPAWNS, MAP_DOORS, MAP_WEAPONS, MAP_PACK_A_PUNCH, MAP_POWER, MAP_MYSTERY_BOXES, MAP_PERKS, MAP_Z_LIMITS, MAP_WUNDERFIZZ, MAP_INTERACT_TRIGGERS, MAP_TELEPORTERS, MAP_LIGHT_ZONES, MAP_SETTINGS, MAP_STATIC_MESHES, HELLHOUND_SPAWNS, BANKS, VEHICLES_PADS)
+	Events.Call("VZOMBIES_MAP_CONFIG", MAP_ROOMS, PLAYER_SPAWNS, MAP_DOORS, MAP_WEAPONS, MAP_PACK_A_PUNCH, MAP_POWER, MAP_MYSTERY_BOXES, MAP_PERKS, MAP_Z_LIMITS, MAP_WUNDERFIZZ, MAP_INTERACT_TRIGGERS, MAP_TELEPORTERS, MAP_LIGHT_ZONES, MAP_SETTINGS, MAP_STATIC_MESHES, HELLHOUND_SPAWNS, BANKS, VEHICLES_PADS, MAP_CHARGERS)
 end)

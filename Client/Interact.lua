@@ -59,6 +59,9 @@ function InteractCheck(interact_type, loop_params, Interact_Check_Interval_ms, C
                             if (v and (not loop_params.check_is_valid or v:IsValid())) then
                                 found = CheckFunc(local_player, local_char, local_char_location, v)
                                 if found then
+                                    if PPG_ClientCheckSabotaged then
+                                        PPG_ClientCheckSabotaged(InteractThing)
+                                    end
                                     break
                                 end
                             end
@@ -95,7 +98,7 @@ end, Gibs_Interact_Check_Interval_ms)
 
 function InteractAction(CheckNoPower, event_name, check_valid)
     if (not CheckNoPower or InteractThing ~= "NoPower") then
-        if (not check_valid or InteractThing:IsValid()) then
+        if (not check_valid or IsValid(InteractThing)) then
             Events.CallRemote(event_name, InteractThing)
         end
     end
@@ -114,7 +117,7 @@ InteractCheck("MapDoor", nil, Doors_Interact_Check_Interval_ms, function(local_p
     local trace = Trace.LineSingle(local_char_location, local_char_location + Fwd * Doors_Interact_Check_Trace_Distance_Max, CollisionChannel.WorldStatic, trace_mode, {})
     if trace.Success then
         local v = trace.Entity
-        if v then
+        if IsValid(v) then
             local door_id = v:GetValue("DoorID")
             if door_id then
                 InteractType = "MapDoor"
@@ -131,7 +134,10 @@ InteractCheck("MapDoor", nil, Doors_Interact_Check_Interval_ms, function(local_p
                 end
                 if not power_needed then
                     BuyText("Door", tostring(MAP_DOORS[door_id].price))
-                    InteractThing = door_id
+                    InteractThing = v
+                    if PPG_ClientCheckSabotaged then
+                        PPG_ClientCheckSabotaged(v)
+                    end
                 else
                     InteractText("Missing Power")
                     InteractThing = "NoPower"
@@ -442,6 +448,45 @@ if Enemies_Gibs_Can_Pickup then
         end
 
         return found
+    end)
+end
+
+if (VZ_GetFeatureValue("Chargers", "script_loaded") and VZ_GetFeatureValue("Chargers", "can_interact")) then
+    RegisterPreparedLoop("Chargers", StaticMesh, "MapChargerID")
+    InteractCheck("MapCharger", {LoopFunc = PreparedLoops["Chargers"], check_is_valid = true}, VZ_GetFeatureValue("Chargers", "Interact_Check_Interval_ms"), function(local_player, local_char, local_char_location, v)
+        local distance_sq = local_char_location:DistanceSquared(v:GetLocation())
+        --print(distance_sq)
+        if distance_sq <= VZ_GetFeatureValue("Chargers", "Interact_Check_Distance_Squared_Max") then
+            InteractType = "MapCharger"
+
+            local charge_time_text = ""
+            local stored_charge_time = v:GetValue("MapChargerChargeTime")
+            if stored_charge_time then
+                charge_time_text = " takes " .. tostring(math.floor(stored_charge_time/1000 + 0.5)) .. "s"
+            end
+
+            local charge_price = ""
+            local stored_price = v:GetValue("MapChargerAttemptPrice")
+            if stored_price and stored_price > 0 then
+                charge_price = " (" .. tostring(stored_price) .. " $)"
+            end
+
+            if v:GetValue("Charged") then
+                InteractText("Module already charged")
+                InteractThing = ""
+            elseif v:GetValue("Charging") then
+                InteractText("Module is charging")
+                InteractThing = ""
+            elseif v:GetValue("InCooldown") then
+                InteractText("Module is in cooldown")
+                InteractThing = ""
+            else
+                InteractText("Charge Module" .. charge_time_text .. charge_price)
+                InteractThing = v
+            end
+
+            return true
+        end
     end)
 end
 

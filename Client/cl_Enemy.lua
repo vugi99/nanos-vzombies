@@ -12,8 +12,10 @@ function HandleEnemyType(char, value)
 
     local old_value = char:GetValue("OldEnemyType")
     if old_value ~= nil then
-        if enemy_table.Custom_Anims_Transform["to_" .. value] then
-            enemy_table.Custom_Anims_Transform["to_" .. value](Custom_Anims_BP, char)
+        if enemy_table.Custom_Anims_Transform then
+            if enemy_table.Custom_Anims_Transform["to_" .. value] then
+                enemy_table.Custom_Anims_Transform["to_" .. value](Custom_Anims_BP, char)
+            end
         end
     else
         if enemy_table.Custom_Anims_Func then

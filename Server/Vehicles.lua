@@ -1,14 +1,15 @@
 
 
--- Vehicles Health Is not used yet as zombies can reach players inside vehicles because they can go through them
-
-
 
 function SpawnVehicle(veh_name, location, rotation)
     local veh = VZVehicles[veh_name](location, rotation)
     veh:SetCollision(CollisionType.IgnoreOnlyPawn)
     veh:SetValue("VehName", veh_name, true)
-    veh:SetValue("VehHealth", VZVehicles[veh_name].health, true)
+    veh:SetValue("AR_Multiplier", VZVehicles[veh_name].AR_Multiplier, false)
+    veh:SetValue("Damage_Radius_sq_Mult", VZVehicles[veh_name].Damage_Radius_sq_Mult, false)
+    --veh:SetValue("VehHealth", VZVehicles[veh_name].health, true)
+    veh:SetMaxHealth(VZVehicles[veh_name].health)
+    veh:SetHealth(VZVehicles[veh_name].health)
 
     return veh
 end
@@ -43,6 +44,10 @@ if VEHICLES_PADS then
                 end
             end
             if (InteractThing and InteractThing:IsValid() and InteractThing:GetValue("VehiclePad")) then
+                if InteractThing:GetValue("PPG_Sabotaged") then
+                    return
+                end
+
                 local veh_pad_ground = InteractThing:GetValue("GroundPad")
                 if veh_pad_ground then
                     local char = ply:GetControlledCharacter()
@@ -66,7 +71,7 @@ if VEHICLES_PADS then
         end
     end)
 
-    --[[VZ_EVENT_SUBSCRIBE("Vehicle", "TakeDamage", function(veh, damage, bone, dtype, from_direction, instigator, causer)
+    --[[VZ_EVENT_SUBSCRIBE("VehicleWheeled", "TakeDamage", function(veh, damage, bone, dtype, from_direction, instigator, causer)
         print(veh, damage, bone, dtype, from_direction, instigator, causer)
     end)]]--
 
@@ -77,9 +82,10 @@ if VEHICLES_PADS then
 end
 
 VZ_EVENT_SUBSCRIBE("Character", "AttemptEnterVehicle", function(char, veh, seat)
-    if char:GetValue("PlayerDown") then
-        return false
-    end
+    if char:GetValue("PlayerDown") then return false end
+
+    if char:GetValue("ChargingChargerID") then return false end
+
     local picked = char:GetPicked()
     if picked then
         if (picked:IsA(Grenade) or picked:IsA(Melee)) then

@@ -1,0 +1,184 @@
+
+:root {
+    --imposter-show-duration: 1000ms;
+}
+
+@font-face {
+    font-family: "Dirty Ego";
+    src: url("../fonts/DIRTYEGO.woff");
+}
+
+/* Scroll Bar */
+/* width */
+::-webkit-scrollbar {
+    width: 10px;
+}
+  
+/* Track */
+::-webkit-scrollbar-track {
+    background: #f1f1f11f;
+    border-radius: 4px;
+}
+
+/* Handle */
+::-webkit-scrollbar-thumb {
+    background: rgb(255, 72, 0);
+    border-radius: 4px;
+}
+  
+/* Handle on hover */
+::-webkit-scrollbar-thumb:hover {
+    background: rgb(255, 72, 0);
+}
+
+html, body {
+    height: 100%;
+}
+
+html {
+    font-size: medium;
+    font-family: "Dirty Ego";
+    color: white;
+    user-select: none;
+}
+
+body {
+    overflow: hidden;
+}
+
+.hidden {
+    visibility: hidden !important;
+    display: none !important;
+}
+
+#imposter_image_container {
+    position: absolute;
+	top: 50%;
+	left: 50%;
+	transform: translate(-50%, -50%);
+    width: fit-content;
+    height: fit-content;
+}
+
+#ppg_artwork_img {
+    max-width:1024px;
+    max-height:1536px;
+    width: 50%;
+    height: 50%;
+    margin-left:25%;
+}
+
+@keyframes ppg_artwork_disappear {
+    0% {
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+    }
+    100% {
+        top: -50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+    }
+}
+.ppg_artwork_disappear {
+    animation: var(--imposter-show-duration) ease-in-out ppg_artwork_disappear forwards;
+}
+
+#background {
+    background-color: black;
+    position: absolute;
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    top: 0;
+    left: 0;
+    opacity: 1;
+}
+
+
+@keyframes background_to_transparent {
+    0% {
+        opacity: 1;
+    }
+    100% {
+        opacity: 0;
+    }
+}
+.background_to_transparent {
+    animation: var(--imposter-show-duration) ease-in-out background_to_transparent forwards;
+}
+
+
+:root{
+--bg:#0f1724; --card:#0b1220; --accent:#f97316; --muted:#9ca3af; --glass: rgba(255,255,255,0.04); --glass-hover: rgba(255,255,255,0.08); --glass-dead: rgba(255, 0, 0, 0.07); --glass-selected: rgba(255, 255, 0, 0.07);
+--success:#10b981; --danger:#ef4444; --glass-2: rgba(255,255,255,0.03);
+font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+}
+
+/*html,body{height:100%;margin:0;background:linear-gradient(180deg,#071025 0%, #0f1724 100%);color:#e6eef8}*/
+.wrap{max-width:1100px;margin:28px auto;padding:20px;background:linear-gradient(180deg,#071025 0%, #0f1724 100%);color:#e6eef8;border-radius: 20px;
+margin-top: 12%;
+}
+header{display:flex;align-items:center;gap:16px;margin-bottom:18px}
+h1{font-size:20px;margin:0;flex-grow:1}
+.board{display:grid;grid-template-columns:1fr 340px;gap:18px}
+.card{background:linear-gradient(180deg,var(--card), #071021);padding:14px;border-radius:12px;box-shadow:0 6px 22px rgba(2,6,23,0.6);position: relative;};
+
+#ppgvotingclosebtn{background-color:var(--danger); border-radius: 25px; margin-left: auto; width: 18px; height: 100%; padding: 0 0; color: var(--bg)}
+
+/* Players grid */
+.players{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:12px}
+.player{background:var(--glass);border-radius:10px;padding:10px;display:flex;flex-direction:column;align-items:center;gap:8px;position:relative}
+.player .avatar{width:48px;height:48px;border-radius:10px;background:linear-gradient(135deg,var(--accent),#ec4899);display:flex;align-items:center;justify-content:center;font-weight:700}
+.player .name{font-size:14px}
+.player .alive{font-size:12px;color:var(--success)}
+.player.dead .alive{color:var(--danger)}
+.player .voteBadge{position:absolute;top:8px;right:8px;background:var(--glass-2);padding:6px;border-radius:999px;font-size:12px}
+.player.selected{outline:3px solid rgba(249,115,22,0.18)}
+
+
+/* Voting panel */
+.votingPanel{display:flex;flex-direction:column;gap:10px}
+.controls{display:flex;gap:8px;flex-wrap:wrap}
+button{background:transparent;border:1px solid rgba(255,255,255,0.06);padding:8px 10px;border-radius:8px;color:inherit;cursor:pointer}
+.primary{background:linear-gradient(90deg,var(--accent),#ec4899);border:none;color:#06101a}
+.danger{background:var(--danger);border:none}
+.success{background:var(--success);border:none}
+
+
+.status{font-size:13px;color:var(--muted)}
+
+
+.voteList{display:flex;flex-direction:column;gap:6px;max-height:300px;overflow:auto;padding-right:6px}
+.voteItem{display:flex;justify-content:space-between;align-items:center;padding:8px;border-radius:8px;background:rgba(255,255,255,0.02)}
+
+
+.resultArea{margin-top:10px;}
+.bigResult{font-size:18px;font-weight:700}
+
+
+/* Admin area */
+.adminControls{display:flex;flex-direction:column;gap:8px}
+.inputRow{display:flex;gap:8px}
+input[type=text]{flex:1;padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,0.05);background:transparent;color:inherit}
+
+.ppg_voting_player_alive_button:hover {
+    background-color: var(--glass-hover);
+}
+
+.ppg_voting_player_local_selected {
+    background-color: var(--glass-selected);
+}
+
+.ppg_voting_player_dead_button {
+    background-color: var(--glass-dead);
+    cursor: initial;
+}
+
+
+footer{margin-top:12px;color:var(--muted);font-size:13px}
+
+
+/* responsive */
+@media (max-width:880px){.board{grid-template-columns:1fr}}

@@ -48,6 +48,7 @@ html {
     font-size: medium;
     font-family: "Dirty Ego";
     color: white;
+    user-select: none;
 }
 
 body {
@@ -245,18 +246,30 @@ body {
     margin: auto;
     margin-top: 5%;
     background-color: rgba(78, 78, 78, 0.92);
-    border-radius: 30px;
+    border-radius: 10px;
     overflow-x: hidden;
     overflow-y: auto;
     width: 75%;
     height: 65%;
-    text-align: center;
+    display: grid;
+    grid-auto-rows: 1fr 1fr;
+    /*text-align: center;*/
+}
+
+#HTP_close_button {
+    border-radius: 20px;
+    background-color: rgba(128, 128, 128, 0.92);
+    margin-left: auto;
+    font-family: Verdana;
+    height: 40px;
+    margin-right: 5px;
 }
 
 .HTP_title {
-    margin-top: 10px;
+    /*margin-top: 10px;*/
     font-size: 28px;
     font-weight: bold;
+    text-align: center;
 }
 
 .HTP_category_title {
@@ -264,6 +277,7 @@ body {
     font-size: 26px;
     font-weight: bold;
     color: rgb(12, 175, 12);
+    text-align: center;
 }
 
 .HTP_text {
@@ -359,133 +373,6 @@ body {
 }
 .voip_disappear_anim {
     animation: 700ms running voip_disappear;
-}
-
-.Frame_Container {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%,-50%);
-    background-color: rgba(51, 34, 34, 0.95);
-    text-align: center;
-    border-radius: 10px;
-    overflow-x: hidden;
-    overflow-y: auto;
-}
-
-.Frame_Header {
-    width: 100%;
-    height: 50px;
-    font-size: 50px;
-    text-shadow: 1px 1px 2px black;
-    border-bottom: 1px solid black;
-}
-
-.Tabs_Header {
-    width: 100%;
-    height: 35px;
-    font-size: 35px;
-    border-bottom: 1px dashed rgb(151, 141, 130);
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(50px, 1fr));
-    overflow-x: auto;
-    overflow-y: hidden;
-}
-
-button {
-    border: none;
-    font-size: 30px;
-    font-family: "Dirty Ego";
-    text-decoration: none;
-    color: white;
-    background-color: rgba(41, 35, 35, 0.92);
-}
-
-button:hover {
-    background-color: rgba(14, 4, 71, 0.3);
-    cursor: pointer;
-}
-
-.FrameTab {
-    width: 100%;
-    height: 100%;
-}
-
-.FTSelectedTab {
-    background-color: rgba(37, 41, 6, 0.92);
-}
-
-.Items_Container {
-    width: 100%;
-}
-
-.Item_Container {
-    width: 100%;
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(50%, 1fr));
-    height: 35px;
-    border-bottom: 1px solid rgb(110, 110, 110);
-}
-
-.Item_Text {
-    height: 100%;
-    text-align: center;
-    font-family: Verdana;
-    font-size: 20px;
-    border-right: 1px solid rgb(255, 255, 255);
-}
-
-.Item_Checkbox {
-    margin-top: 5px;
-    margin-bottom: 5px;
-}
-
-.Item_TextInput {
-    text-align: center;
-    width: 70%;
-    height: 70%;
-    margin-top: 3px;
-    margin-left: 15%;
-    border-radius: 5px;
-}
-
-.Item_Select {
-    text-align: center;
-    width: 72%;
-    height: 80%;
-    margin-left: 15%;
-    margin-top: 3px;
-    border-radius: 5px;
-}
-
-.Item_Button {
-    text-align: center;
-    width: 72%;
-    height: 80%;
-    margin-top: 4px;
-    margin-left: 15%;
-    border-radius: 5px;
-    font-family: Helvetica;
-    font-size: 22px;
-}
-.Item_Button:active {
-    background-color: rgba(37, 41, 6, 0.92);
-}
-
-.Item_Text_Solo {
-    font-size: 25px;
-    font-family: Helvetica;
-    padding-top: 3px;
-    padding-bottom: 3px;
-    /*height: 35px;*/
-}
-
-.Item_Text_Solo_Bottom {
-    border-bottom: 1px solid rgb(110, 110, 110);
-}
-
-.Item_Image {
-    margin-top: 3px;
 }
 
 .lvls_container {

@@ -209,13 +209,17 @@ end)
 
 VZ_EVENT_SUBSCRIBE_REMOTE("BuyWunderfizz", function(ply, SM_Wunder)
     if (SM_Wunder and SM_Wunder:IsValid()) then
+        if SM_Wunder:GetValue("PPG_Sabotaged") then
+            return
+        end
+
         if ply:GetValue("ZMoney") ~= -666 then
             local char = ply:GetControlledCharacter()
             if char then
                 if not char:GetValue("PlayerDown") then
                     local can_buy_wunder = SM_Wunder:GetValue("CanBuyWunder")
                     if can_buy_wunder then
-                        if Active_Wunderfizz_ID then
+                        if Active_Wunderfizz_ID and SM_Wunderfizzes[Active_Wunderfizz_ID] and SM_Wunderfizzes[Active_Wunderfizz_ID].body == SM_Wunder then
                             if table_count(char:GetValue("OwnedPerks")) < table_count(PERKS_CONFIG) then
                                 if Buy(ply, Wonderfizz_Price) then
                                     OpenActiveWunderfizz(char)

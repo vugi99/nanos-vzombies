@@ -42,18 +42,22 @@ Playing_LowHealth_Sound = false
 
 function PlayVZSound(data_tbl, loc)
     if data_tbl then
+        local _3D_Sound
         if data_tbl.basic_sound_tbl then
             if data_tbl.basic_sound_tbl.falloff_distance then
-                local _3D_Sound = Sound(
-                    loc,
+                _3D_Sound = Sound(
+                    loc or Vector(),
                     data_tbl.basic_sound_tbl.asset,
                     false,
-                    true,
+                    not IsValid(data_tbl.attachto),
                     SoundType.SFX,
                     data_tbl.basic_sound_tbl.volume,
                     1,
                     data_tbl.basic_sound_tbl.radius,
-                    data_tbl.basic_sound_tbl.falloff_distance
+                    data_tbl.basic_sound_tbl.falloff_distance,
+                    data_tbl.basic_sound_tbl.attenuation_function or 0,
+                    false,
+                    data_tbl.basic_sound_tbl.loop_mode or 0
                 )
             else
                 local _2D_Sound = Sound(
@@ -76,16 +80,19 @@ function PlayVZSound(data_tbl, loc)
             end
 
             if data_tbl.random_sound_tbl.falloff_distance then
-                local _3D_Sound = Sound(
-                    loc,
+                _3D_Sound = Sound(
+                    loc or Vector(),
                     sound_asset_to_play,
                     false,
-                    true,
+                    not IsValid(data_tbl.attachto),
                     SoundType.SFX,
                     data_tbl.random_sound_tbl.volume,
                     1,
                     data_tbl.random_sound_tbl.radius,
-                    data_tbl.random_sound_tbl.falloff_distance
+                    data_tbl.random_sound_tbl.falloff_distance,
+                    data_tbl.random_sound_tbl.attenuation_function or 0,
+                    false,
+                    data_tbl.random_sound_tbl.loop_mode or 0
                 )
             else
                 local _2D_Sound = Sound(
@@ -98,10 +105,17 @@ function PlayVZSound(data_tbl, loc)
                 )
             end
         end
+
+        if IsValid(_3D_Sound) and IsValid(data_tbl.attachto) then
+            _3D_Sound:AttachTo(data_tbl.attachto, AttachmentRule.SnapToTarget, "", 0)
+        end
+
+        return _3D_Sound
     end
 end
 VZ_EVENT_SUBSCRIBE("Events", "PlayVZSound", PlayVZSound)
 VZ_EVENT_SUBSCRIBE_REMOTE("PlayVZSound", PlayVZSound)
+Package.Export("PlayVZSound", PlayVZSound)
 
 function LastStandExitSound()
     local down_exit = Sound(
@@ -557,5 +571,35 @@ end)
 VZ_EVENT_SUBSCRIBE_REMOTE("JokerZombieSound", function(char)
     if char:IsValid() then
         PlayVZSound({random_sound_tbl=RANDOM_SOUNDS.zombie_death}, char:GetLocation())
+    end
+end)
+
+VZ_EVENT_SUBSCRIBE("StaticMesh", "ValueChange", function(sm, key, value)
+    if not sm:GetValue("MapChargerID") then return end
+    if key == "Charging" then
+        if value then
+            PlayVZSound({basic_sound_tbl=VZ_GetFeatureValue("Chargers", "charger_start_sound")}, sm:GetLocation() + Vector(0, 0, 100))
+
+            local looping_activation_sound = sm:GetValue("LoopingActivationSound")
+            if IsValid(looping_activation_sound) then
+                looping_activation_sound:Destroy()
+            end
+
+            sm:SetValue("LoopingActivationSound", PlayVZSound({basic_sound_tbl=VZ_GetFeatureValue("Chargers", "charger_charging_loop_sound"), attachto=sm}))
+        else
+            local looping_activation_sound = sm:GetValue("LoopingActivationSound")
+            if IsValid(looping_activation_sound) then
+                looping_activation_sound:Destroy()
+            end
+            sm:SetValue("LoopingActivationSound", nil)
+
+            if not sm:GetValue("Charged") then
+                PlayVZSound({basic_sound_tbl=VZ_GetFeatureValue("Chargers", "charger_fail_sound")}, sm:GetLocation() + Vector(0, 0, 100))
+            end
+        end
+    elseif key == "Charged" then
+        if value then
+            PlayVZSound({basic_sound_tbl=VZ_GetFeatureValue("Chargers", "charger_success_sound")}, sm:GetLocation() + Vector(0, 0, 100))
+        end
     end
 end)

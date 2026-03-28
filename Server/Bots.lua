@@ -81,6 +81,54 @@ function VZBot.prototype:SetVOIPSetting(setting)
     end
 end
 
+function VZBot.prototype:SetVOIPLocalSetting(setting)
+    if self:IsValid(true) then
+        return true
+    end
+end
+
+function VZBot.prototype:SetVOIPLocalVolume(vol)
+    if self:IsValid(true) then
+        return true
+    end
+end
+
+function VZBot.prototype:SetVOIPMuted(muted)
+    if self:IsValid(true) then
+        return true
+    end
+end
+
+function VZBot.prototype:SetVOIPGlobalVolume(vol)
+    if self:IsValid(true) then
+        return true
+    end
+end
+
+function VZBot.prototype:SetVOIPGlobalLowPassFilter(lp)
+    if self:IsValid(true) then
+        return true
+    end
+end
+
+function VZBot.prototype:SetVOIPGlobalHighPassFilter(hp)
+    if self:IsValid(true) then
+        return true
+    end
+end
+
+function VZBot.prototype:SetVOIPGlobalChannelSetting(channel, setting)
+    if self:IsValid(true) then
+        return true
+    end
+end
+
+function VZBot.prototype:SetVOIPGlobalAllChannelsSetting(setting)
+    if self:IsValid(true) then
+        return true
+    end
+end
+
 function VZBotJoin()
     local Bot = setmetatable({}, VZBot.prototype)
 
@@ -352,10 +400,10 @@ function BotMoveComplete(char, success, prereach)
                         if v.SM_Powerup:IsValid() then
                             local id = v.SM_Powerup:GetValue("GrabPowerup")
                             local p_name = v.powerup_name
-                            Events.Call("VZ_PowerupGrabbed", char, id, p_name)
+                            VZ_EVENT_CALL("Events", "VZ_PowerupGrabbed", char, id, p_name)
                             DestroyPowerup(v)
                             PowerupGrabbed(v.powerup_name, char)
-                            Events.Call("VZ_PowerupGrabbed_AfterDestroy", char, id, p_name)
+                            VZ_EVENT_CALL("Events", "VZ_PowerupGrabbed_AfterDestroy", char, id, p_name)
                         end
                         POWERUPS_PICKUPS[k] = nil
                     end
@@ -380,7 +428,7 @@ function BotMoveComplete(char, success, prereach)
                     if (action[2] and action[2]:IsValid()) then
                         local door_id = action[2]:GetValue("DoorID")
                         if door_id then
-                            BuyDoor(bot, door_id)
+                            BuyDoor(bot, action[2])
                         end
                     end
                 elseif action[1] == "REVIVE" then
@@ -505,9 +553,9 @@ function BOTShootIntervalFunc(char)
                                     inaccurate_loc.Z = inaccurate_loc.Z + Bots_Shoot_Inaccuracy_Each_Distance_Unit * dist * rand_z
                                     char:LookAt(inaccurate_loc)
                                     weapon:PullUse(0)
-                                    --print(weapon:GetAmmoClip())
+                                    --print(weapon:GetAmmoClip(), weapon:GetAmmoBag())
                                     -- 8, 8, 7, 6, ..., 1 ?
-                                    if (weapon:GetAmmoClip() == 1) then
+                                    if (weapon:GetAmmoClip() <= 1) then
                                         -- Fake Reload
                                     --[[local clip_capacity = weapon:GetClipCapacity()
                                         if weapon:GetAmmoBag() < clip_capacity then
@@ -516,12 +564,14 @@ function BOTShootIntervalFunc(char)
                                         weapon:SetAmmoClip(clip_capacity)
                                         weapon:SetAmmoBag(weapon:GetAmmoBag() - clip_capacity)]]--
 
-                                        if ZDEV_IsModeEnabled("ZDEV_DEBUG_BOTS_SHOOT") then
-                                            print("Bot " .. tostring(char:GetPlayer().ID) .. " Reload")
-                                        end
+                                        if weapon:GetAmmoBag() > 0 then -- Prevent BOTReloading state from locking this func because never reloaded
+                                            if ZDEV_IsModeEnabled("ZDEV_DEBUG_BOTS_SHOOT") then
+                                                print("Bot " .. tostring(char:GetPlayer().ID) .. " Reload")
+                                            end
 
-                                        weapon:Reload()
-                                        char:SetValue("BOTReloading", true, false)
+                                            weapon:Reload()
+                                            char:SetValue("BOTReloading", true, false)
+                                        end
                                     end
                                     return
                                 end
@@ -544,6 +594,28 @@ function BOTShootIntervalFunc(char)
     end
 end
 
+function BotCreateShootInterval(char)
+    if ZDEV_IsModeEnabled("ZDEV_DEBUG_BOTS_SHOOT") then
+        if IsValid(char) then
+            local ply = char:GetPlayer()
+            if IsValid(ply) then
+                print("BotCreateShootInterval " .. ply.ID)
+            end
+        end
+    end
+
+    local weapon = char:GetPicked()
+    if not IsValid(weapon) then return end
+    if char:GetValue("BOTShootInterval") then
+        if Timer.IsValid(char:GetValue("BOTShootInterval")) then
+            Timer.ClearInterval(char:GetValue("BOTShootInterval"))
+        end
+    end
+
+    char:SetValue("BOTShootInterval", Timer.SetInterval(BOTShootIntervalFunc,  weapon:GetCadence() * 1000, char), false)
+    BOTShootIntervalFunc(char)
+end
+
 VZ_EVENT_SUBSCRIBE_REMOTE("NewBotTargets", function(ply, bot_id, targets_chars)
     --print("NewBotTargets")
     local Bot = GetBotFromNanosBotID(bot_id)
@@ -551,6 +623,10 @@ VZ_EVENT_SUBSCRIBE_REMOTE("NewBotTargets", function(ply, bot_id, targets_chars)
         local BotAimPlayer = Bot:GetValue("BotAimPlayer")
         if BotAimPlayer then
             if BotAimPlayer == ply:GetID() then
+                if ZDEV_IsModeEnabled("ZDEV_DEBUG_BOTS_SHOOT") then
+                    print("#NewBotTargets for " .. Bot.ID, table_count(targets_chars or {}))
+                end
+
                 local targets_checked = {}
                 for i, v in ipairs(targets_chars) do
                     if (v and v:IsValid() and v:GetHealth() > 0) then
@@ -573,8 +649,7 @@ VZ_EVENT_SUBSCRIBE_REMOTE("NewBotTargets", function(ply, bot_id, targets_chars)
                                             if ZDEV_IsModeEnabled("ZDEV_DEBUG_BOTS_SHOOT") then
                                                 print("Bot " .. tostring(Bot.ID) .. " Started shooting")
                                             end
-                                            char:SetValue("BOTShootInterval", Timer.SetInterval(BOTShootIntervalFunc,  weapon:GetCadence() * 1000, char), false)
-                                            BOTShootIntervalFunc(char)
+                                            BotCreateShootInterval(char)
                                         end
                                     end
                                 else
@@ -595,7 +670,7 @@ VZ_EVENT_SUBSCRIBE("Weapon", "Reload", function(weapon, char, ammo_to_reload)
         if (ply and ply.BOT) then
             char:SetValue("BOTReloading", nil, false)
             if ZDEV_IsModeEnabled("ZDEV_DEBUG_BOTS_SHOOT") then
-                print("Bot " .. tostring(ply.ID) .. " Reloaded")
+                print("Bot " .. tostring(ply.ID) .. " Reloaded " .. tostring(weapon:GetAmmoClip()) .. " / " .. tostring(weapon:GetAmmoBag()))
             end
             --print(weapon:GetAmmoBag())
         end
@@ -699,7 +774,75 @@ if Bots_Enabled then
                 end
             end
         end
-    end, Bots_Smart_Reload_Check_Interval_ms)
+    end, Bots_Smart_Weapon_Switch_Interval_ms)
+end
+
+function BotWeaponSwitch(char, inv_weap)
+    EquipSlot(char, inv_weap.slot)
+    char:SetValue("BOTReloading", nil, false)
+    if char:GetValue("BOTShootInterval") then
+        BotCreateShootInterval(char)
+    end
+end
+
+-- Switch weapon when no ammo
+VZ_EVENT_SUBSCRIBE("Character", "Fire", function(char, weapon)
+    if not IsValid(char) then return end
+    if Bots_No_Ammo_Switch_Weapon then
+        local ply = char:GetPlayer()
+        if IsValid(ply) then
+            if IsValid(weapon) then
+                if ply.BOT then
+                    if (not char:IsInRagdollMode() and not char:GetValue("PlayerDown")) then
+                        if weapon:IsA(Melee) or weapon:IsA(Grenade) then return end
+                        if weapon:GetAmmoClip() == 0 and weapon:GetAmmoBag() == 0 then
+                            local charInvID = GetCharacterInventory(char)
+                            if charInvID then
+                                local best_inv_weapon, best_inv_weapon_rank = GetBestInvWeapon(PlayersCharactersWeapons[charInvID], true, true)
+                                if best_inv_weapon then
+                                    BotWeaponSwitch(char, best_inv_weapon)
+
+                                    if ZDEV_IsModeEnabled("ZDEV_DEBUG_BOTS_SHOOT") then
+                                        print("Bot " .. tostring(ply.ID) .. " Switch weapon to " .. tostring(best_inv_weapon.weapon_name) .. " (No ammo in current)")
+                                    end
+                                end
+                            end
+                        end
+                    end
+                end
+            end
+        end
+    end
+end)
+
+-- Smart weapon switch
+if Bots_Enabled then
+    Timer.SetInterval(function()
+        for k, v in pairs(Character.GetPairs()) do
+            if v:IsValid() then
+                local ply = v:GetPlayer()
+                if (ply and ply.BOT) then
+                    if (not v:IsInRagdollMode() and not v:GetValue("PlayerDown")) then
+                        local weapon = v:GetPicked()
+                        if weapon then
+                            local charInvID = GetCharacterInventory(v)
+                            if charInvID then
+                                local cur_slot = PlayersCharactersWeapons[charInvID].selected_slot
+                                local best_inv_weapon, best_inv_weapon_rank = GetBestInvWeapon(PlayersCharactersWeapons[charInvID], nil, true)
+                                if best_inv_weapon and best_inv_weapon.slot ~= cur_slot then
+                                    BotWeaponSwitch(v, best_inv_weapon)
+
+                                    if ZDEV_IsModeEnabled("ZDEV_DEBUG_BOTS_SHOOT") then
+                                        print("Bot " .. tostring(ply.ID) .. " Smart switch weapon to " .. tostring(best_inv_weapon.weapon_name))
+                                    end
+                                end
+                            end
+                        end
+                    end
+                end
+            end
+        end
+    end, Bots_Smart_Weapon_Switch_Interval_ms)
 end
 
 VZ_EVENT_SUBSCRIBE_REMOTE("BotOrder", function(ply, char, order, moveto_location)

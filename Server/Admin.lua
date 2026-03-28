@@ -7,8 +7,18 @@ VZA_MutedVOIPPlayers = {}
 VZ_EVENT_SUBSCRIBE_REMOTE("VZAM_SkipRound", function(ply)
     if VZ_IsAdmin(ply) then
         REMAINING_ENEMIES_TO_SPAWN = 0
+
+        local killed
+
         for k, v in pairs(GetEnemiesCharsCopy()) do
-            v:SetHealth(0)
+            if IsValid(v) then
+                v:SetHealth(0)
+                killed = true
+            end
+        end
+
+        if not killed then
+            CheckRoundFinished()
         end
     end
 end)
@@ -44,7 +54,8 @@ end)
 VZ_EVENT_SUBSCRIBE_REMOTE("VZAM_MuteVOIP", function(ply, a_target_ply)
     if (a_target_ply and a_target_ply:IsValid()) then
         if VZ_IsAdmin(ply) then
-            a_target_ply:SetVOIPSetting(VOIPSetting.Muted)
+            --a_target_ply:SetVOIPSetting(VOIPSetting.Muted)
+            a_target_ply:SetVOIPMuted(true)
             VZA_MutedVOIPPlayers[a_target_ply:GetSteamID()] = true
         end
     end
@@ -67,8 +78,9 @@ VZ_EVENT_SUBSCRIBE_REMOTE("VZAM_UnMuteVOIP", function(ply, a_target_ply)
                 VZA_MutedVOIPPlayers[a_target_ply:GetSteamID()] = nil
                 local char = a_target_ply:GetControlledCharacter()
                 if char then
-                    a_target_ply:SetVOIPSetting(Player_VOIP_Setting_Alive)
+                    --a_target_ply:SetVOIPLocalSetting(Player_Local_VOIP_Setting_Alive)
                 end
+                a_target_ply:SetVOIPMuted(false)
             end
         end
     end

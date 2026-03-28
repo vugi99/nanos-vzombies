@@ -37,7 +37,7 @@ function BuyTeleport(ply, teleporter)
         if teleporter:GetValue("CanTeleport") then
             local char = ply:GetControlledCharacter()
             if char then
-                if (not char:GetValue("PlayerDown") and not char:GetVehicle()) then
+                if ((not char:GetValue("PlayerDown")) and (not char:GetVehicle()) and (not char:GetValue("ChargingChargerID"))) then
                     local teleporter_ID = teleporter:GetValue("TeleporterID")
                     if (MAP_TELEPORTERS[teleporter_ID].bots_allowed or not ply.BOT) then
                         if Buy(ply, MAP_TELEPORTERS[teleporter_ID].price) then
@@ -54,7 +54,7 @@ function BuyTeleport(ply, teleporter)
                                     if (MAP_TELEPORTERS[teleporter_ID].bots_allowed or not v.BOT) then
                                         local _char = v:GetControlledCharacter()
                                         if _char then
-                                            if not _char:GetVehicle() then
+                                            if (not _char:GetVehicle()) and (not _char:GetValue("ChargingChargerID")) then
                                                 if in_tbl < Destination_Spawns_Count then
                                                     table.insert(teleport_table, v)
                                                     in_tbl = in_tbl + 1
@@ -68,11 +68,16 @@ function BuyTeleport(ply, teleporter)
                                 return
                             end
 
+                            local tp_setnotarget = MAP_TELEPORTERS[teleporter_ID].set_no_target
+
                             for i, v in ipairs(teleport_table) do
                                 local char_to_tp = v:GetControlledCharacter()
                                 char_to_tp:SetLocation(MAP_TELEPORTERS[teleporter_ID].teleport_to[i].location + Vector(0, 0, 100))
                                 char_to_tp:SetRotation(MAP_TELEPORTERS[teleporter_ID].teleport_to[i].rotation)
                                 v:SetCameraRotation(MAP_TELEPORTERS[teleporter_ID].teleport_to[i].rotation)
+                                if type(tp_setnotarget) == "boolean" then
+                                    SetCharacterNotTargeted(char_to_tp, tp_setnotarget)
+                                end
 
 
                                 Events.CallRemote("PlayVZSound", v, {basic_sound_tbl=Player_Teleport_Sound})
@@ -94,6 +99,9 @@ function BuyTeleport(ply, teleporter)
                                                     char_to_tp:SetLocation(MAP_TELEPORTERS[teleporter_ID].teleport_back[i].location + Vector(0, 0, 100))
                                                     char_to_tp:SetRotation(MAP_TELEPORTERS[teleporter_ID].teleport_back[i].rotation)
                                                     v:SetCameraRotation(MAP_TELEPORTERS[teleporter_ID].teleport_back[i].rotation)
+                                                    if tp_setnotarget == true then
+                                                        SetCharacterNotTargeted(char_to_tp, false)
+                                                    end
 
                                                     Events.CallRemote("PlayVZSound", v, {basic_sound_tbl=Player_Teleport_Sound})
                                                 end

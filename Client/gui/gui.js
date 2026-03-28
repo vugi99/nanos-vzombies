@@ -192,7 +192,7 @@ Events.Subscribe("RemovePowerup", function(powerup_src) {
 const tab_container = document.getElementById("tab_container");
 const tab_top = document.getElementById("tab_top");
 
-Events.Subscribe("ShowTab", function(players) {
+Events.Subscribe("ShowTab", function(players, id_line_highlight) {
     players = JSON.parse(players);
     for (let i = 0; i < players.length; i++) {
         let div_line = document.createElement("div");
@@ -202,6 +202,10 @@ Events.Subscribe("ShowTab", function(players) {
             if (players[i][i2] != "nil") {
                 let div_item = document.createElement("div");
                 div_item.classList.add("tab_item");
+                if (i+1 == id_line_highlight) {
+                    div_item.style.color = "yellow";
+                }
+
                 div_item.innerText = players[i][i2];
 
                 div_line.appendChild(div_item);
@@ -252,6 +256,14 @@ Events.Subscribe("ShowHTPFrame", function() {
 Events.Subscribe("HideHTPFrame", function() {
     htp_frame.classList.add("hidden");
 })
+
+const htp_close_btn = document.getElementById("HTP_close_button");
+
+htp_close_btn.addEventListener("click", function() {
+    htp_frame.classList.add("hidden");
+    Events.Call("HTPCloseButtonPressed")
+})
+
 
 const hBar = document.getElementById("health-bar-container"),
     bar = document.getElementById("health-bar"),
@@ -407,6 +419,16 @@ Events.Subscribe("HelpMenuDefaultKeys", function(tbl) {
         dk_div.innerText = "- " + tbl[i][1] + " : " + tbl[i][0]
 
         Help_Default_Keys_container.appendChild(dk_div)
+    }
+})
+
+const htp_content_container = document.getElementById("HTP_content_container")
+
+Events.Subscribe("HelpAddInnerHTML", function(appended, top) {
+    if (top) {
+        htp_content_container.innerHTML = appended + htp_content_container.innerHTML;
+    } else {
+        htp_content_container.innerHTML = htp_content_container.innerHTML + appended;
     }
 })
 
@@ -600,7 +622,8 @@ setTimeout(() => {  testFuncs.UpdateGUIHealth(100, 20); }, 2000);
 setTimeout(() => {  testFuncs.UpdateGUIHealth(100, 100); }, 4000);*/
 
 
-//testFuncs.ShowHTPFrame()
+/*testFuncs.ShowHTPFrame()
+testFuncs.HelpAddInnerHTML(`<div class="HTP_title">How to play PumpongUs</div>\n`, true)*/
 
 /*testFuncs.AddPowerup("images/instakill_icon.png")
 testFuncs.AddPowerup("images/x2_icon.png")

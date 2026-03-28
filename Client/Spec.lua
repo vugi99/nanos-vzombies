@@ -54,34 +54,40 @@ function SpectatePlayer(to_spec)
         Spectating_Player = to_spec
 
         local char = Spectating_Player:GetControlledCharacter()
-        local picked = char:GetPicked()
-        if picked then
-            NeedToUpdateAmmoText(char, picked)
-            SetWeaponNameText(picked:GetValue("WeaponName"))
+        if IsValid(char) then
+            local picked = char:GetPicked()
+            if picked then
+                NeedToUpdateAmmoText(char, picked)
+                SetWeaponNameText(picked:GetValue("WeaponName"))
 
-            if picked:GetValue("PAPRepackEffect") then
-                local config = PAP_Repack_Config[picked:GetValue("PAPRepackEffect")]
-                if (config and config.icon) then
-                    GUI:CallEvent("ShowRepackIcon", config.icon)
+                if picked:GetValue("PAPRepackEffect") then
+                    local config = PAP_Repack_Config[picked:GetValue("PAPRepackEffect")]
+                    if (config and config.icon) then
+                        GUI:CallEvent("ShowRepackIcon", config.icon)
+                    else
+                        GUI:CallEvent("ShowRepackIcon")
+                    end
                 else
                     GUI:CallEvent("ShowRepackIcon")
                 end
-            else
-                GUI:CallEvent("ShowRepackIcon")
             end
-        end
 
-        One_Time_Updates_Canvas:Repaint()
+            One_Time_Updates_Canvas:Repaint()
 
-        if char:GetValue("ZGrenadesNB") then
-            UpdateGrenadesNB(char:GetValue("ZGrenadesNB"))
+            if char:GetValue("ZGrenadesNB") then
+                UpdateGrenadesNB(char:GetValue("ZGrenadesNB"))
+            else
+                UpdateGrenadesNB(0)
+            end
+
+            CurPerks = char:GetValue("OwnedPerks")
+            for k, v in pairs(CurPerks or {}) do
+                GUINewPerk(k)
+            end
+
+            UpdateHealth(char, char:GetHealth())
         else
-            UpdateGrenadesNB(0)
-        end
-
-        CurPerks = char:GetValue("OwnedPerks")
-        for k, v in pairs(CurPerks) do
-            GUINewPerk(k)
+            One_Time_Updates_Canvas:Repaint()
         end
     end
 end
@@ -97,6 +103,8 @@ function StopSpectate()
 
     CurPerks = {}
     GUI:CallEvent("ResetPerks")
+
+    UpdateHealth()
 end
 
 VZ_EVENT_SUBSCRIBE("Player", "Possess", function(ply, char)

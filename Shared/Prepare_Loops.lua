@@ -3,6 +3,9 @@
 PreparedLoops = {}
 
 function RegisterPreparedLoop(key, class, looking_for_value)
+    if PreparedLoops[key] then
+        error("Key " .. tostring(key) .. " already exists in PreparedLoops table")
+    end
     PreparedLoops[key] = {}
     for k, v in pairs(class.GetPairs()) do
         if v:GetValue(looking_for_value) then

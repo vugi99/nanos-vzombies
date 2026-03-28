@@ -19,7 +19,7 @@ end
 
 if Parse_Custom_Settings then
     if Server then
-        --print(NanosUtils.Dump(Server.GetCustomSettings()))
+        --print(NanosTable.Dump(Server.GetCustomSettings()))
         ApplyCustomSettings(Server.GetCustomSettings())
     end
 end
@@ -38,7 +38,7 @@ if VZ_GAMEMODES_CONFIG[VZ_SELECTED_GAMEMODE].Powerups_Overwrite then
 end
 
 Package.Subscribe("Load", function()
-    --print(NanosUtils.Dump(Assets.GetAssetPacks()))
+    --print(NanosTable.Dump(Assets.GetAssetPacks()))
 
     for i, v in ipairs(Assets.GetAssetPacks()) do
         if v.Path == "vzombies-survivors-assets" then
@@ -141,6 +141,8 @@ Package.Subscribe("Load", function()
                     end
                 end
             end
+
+            Console.Error("The waves config is missing for zombie-pack-v1, maybe you can repair it now")
 
             Console.Log("zombie-pack-v1 Zombies loaded")
         end

@@ -1,9 +1,4 @@
 
-local _Weapons_Names = {}
-
-for k, v in pairs(NanosWorldWeapons) do
-    table.insert(_Weapons_Names, k)
-end
 
 VZ_EVENT_SUBSCRIBE_REMOTE("VZMM_GodMode", function(ply, enable)
     ply:SetValue("MM_GodMode", enable, false)
@@ -25,6 +20,12 @@ VZ_EVENT_SUBSCRIBE_REMOTE("VZMM_Noclip", function(ply)
 end)
 
 VZ_EVENT_SUBSCRIBE("Events", "VZ_PlayerJoined", function(ply)
+    local _Weapons_Names = {}
+
+    for k, v in pairs(NanosWorldWeapons) do
+        table.insert(_Weapons_Names, k)
+    end
+
     Events.CallRemote("Send_Weapons_Names", ply, _Weapons_Names)
     ply:SetValue("MM_GodMode", true, false)
     ply:SetValue("MM_InfMoney", true, false)
@@ -106,14 +107,14 @@ VZ_EVENT_SUBSCRIBE_REMOTE("VZMM_SetRound", function(ply, r_nb)
         REMAINING_ENEMIES_TO_SPAWN = 0
         local killed
         for k, v in pairs(GetEnemiesCharsCopy()) do
-            v:SetHealth(0)
-            killed = true
+            if IsValid(v) then
+                v:SetHealth(0)
+                killed = true
+            end
         end
 
         if not killed then
-            if (table_count(ENEMY_CHARACTERS) == 0 and REMAINING_ENEMIES_TO_SPAWN == 0 and not WaitingNewRound_Timer) then
-                RoundFinished()
-            end
+            CheckRoundFinished()
         end
     end
 end)
@@ -156,7 +157,7 @@ VZ_EVENT_SUBSCRIBE_REMOTE("VZMM_OpenAllDoors", function(ply)
                 end
 
                 if required_rooms_good then
-                    _opened_door = _opened_door or OpenMapDoor(i)
+                    _opened_door = _opened_door or OpenMapDoor(ply, i)
                 end
             end
         end
@@ -192,6 +193,23 @@ VZ_EVENT_SUBSCRIBE_REMOTE("VZMM_SpawnVehicle", function(ply, selected)
                     end
                 end
             end
+        end
+    end
+end)
+
+VZ_EVENT_SUBSCRIBE_REMOTE("VZMM_DontTarget", function(ply, enable)
+    ply:SetValue("MM_EnemiesDontTarget", enable, false)
+    local char = ply:GetControlledCharacter()
+    if IsValid(char) then
+        SetCharacterNotTargeted(char, enable)
+    end
+end)
+
+VZ_EVENT_SUBSCRIBE("Events", "VZ_PlayerCharacterSpawned", function(char)
+    local ply = char:GetPlayer()
+    if IsValid(ply) then
+        if ply:GetValue("MM_EnemiesDontTarget") then
+            SetCharacterNotTargeted(char, true)
         end
     end
 end)

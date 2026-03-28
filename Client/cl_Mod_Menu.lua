@@ -59,6 +59,10 @@ AddTabCheckbox("Mod_Menu", "Enemies", "Highlight Enemies", function(checked)
     end
 end, false, false)
 
+AddTabCheckbox("Mod_Menu", "Enemies", "Don't Target Player", function(checked)
+    Events.CallRemote("VZMM_DontTarget", checked)
+end, false, false)
+
 AddTabCheckbox("Mod_Menu", "Player", "Infinite Grenades", function(checked)
     Events.CallRemote("VZMM_InfGrenades", checked)
 end, false, false)

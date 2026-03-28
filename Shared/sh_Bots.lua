@@ -138,3 +138,31 @@ VZ_EVENT_SUBSCRIBE("Character", "Destroy", function(char)
         end
     end
 end)
+
+
+function GetWeaponRank(weapon_name)
+    for i, v in ipairs(Bots_Weapons_Ranks) do
+        if v == weapon_name then
+            return i
+        end
+    end
+    return 0
+end
+
+function GetBestInvWeapon(bot_inv, ignore_equipped, ignore_empty_weaps)
+    local Best_Inv_Weapon
+    local Best_Inv_Weapon_Rank = 0
+    for k, v in pairs(bot_inv.weapons) do
+        if (not ignore_equipped) or ((not v.weapon) and (v.slot ~= bot_inv.selected_slot)) then
+            if (not ignore_empty_weaps) or ((not v.ammo_bag) or (v.ammo_bag > 0) or ((v.ammo_clip or 0) > 0)) then
+                local rank = GetWeaponRank(v.weapon_name)
+                if rank > Best_Inv_Weapon_Rank then
+                    Best_Inv_Weapon_Rank = rank
+                    Best_Inv_Weapon = v
+                end
+            end
+        end
+    end
+
+    return Best_Inv_Weapon, Best_Inv_Weapon_Rank
+end

@@ -1,7 +1,6 @@
 
 
 Package.Require("Config/Money_Config.lua")
-Package.Require("Config/Rounds_Config.lua")
 Package.Require("Config/Custom_Weapons_Config.lua")
 Package.Require("Config/Mapvote_Config.lua")
 

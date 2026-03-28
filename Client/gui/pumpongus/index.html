@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, shrink-to-fit=no">
+    <link href="./style.css" rel="stylesheet">
+</head>
+
+<body>
+
+    <div id="background" class="hidden"></div>
+
+    <div id="imposter_image_container" class="hidden">
+        <img src="./images/Pumpongus_Artwork.jpg"
+        alt="Imposter Artwork" id="ppg_artwork_img"/>
+    </div>
+
+
+    <div class="wrap hidden" id="VotingWrap">
+        <header>
+            <h1>PumpongUs Voting UI</h1>
+            <!--<div class="status">Modulaire • Pur HTML/CSS/JS • Accessible depuis la console</div>-->
+
+            <button id="ppgvotingclosebtn">X</button>
+        </header>
+
+
+        <div class="board">
+            <section class="card">
+            <h2 style="margin-top:0">Players</h2>
+            <div id="playersGrid" class="players" aria-live="polite"></div>
+            </section>
+
+
+            <aside class="card">
+            <div class="votingPanel">
+            
+            <div class="controls">
+                <!--<button id="startBtn" class="primary">Start vote</button>
+                <button id="endBtn">Finish</button>
+                <button id="resetBtn">Reset</button>-->
+                <button id="skipBtn">Skip Vote</button>
+            </div>
+            
+
+
+            <div class="voteInfo">
+                <div id="phase" class="status">Phase : <span id="phaseText">Discuss</span></div>
+                <div id="timer" class="status">Time left : <span id="timerText">—</span></div>
+            </div>
+
+
+            <div style="margin-top:8px">
+                <strong>Votes</strong>
+                <div id="voteList" class="voteList"></div>
+            </div>
+
+
+            <div class="resultArea">
+                <div class="bigResult" id="resultText">No result yet</div>
+            </div>
+
+
+            <hr style="opacity:0.06;margin:8px 0">
+
+            <!--
+            <div class="adminControls">
+            <div style="font-size:13px;color:var(--muted)">Ajouter un joueur</div>
+            <div class="inputRow">
+            <input id="newName" type="text" placeholder="Nom du joueur" />
+            <button id="addPlayerBtn">Ajouter</button>
+            </div>
+            </div>
+            </div>-->
+            </aside>
+            
+        </div>
+    </div>
+
+
+    <script src="./ppg.js" type="text/javascript"></script>
+</body>
+</html>

@@ -58,7 +58,7 @@ function Sharpshooter_End_Check()
     if table_count(Players_Alive_Sharp) == 1 then
         Server.BroadcastChatMessage(Players_Alive_Sharp[1]:GetAccountName() .. " won the Sharpshooter game.")
 
-        RoundFinished(false, true)
+        CheckRoundFinished(false, true)
     end
 end
 

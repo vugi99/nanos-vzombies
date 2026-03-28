@@ -23,7 +23,7 @@ end)
 
 VZ_EVENT_SUBSCRIBE("Character", "PickUp", function(char, ent)
     if IsSelfCharacter(char) then
-        if ent then
+        if IsValid(ent) then
             local m_weap_id = ent:GetValue("MapWeaponID")
             if (not m_weap_id and ent:IsA(Weapon)) then
                 if (InteractType == "TopDownWeapon" and InteractThing == ent) then

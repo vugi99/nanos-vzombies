@@ -209,15 +209,19 @@ function OpenActiveMysteryBox(char)
 end
 
 VZ_EVENT_SUBSCRIBE_REMOTE("BuyMBOX", function(ply, mbox)
-    if (mbox and mbox:IsValid()) then
+    if (IsValid(mbox)) then
         local mbox_can_buy = mbox:GetValue("CanBuyMysteryBox")
         if mbox_can_buy then
             if Active_MysteryBox_ID then
-                local char = ply:GetControlledCharacter()
-                if char then
-                    if not char:GetValue("PlayerDown") then
-                        if Buy(ply, Mystery_box_price) then
-                            OpenActiveMysteryBox(char)
+                if SM_MysteryBoxes[Active_MysteryBox_ID] and SM_MysteryBoxes[Active_MysteryBox_ID].mbox == mbox then
+                    if not mbox:GetValue("PPG_Sabotaged") then
+                        local char = ply:GetControlledCharacter()
+                        if char then
+                            if not char:GetValue("PlayerDown") then
+                                if Buy(ply, Mystery_box_price) then
+                                    OpenActiveMysteryBox(char)
+                                end
+                            end
                         end
                     end
                 end

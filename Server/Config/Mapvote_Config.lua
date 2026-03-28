@@ -3,17 +3,18 @@
 Mapvote_tbl = {
     time = 20,
     maps = {
-        BlankMap = {
+        --[[BlankMap = {
             path = "default-blank-map",
             UI_name = "BlankMap",
             image = "images/missing.png",
-        },
+        },]]--
         zm_kino_der_toten = {
             path = "zm-kino-der-toten",
             UI_name = "Kino Der Toten",
-            image = "../../../../../../../Server/Assets/zm-kino-der-toten/zm_kino_der_toten/zm_kino_der_toten/Map.jpg",
+            image = "images/missing.png",
+            --image = "../../../../../../../Server/Assets/zm-kino-der-toten/zm_kino_der_toten/zm_kino_der_toten/Map.jpg",
         },
-        zm_nacht_der_untoten = {
+        --[[zm_nacht_der_untoten = {
             path = "zm-nacht-der-untoten",
             UI_name = "Nacht Der Untoten",
             image = "../../../../../../../Server/Assets/zm-nacht-der-untoten/nacht_der_untoten/nacht_der_untoten/Map.jpg",
@@ -32,13 +33,14 @@ Mapvote_tbl = {
             path = "zm-soul",
             UI_name = "Soul",
             image = "../../../../../../../Server/Assets/zm-soul/ZMsoul/Map.jpg",
-        },
+        },]]--
         zm_town_bo3 = {
             path = "zm-town",
             UI_name = "Town",
-            image = "../../../../../../../Server/Assets/zm-town/zm_town_bo3/Map.jpg",
+            image = "images/missing.png",
+            --image = "../../../../../../../Server/Assets/zm-town/zm_town_bo3/Map.jpg",
         },
-        bigoffice = {
+        --[[bigoffice = {
             path = "bigoffice",
             UI_name = "Big Office",
             image = "../../../../../../../Server/Assets/bigoffice/Maps/Maps_BigCompany/Map.jpg",
@@ -52,11 +54,12 @@ Mapvote_tbl = {
             path = "zm-freefall",
             UI_name = "Freefall",
             image = "../../../../../../../Server/Assets/zm-freefall/zm_freefall/zm_freefall/Map.jpg",
-        },
+        },]]--
         Supermarket = {
             path = "zm-supermarket",
             UI_name = "Supermarket",
-            image = "../../../../../../../Server/Assets/zm-supermarket/Maps/Supermarket_Map/Map.jpg",
+            image = "images/missing.png",
+            --image = "../../../../../../../Server/Assets/zm-supermarket/Maps/Supermarket_Map/Map.jpg",
         },
     }
 }

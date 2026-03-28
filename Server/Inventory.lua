@@ -82,11 +82,14 @@ local function CreateWeaponToGiveToPlayer(char, charInvID, i, v, loc, rot)
     rot = rot or Rotator()
     local weapon = NanosWorldWeapons[v.weapon_name](loc, rot)
     weapon:SetValue("WeaponName", v.weapon_name, true)
-    weapon:SetAmmoBag(v.ammo_bag)
-    if v.ammo_clip then
-        weapon:SetAmmoClip(v.ammo_clip)
-    else
-        PlayersCharactersWeapons[charInvID].weapons[i].ammo_clip = weapon:GetAmmoClip()
+
+    if weapon.SetAmmoBag then
+        weapon:SetAmmoBag(v.ammo_bag)
+        if v.ammo_clip then
+            weapon:SetAmmoClip(v.ammo_clip)
+        else
+            PlayersCharactersWeapons[charInvID].weapons[i].ammo_clip = weapon:GetAmmoClip()
+        end
     end
     --print("b", PlayersCharactersWeapons[charInvID].weapons[i])
     --print("holding", char:GetPicked())
@@ -100,24 +103,28 @@ local function CreateWeaponToGiveToPlayer(char, charInvID, i, v, loc, rot)
 
     local has_speed_cola = char:GetValue("OwnedPerks").speed_cola
     if has_speed_cola then
-        weapon:ActivateSpeedReload(true)
+        if weapon.ActivateSpeedReload then
+            weapon:ActivateSpeedReload(true)
+        end
     end
 
     return weapon
 end
 
 local function GiveInventoryPlayerWeapon(char, charInvID, i, v)
-    --print("GiveInventoryPlayerWeapon", char, charInvID, i, NanosUtils.Dump(v))
+    --print("GiveInventoryPlayerWeapon", char, charInvID, i, NanosTable.Dump(v))
     local weapon = CreateWeaponToGiveToPlayer(char, charInvID, i, v)
 
     local ply = char:GetPlayer()
     if ply then
         if ply.BOT then
-            weapon:SetValue("RealRecoil", weapon:GetRecoil(), false)
-            weapon:SetValue("RealSpread", weapon:GetSpread(), false)
-            -- Remove for bots, consider calculated inaccuracy instead
-            weapon:SetRecoil(0)
-            weapon:SetSpread(0)
+            if weapon.GetRecoil and weapon.GetSpread then
+                weapon:SetValue("RealRecoil", weapon:GetRecoil(), false)
+                weapon:SetValue("RealSpread", weapon:GetSpread(), false)
+                -- Remove for bots, consider calculated inaccuracy instead
+                weapon:SetRecoil(0)
+                weapon:SetSpread(0)
+            end
         end
     end
 
@@ -145,7 +152,7 @@ function EquipSlot(char, slot)
     local charInvID = GetCharacterInventory(char)
     if charInvID then
         local Inv = PlayersCharactersWeapons[charInvID]
-        --print(NanosUtils.Dump(Inv.weapons))
+        --print(NanosTable.Dump(Inv.weapons))
         local picked_thing = char:GetPicked()
         if (not picked_thing or (not picked_thing:IsA(Grenade) and not picked_thing:IsA(Melee))) then
             if slot ~= Inv.selected_slot then
@@ -209,7 +216,7 @@ function EquipSlot(char, slot)
                     end
                 end
             end
-            Events.Call("VZ_EquippedInventorySlot", char, slot)
+            VZ_EVENT_CALL("Events", "VZ_EquippedInventorySlot", char, slot)
         else
             Inv.selected_slot = slot
             --print("EquipSlot Locked Because He has Grenade")
@@ -251,77 +258,95 @@ end
 
 function AddCharacterWeapon(char, weapon_name, ammo_bag, equip, ammo_clip, pap, pap_repack_effect)
     --print("AddCharacterWeapon", char, weapon_name, ammo_bag, equip, ammo_clip, char:GetPicked())
-    local charInvID = GetCharacterInventory(char)
-    local insert_sl = 1
-    if charInvID then
-        --print(NanosUtils.Dump(PlayersCharactersWeapons[charInvID].weapons))
 
-        -- If the player already have this weapon, drop the current one
-        for i, v in ipairs(PlayersCharactersWeapons[charInvID].weapons) do
-            if v.weapon_name == weapon_name then
-                DropSlot(charInvID, char, i, v)
-                break
-            end
+    if IsValid(char) then
+        local ret_can = VZ_EVENT_CALL("Events", "VZ_CanAddWeaponToInventory", char, weapon_name, ammo_bag, equip, ammo_clip, pap, pap_repack_effect)
+        if (not ret_can) then
+            return false
         end
 
+        local charInvID = GetCharacterInventory(char)
+        local insert_sl = 1
+        if charInvID then
+            --print(NanosTable.Dump(PlayersCharactersWeapons[charInvID].weapons))
 
-        local inv_w_count = table_count(PlayersCharactersWeapons[charInvID].weapons)
-        --print("inv_w_count", inv_w_count)
-
-        -- If the player slots are full, drop the weapon in the selected slot
-        local has_three_gun = char:GetValue("OwnedPerks").three_gun
-        if ((inv_w_count >= 2 and not has_three_gun) or (inv_w_count >= 3 and has_three_gun)) then
+            -- If the player already have this weapon, drop the current one
             for i, v in ipairs(PlayersCharactersWeapons[charInvID].weapons) do
-                if v.slot == PlayersCharactersWeapons[charInvID].selected_slot then
+                if v.weapon_name == weapon_name then
                     DropSlot(charInvID, char, i, v)
                     break
                 end
             end
-        else
-            for i, v in ipairs(PlayersCharactersWeapons[charInvID].weapons) do
-                if v.slot == PlayersCharactersWeapons[charInvID].selected_slot then
-                    if v.weapon then
-                        v.just_dropped = nil
+
+
+            local inv_w_count = table_count(PlayersCharactersWeapons[charInvID].weapons)
+            --print("inv_w_count", inv_w_count)
+
+            -- If the player slots are full, drop the weapon in the selected slot
+            local has_three_gun = char:GetValue("OwnedPerks").three_gun
+            if ((inv_w_count >= 2 and not has_three_gun) or (inv_w_count >= 3 and has_three_gun)) then
+                for i, v in ipairs(PlayersCharactersWeapons[charInvID].weapons) do
+                    if v.slot == PlayersCharactersWeapons[charInvID].selected_slot then
+                        DropSlot(charInvID, char, i, v)
+                        break
                     end
-                    break
+                end
+            else
+                for i, v in ipairs(PlayersCharactersWeapons[charInvID].weapons) do
+                    if v.slot == PlayersCharactersWeapons[charInvID].selected_slot then
+                        if v.weapon then
+                            v.just_dropped = nil
+                        end
+                        break
+                    end
                 end
             end
-        end
 
-        insert_sl = GetInsertSlot(char, PlayersCharactersWeapons[charInvID])
-        --print("GetInsertSlot", insert_sl)
+            insert_sl = GetInsertSlot(char, PlayersCharactersWeapons[charInvID])
+            --print("GetInsertSlot", insert_sl)
 
-        table.insert(PlayersCharactersWeapons[charInvID].weapons, GenerateWeaponToInsert(weapon_name, ammo_bag, insert_sl, ammo_clip, pap, pap_repack_effect))
-        if equip then
-            EquipSlot(char, insert_sl)
+            table.insert(PlayersCharactersWeapons[charInvID].weapons, GenerateWeaponToInsert(weapon_name, ammo_bag, insert_sl, ammo_clip, pap, pap_repack_effect))
+            if equip then
+                EquipSlot(char, insert_sl)
+            else
+                EquipSlot(char, PlayersCharactersWeapons[charInvID].selected_slot)
+            end
+
+            --print(NanosTable.Dump(PlayersCharactersWeapons[charInvID]))
+            return true
         else
-            EquipSlot(char, PlayersCharactersWeapons[charInvID].selected_slot)
+            table.insert(PlayersCharactersWeapons, {
+                char = char,
+                selected_slot = insert_sl,
+                weapons = {
+                    GenerateWeaponToInsert(weapon_name, ammo_bag, insert_sl, ammo_clip, pap, pap_repack_effect),
+                },
+            })
+            EquipSlot(char, insert_sl)
+            return true
         end
-
-        --print(NanosTable.Dump(PlayersCharactersWeapons[charInvID]))
-    else
-        table.insert(PlayersCharactersWeapons, {
-            char = char,
-            selected_slot = insert_sl,
-            weapons = {
-                GenerateWeaponToInsert(weapon_name, ammo_bag, insert_sl, ammo_clip, pap, pap_repack_effect),
-            },
-        })
-        EquipSlot(char, insert_sl)
     end
 end
 
-VZ_EVENT_SUBSCRIBE("Character", "Destroy", function(char)
+function DestroyInventoryByChar(char, drop_weapon)
     local charInvID = GetCharacterInventory(char)
     if charInvID then
         for i, v in ipairs(PlayersCharactersWeapons[charInvID].weapons) do
-            if (v.weapon and v.weapon:IsValid()) then
-                v.destroying = true
-                v.weapon:Destroy()
+            if not drop_weapon then
+                if (v.weapon and v.weapon:IsValid()) then
+                    v.destroying = true
+                    v.weapon:Destroy()
+                end
+            else
+                DropSlot(charInvID, char, i, v)
             end
         end
         table.remove(PlayersCharactersWeapons, charInvID)
     end
+end
+
+VZ_EVENT_SUBSCRIBE("Character", "Destroy", function(char)
+    DestroyInventoryByChar(char, false)
 end)
 
 function WeaponDropLogic(v, weapon)
@@ -350,7 +375,7 @@ VZ_EVENT_SUBSCRIBE("Weapon", "Drop", function(weapon, char, was_triggered_by_pla
 
     local charInvID = GetCharacterInventory(char)
     if charInvID then
-        --print(NanosUtils.Dump(PlayersCharactersWeapons[charInvID]))
+        --print(NanosTable.Dump(PlayersCharactersWeapons[charInvID]))
         for i, v in ipairs(PlayersCharactersWeapons[charInvID].weapons) do
             if (v.weapon and v.weapon == weapon) then
                 if not v.destroying then
@@ -371,16 +396,18 @@ VZ_EVENT_SUBSCRIBE("Weapon", "Drop", function(weapon, char, was_triggered_by_pla
 end)
 
 VZ_EVENT_SUBSCRIBE("Weapon", "PickUp", function(weapon, char)
-    local d_weap_name = weapon:GetValue("DroppedWeaponName")
-    if d_weap_name then
-        Timer.ClearTimeout(weapon:GetValue("DroppedWeaponDTimeout"))
-        local ammo_bag = weapon:GetAmmoBag()
-        local ammo_clip = weapon:GetAmmoClip()
-        local pap = weapon:GetValue("DroppedWeaponPAP")
-        --print("Pickup_Exec", weapon:GetValue("DroppedWeaponName"), char:GetPicked())
-        weapon:Destroy()
-        --print("Pickup_2", char:GetPicked())
-        AddCharacterWeapon(char, d_weap_name, ammo_bag, true, ammo_clip, pap[1], pap[2])
+    if IsValid(weapon) and IsValid(char) then
+        local d_weap_name = weapon:GetValue("DroppedWeaponName")
+        if d_weap_name then
+            Timer.ClearTimeout(weapon:GetValue("DroppedWeaponDTimeout"))
+            local ammo_bag = weapon:GetAmmoBag()
+            local ammo_clip = weapon:GetAmmoClip()
+            local pap = weapon:GetValue("DroppedWeaponPAP")
+            --print("Pickup_Exec", weapon:GetValue("DroppedWeaponName"), char:GetPicked())
+            weapon:Destroy()
+            --print("Pickup_2", char:GetPicked())
+            AddCharacterWeapon(char, d_weap_name, ammo_bag, true, ammo_clip, pap[1], pap[2])
+        end
     end
 end)
 
@@ -412,7 +439,7 @@ VZ_EVENT_SUBSCRIBE_REMOTE("PickupGrenade", function(ply)
         if not GAME_PAUSED then
             local char = ply:GetControlledCharacter()
             if char then
-                if (not char:GetValue("PlayerDown") and not char:GetVehicle()) then
+                if (not char:GetValue("PlayerDown") and not char:GetVehicle() and char:GetValue("CanThrowGrenades")) then
                     if not char:IsInRagdollMode() then
                         local grenades = char:GetValue("ZGrenadesNB")
                         if (grenades and grenades > 0) then
@@ -435,8 +462,12 @@ VZ_EVENT_SUBSCRIBE_REMOTE("PickupGrenade", function(ply)
                                 for i, v in ipairs(Inv.weapons) do
                                     if (v.slot == Inv.selected_slot and v.weapon) then
                                         if v.weapon:IsValid() then
-                                            v.ammo_bag = v.weapon:GetAmmoBag()
-                                            v.ammo_clip = v.weapon:GetAmmoClip()
+                                            if v.weapon.GetAmmoBag then
+                                                v.ammo_bag = v.weapon:GetAmmoBag()
+                                            end
+                                            if v.weapon.GetAmmoClip then
+                                                v.ammo_clip = v.weapon:GetAmmoClip()
+                                            end
 
                                             v.destroying = true
                                             v.weapon:Destroy()
@@ -467,9 +498,18 @@ VZ_EVENT_SUBSCRIBE("Grenade", "Throw", function(grenade)
         if char_id then
             local char = GetCharacterFromId(char_id)
             if char then
-                if (not char:GetValue("PlayerDown") and not GAME_PAUSED) then
-                    if not char:GetPlayer():GetValue("MM_InfGrenades") then
-                        char:SetValue("ZGrenadesNB", char:GetValue("ZGrenadesNB") - 1, true)
+                if (not char:GetValue("PlayerDown") and not GAME_PAUSED and char:GetValue("CanThrowGrenades")) then
+                    local ret_prevent = VZ_EVENT_CALL("Events", "VZ_CharacterThrowGrenade", char, grenade)
+                    if IsValid(grenade) then
+                        if (not ret_prevent) then
+                            grenade:Destroy()
+                            return
+                        end
+
+
+                        if not char:GetPlayer():GetValue("MM_InfGrenades") then
+                            char:SetValue("ZGrenadesNB", char:GetValue("ZGrenadesNB") - 1, true)
+                        end
                     end
 
                     local charInvID = GetCharacterInventory(char)
@@ -530,8 +570,12 @@ VZ_EVENT_SUBSCRIBE("Grenade", "Interact", function(grenade, char)
     if not grenade:GetValue("GibData") then
         return false
     else
-        PickupGib(char, grenade:GetValue("GibData"))
-        grenade:Destroy()
+        local picked_up = PickupGib(char, grenade:GetValue("GibData"))
+        if picked_up then
+            grenade:Destroy()
+        else
+            return false
+        end
     end
 end)
 
@@ -681,52 +725,59 @@ function PickupGib(char, gib_data)
     if gib_data then
         if (not char:GetValue("PlayerDown") and not char:GetVehicle()) then
             if not char:IsInRagdollMode() then
-                local enemy_table = Enemies_Config[gib_data[1]]
-                if enemy_table then
-                    if Enemies_Config[gib_data[1]].Gibs then
-                        if Enemies_Config[gib_data[1]].Gibs[gib_data[2]] then
-                            local gib_grenade = Grenade(
-                                Vector(0, 0, 0),
-                                Rotator(0, 0, 0),
-                                gib_data[4],
-                                "",
-                                "",
-                                CollisionType.IgnoreOnlyPawn
-                            )
-                            gib_grenade:SetValue("GibData", gib_data, false)
-                            gib_grenade:SetValue("GrenadeOwner", char:GetID(), false)
-                            gib_grenade:SetDamage(0, 0, 0, 0, 0)
-                            gib_grenade:SetTimeToExplode(Enemies_Gibs_Destroy_Timeout_ms / 1000)
+                if char:GetValue("CanPickupGibs") then
+                    local enemy_table = Enemies_Config[gib_data[1]]
+                    if enemy_table then
+                        if Enemies_Config[gib_data[1]].Gibs then
+                            if Enemies_Config[gib_data[1]].Gibs[gib_data[2]] then
+                                local gib_grenade = Grenade(
+                                    Vector(0, 0, 0),
+                                    Rotator(0, 0, 0),
+                                    gib_data[4],
+                                    "",
+                                    "",
+                                    CollisionType.IgnoreOnlyPawn
+                                )
+                                gib_grenade:SetValue("GibData", gib_data, false)
+                                gib_grenade:SetValue("GrenadeOwner", char:GetID(), false)
+                                gib_grenade:SetDamage(0, 0, 0, 0, 0)
+                                gib_grenade:SetTimeToExplode(Enemies_Gibs_Destroy_Timeout_ms / 1000)
 
-                            if gib_data[3] then
-                                SetGibMaterials(gib_grenade, gib_data[2], enemy_table, gib_data[3])
-                            end
+                                if gib_data[3] then
+                                    SetGibMaterials(gib_grenade, gib_data[2], enemy_table, gib_data[3])
+                                end
 
-                            if gib_data[2] == enemy_table.Gibs_heart_bone then
-                                gib_grenade:SetMaterialScalarParameter("Emissive_value", 0.0)
-                            end
+                                if Enemies_Config[gib_data[1]].Gibs[gib_data[2]].emissive_key then
+                                    gib_grenade:SetMaterialScalarParameter(Enemies_Config[gib_data[1]].Gibs[gib_data[2]].emissive_key, 0.0)
+                                end
 
-                            local charInvID = GetCharacterInventory(char)
-                            if charInvID then
-                                local Inv = PlayersCharactersWeapons[charInvID]
+                                local charInvID = GetCharacterInventory(char)
+                                if charInvID then
+                                    local Inv = PlayersCharactersWeapons[charInvID]
 
-                                for i, v in ipairs(Inv.weapons) do
-                                    if (v.slot == Inv.selected_slot and v.weapon) then
-                                        if v.weapon:IsValid() then
-                                            v.ammo_bag = v.weapon:GetAmmoBag()
-                                            v.ammo_clip = v.weapon:GetAmmoClip()
+                                    for i, v in ipairs(Inv.weapons) do
+                                        if (v.slot == Inv.selected_slot and v.weapon) then
+                                            if v.weapon:IsValid() then
+                                                if v.weapon.GetAmmoBag then
+                                                    v.ammo_bag = v.weapon:GetAmmoBag()
+                                                end
+                                                if v.weapon.GetAmmoClip then
+                                                    v.ammo_clip = v.weapon:GetAmmoClip()
+                                                end
 
-                                            v.destroying = true
-                                            v.weapon:Destroy()
+                                                v.destroying = true
+                                                v.weapon:Destroy()
+                                            end
+                                            v.weapon = nil
+                                            v.destroying = nil
+                                            break
                                         end
-                                        v.weapon = nil
-                                        v.destroying = nil
-                                        break
                                     end
                                 end
-                            end
 
-                            char:PickUp(gib_grenade)
+                                char:PickUp(gib_grenade)
+                                return true
+                            end
                         end
                     end
                 end

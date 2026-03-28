@@ -162,7 +162,7 @@ end
         local weapon_name = weap:GetValue("WeaponName")
         if weapon_name == "Thundergun" then
             local muzzle_transform = weap:GetBoneTransform("muzzle")
-            print(NanosUtils.Dump(muzzle_transform))
+            print(NanosTable.Dump(muzzle_transform))
             if muzzle_transform then
                 if (muzzle_transform.Location and muzzle_transform.Rotation) then
                     

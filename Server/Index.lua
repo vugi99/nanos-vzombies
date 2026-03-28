@@ -18,16 +18,38 @@ if ZDEV_CONFIG.ENABLED then
 end
 
 local Config_Data = {
-    "MAP_ROOMS", "PLAYER_SPAWNS", "MAP_DOORS", "MAP_WEAPONS", "MAP_PACK_A_PUNCH", "MAP_POWER", "MAP_MYSTERY_BOXES", "MAP_PERKS", "MAP_Z_LIMITS", "MAP_WUNDERFIZZ", "MAP_INTERACT_TRIGGERS", "MAP_TELEPORTERS", "MAP_LIGHT_ZONES", "MAP_SETTINGS", "MAP_STATIC_MESHES", "HELLHOUND_SPAWNS", "BANKS", "VEHICLES_PADS"
+    "MAP_ROOMS", "PLAYER_SPAWNS", "MAP_DOORS", "MAP_WEAPONS", "MAP_PACK_A_PUNCH", "MAP_POWER", "MAP_MYSTERY_BOXES", "MAP_PERKS", "MAP_Z_LIMITS", "MAP_WUNDERFIZZ", "MAP_INTERACT_TRIGGERS", "MAP_TELEPORTERS", "MAP_LIGHT_ZONES", "MAP_SETTINGS", "MAP_STATIC_MESHES", "HELLHOUND_SPAWNS", "BANKS", "VEHICLES_PADS", "MAP_CHARGERS"
+}
+local Config_Data_Count = #Config_Data
+
+local Config_Data_Replicated = {
+    MAP_DOORS = true,
+    MAP_WEAPONS = true,
+    MAP_PACK_A_PUNCH = true,
+    MAP_POWER = true,
+    MAP_PERKS = true,
+    MAP_INTERACT_TRIGGERS = true,
+    MAP_TELEPORTERS = true,
+    MAP_SETTINGS = true,
+    BANKS = true,
+    VEHICLES_PADS = true,
 }
 
 Events.Subscribe("VZOMBIES_MAP_CONFIG", function(...)
     if not MAP_CONFIG_LOADED then
         local args = table.pack(...)
         for i = 1, args.n do
-            local v = args[i]
-            MAP_CONFIG_TO_SEND[Config_Data[i]] = v
-            _ENV[Config_Data[i]] = v
+            if i <= Config_Data_Count then
+                local v = args[i]
+                _ENV[Config_Data[i]] = v
+
+                if Config_Data_Replicated[Config_Data[i]] then
+                    MAP_CONFIG_TO_SEND[Config_Data[i]] = v
+                end
+            else
+                Console.Warn("Got extra data passed into VZOMBIES_MAP_CONFIG, ignoring because it's not configured in the gamemode")
+                break
+            end
         end
 
         --DebugFullPrint(NanosTable.Dump(MAP_CONFIG_TO_SEND))
@@ -58,7 +80,7 @@ Events.Subscribe("VZOMBIES_MAP_CONFIG", function(...)
                 end
 
                 for k, v in pairs(added_spawns) do
-                    table.insert(PLAYER_SPAWNS, v)
+                    table.insert(PLAYER_SPAWNS, v) -- Breaks when sending to clients
                 end
 
                 --print(cur_count)
@@ -95,6 +117,7 @@ function LoadServerFiles()
     Package.Require("Inventory.lua")
     Package.Require("Powerups.lua")
     Package.Require("Bots.lua")
+    Package.Require("Noise.lua")
 
     if ZDEV_IsModeEnabled("ZDEV_MOD_MENU") then
         Package.Require("Mod_Menu.lua")
@@ -111,6 +134,12 @@ function LoadServerFiles()
     end
 
     if VZ_GAMEMODES_CONFIG[VZ_SELECTED_GAMEMODE].Scripts then
+        if VZ_GAMEMODES_CONFIG[VZ_SELECTED_GAMEMODE].Scripts.Shared then
+            for i, v in ipairs(VZ_GAMEMODES_CONFIG[VZ_SELECTED_GAMEMODE].Scripts.Shared) do
+                Package.Require(v)
+            end
+        end
+
         if VZ_GAMEMODES_CONFIG[VZ_SELECTED_GAMEMODE].Scripts.Server then
             for i, v in ipairs(VZ_GAMEMODES_CONFIG[VZ_SELECTED_GAMEMODE].Scripts.Server) do
                 Package.Require(v)
@@ -120,7 +149,7 @@ function LoadServerFiles()
 
     print("VZombies " .. VZ_SELECTED_GAMEMODE .. " selected")
 
-    Events.Call("VZOMBIES_GAMEMODE_LOADED")
+    VZ_EVENT_CALL("Events", "VZOMBIES_GAMEMODE_LOADED")
 end
 
 --print(Server.GetMap())

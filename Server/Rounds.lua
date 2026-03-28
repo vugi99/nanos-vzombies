@@ -12,6 +12,9 @@ REMAINING_ENEMIES_TO_SPAWN = 0
 GAME_TIMER_SECONDS = 0
 KILL_COUNT = 0
 GAME_PAUSED = false
+SPAWN_ENEMY_INTERVAL_TIME = nil
+WAVE_TIMED_OUT = nil
+WAVE_TIMEOUT = 0
 
 ENEMIES_TO_SPAWN_TBL = {}
 
@@ -21,12 +24,31 @@ WaitingMapvote = nil
 
 In_Hellhound_Round = false
 
+function NewRoundTimer_Func()
+    WaitingNewRound_Timer = nil
+    WaitingNewWave = false
+    if (PLAYING_PLAYERS_NB > 0 or (table_count(Player.GetAll()) > 0 and No_Players)) then
+        --print("Start next round timer")
+        StartRound()
+    end
+end
+
 function RoundFinished(reset_all, restart_game, ply_left)
+    --print(NanosTable.Dump(debug.getinfo(2)))
+
     print("RoundFinished", reset_all, restart_game)
-    Timer.ClearInterval(ENEMIES_SPAWN_INTERVAL)
+    if Timer.IsValid(ENEMIES_SPAWN_INTERVAL) then
+        Timer.ClearInterval(ENEMIES_SPAWN_INTERVAL)
+    end
     ENEMIES_SPAWN_INTERVAL = 0
     REMAINING_ENEMIES_TO_SPAWN = 0
     In_Hellhound_Round = false
+
+    if Timer.IsValid(WAVE_TIMEOUT) then
+        Timer.ClearTimeout(WAVE_TIMEOUT)
+    end
+    WAVE_TIMEOUT = 0
+    WAVE_TIMED_OUT = nil
 
     for k, v in pairs(PLAYING_PLAYERS) do
         if v:IsValid() then
@@ -39,19 +61,23 @@ function RoundFinished(reset_all, restart_game, ply_left)
     end
 
     if (not reset_all and not restart_game) then
-        for k, v in pairs(PLAYING_PLAYERS) do
-            if not v:GetControlledCharacter() then
-                SpawnCharacterForPlayer(v, k)
-                if v.BOT then
-                    v:SetValue("BotAimPlayer", GetRandomPlayer():GetID(), true)
-                    RequestBotAction(v)
+        VZ_EVENT_CALL("Events", "VZ_WaveFinished", ROUND_NB)
+
+        if Players_Respawn_Between_Rounds then
+            for k, v in pairs(PLAYING_PLAYERS) do
+                if not v:GetControlledCharacter() then
+                    SpawnCharacterForPlayer(v, k)
+                    if v.BOT then
+                        v:SetValue("BotAimPlayer", GetRandomPlayer():GetID(), true)
+                        RequestBotAction(v)
+                    end
                 end
             end
         end
     end
 
     if (reset_all or restart_game) then
-        Events.Call("VZ_GameEnding", restart_game)
+        VZ_EVENT_CALL("Events", "VZ_GameEnding", restart_game)
 
         ROUND_NB = 0
         ResetMapPower()
@@ -116,7 +142,7 @@ function RoundFinished(reset_all, restart_game, ply_left)
             DestroyPreReachTriggers()
         end
 
-        Events.Call("VZ_GameEnded", restart_game)
+        VZ_EVENT_CALL("Events", "VZ_GameEnded", restart_game)
     end
     if not reset_all then
         local t = WaveInterval_ms
@@ -131,12 +157,12 @@ function RoundFinished(reset_all, restart_game, ply_left)
                 end
             else
                 Events.BroadcastRemote("PlayVZSound", {basic_sound_tbl=GameOver_Sound})
-                if WaitingMapvote == nil then
-                    if StartMapVote then
-                        WaitingMapvote = StartMapVote(Mapvote_tbl)
-                    end
-                end
                 --print(WaitingMapvote)
+            end
+            if WaitingMapvote == nil then
+                if StartMapVote then
+                    WaitingMapvote = StartMapVote(Mapvote_tbl)
+                end
             end
         else
             if WaitingNewRound_Timer then
@@ -148,13 +174,11 @@ function RoundFinished(reset_all, restart_game, ply_left)
         end
         if not WaitingNewRound_Timer then
             if WaitingMapvote == nil then
-                WaitingNewRound_Timer = Timer.SetTimeout(function()
-                    WaitingNewRound_Timer = nil
-                    WaitingNewWave = false
-                    if (PLAYING_PLAYERS_NB > 0 or (table_count(Player.GetAll()) > 0 and No_Players)) then
-                        StartRound()
-                    end
-                end, t)
+                if not Timed_Waves then
+                    WaitingNewRound_Timer = Timer.SetTimeout(NewRoundTimer_Func, t)
+                else
+                    NewRoundTimer_Func()
+                end
             end
         end
     else
@@ -170,9 +194,69 @@ function RoundFinished(reset_all, restart_game, ply_left)
 end
 Package.Export("RoundFinished", RoundFinished)
 
+function CheckRoundFinished(reset_all, restart_game, ply_left)
+    --print("CheckRoundFinished", reset_all, restart_game)
+
+    if (reset_all or restart_game) then
+        RoundFinished(reset_all, restart_game, ply_left)
+        return true
+    end
+
+    local al_nb = GetPlayersAliveNB()
+    if al_nb == 0 then
+        RoundFinished(false, true, ply_left)
+        return true
+    end
+
+    if (table_count(ENEMY_CHARACTERS) == 0 and REMAINING_ENEMIES_TO_SPAWN <= 0 and (not WaitingNewRound_Timer)) then
+        --print("Case no enemies")
+        RoundFinished(false, false, ply_left)
+        return true
+    end
+
+    if (WAVE_TIMED_OUT) then
+        RoundFinished(false, false, ply_left)
+        return true
+    end
+
+    local ret_game_reset = VZ_EVENT_CALL("Events", "VZ_CheckGameReset")
+    if (not ret_game_reset) then
+        RoundFinished(true, false, ply_left)
+        return true
+    end
+
+    local ret_game_restart = VZ_EVENT_CALL("Events", "VZ_CheckGameRestart")
+    if (not ret_game_restart) then
+        RoundFinished(false, true, ply_left)
+        return true
+    end
+
+    local ret_wave = VZ_EVENT_CALL("Events", "VZ_CheckWaveFinished")
+    if (not ret_wave) then
+        --print("Case VZ_CheckWaveFinished")
+        RoundFinished(false, false, ply_left)
+        return true
+    end
+end
+Package.Export("CheckRoundFinished", CheckRoundFinished)
+
 function StartRound()
+    if ROUND_NB == 0 then
+        if VZ_GAMEMODES_CONFIG[VZ_SELECTED_GAMEMODE].MIN_PLAYERS ~= nil then
+            if table_count(Player.GetAll()) < VZ_GAMEMODES_CONFIG[VZ_SELECTED_GAMEMODE].MIN_PLAYERS then
+                --for k, v in pairs(Player.GetAll()) do
+                    --v:SetValue("PlayerWaiting", "Waiting_More_Players", true)
+                --end
+                Events.BroadcastRemote("SetGlobalPlayerWaitingValue", "Waiting_More_Players")
+                return
+            end
+        end
+    end
+
     print("StartRound " .. tostring(ROUND_NB + 1))
     if ROUND_NB == 0 then
+        VZ_EVENT_CALL("Events", "VZ_GameStarting")
+
         SpawnMapDoors()
 
         for k, v in pairs(VZ_GLOBAL_FEATURES) do
@@ -206,9 +290,10 @@ function StartRound()
         GAME_LEFT_PLAYERS_STATS = {}
     end
 
+    WAVE_TIMED_OUT = nil
     ROUND_NB = ROUND_NB + 1
     Events.BroadcastRemote("SetClientRoundNumber", ROUND_NB, CanStartHellhoundRound())
-    REMAINING_ENEMIES_TO_SPAWN = math.floor(Zombies_Number_Mult_Func(First_Wave_Enemies + (Add_at_each_wave * (ROUND_NB - 1)) + (Add_at_each_wave_per_player * (ROUND_NB - 1) * PLAYING_PLAYERS_NB), ROUND_NB) + 0.5)
+    REMAINING_ENEMIES_TO_SPAWN = CalculateEnemiesToSpawn(ROUND_NB)
     if CanStartHellhoundRound() then
         if Enemies_Config.Hellhound.Spawning_Config.Number_To_Spawn_mult then
             REMAINING_ENEMIES_TO_SPAWN = math.floor(REMAINING_ENEMIES_TO_SPAWN * Enemies_Config.Hellhound.Spawning_Config.Number_To_Spawn_mult)
@@ -222,87 +307,70 @@ function StartRound()
     ENEMIES_TO_SPAWN_TBL = {}
 
     if not CanStartHellhoundRound() then
-        local MaxPercentages = {}
-
+        local weight_sum = 0
         local SpawningPercentages = {}
-        for k, v in pairs(FirstWave) do
+        for k, v in pairs(Enemies_Waves_Weight_Functions) do
             SpawningPercentages[k] = {}
-            MaxPercentages[k] = 0
-            for k2, v2 in pairs(Enemies_Config[k].Types) do
-                SpawningPercentages[k][k2] = 0
-            end
             for k2, v2 in pairs(v) do
-                SpawningPercentages[k][k2] = v2
-                MaxPercentages[k] = MaxPercentages[k] + v2
-            end
-        end
-
-        for k, v in pairs(Added_Per_Wave_Percentage) do
-            for k2, v2 in pairs(v) do
-                local calculated = v2 * (ROUND_NB - 1)
-                if calculated > MaxPercentages[k] then
-                    calculated = MaxPercentages[k]
-                end
-
-                for k3, v3 in pairs(SpawningPercentages) do
-                    for k4, v4 in pairs(v3) do
-                        if (k3 == k and k4 ~= k2) then
-                            SpawningPercentages[k][k4] = v4 - calculated
-                        end
-                    end
-                end
-
-                SpawningPercentages[k][k2] = SpawningPercentages[k][k2] + calculated
+                local weight = math.max(0, v2(ROUND_NB))
+                SpawningPercentages[k][k2] = weight
+                weight_sum = weight_sum + weight
             end
         end
         --print(NanosTable.Dump(SpawningPercentages))
 
-        local SpawningCount = {}
-        for k, v in pairs(SpawningPercentages) do
-            SpawningCount[k] = {}
-            for k2, v2 in pairs(v) do
-                if v2 > 0 then
-                    SpawningCount[k][k2] = math.floor((REMAINING_ENEMIES_TO_SPAWN * v2/100) + 0.5)
-                end
-            end
-        end
-        --print(NanosTable.Dump(SpawningCount))
-
-
-        --local FastZombiesToSpawnNB = math.floor((Running_Zombies_Percentage_Start + (Added_Running_Zombies_Percentage_At_Each_Wave * (ROUND_NB - 1))) * REMAINING_ENEMIES_TO_SPAWN / 100)
-        --local SlowZombiesToSpawnNB = REMAINING_ENEMIES_TO_SPAWN - FastZombiesToSpawnNB
-        for k, v in pairs(SpawningCount) do
-            for k2, v2 in pairs(v) do
-                for i = 1, v2 do
-                    table.insert(ENEMIES_TO_SPAWN_TBL, {k, k2})
-                end
-            end
-        end
-
-        local tbl_cnt = table_count(ENEMIES_TO_SPAWN_TBL)
-        --print(tbl_cnt, REMAINING_ENEMIES_TO_SPAWN)
-        if tbl_cnt < REMAINING_ENEMIES_TO_SPAWN then
-            local added_per_wave_names = {}
-            for k, v in pairs(Added_Per_Wave_Percentage) do
+        if weight_sum > 0 then
+            local SpawningCount = {}
+            for k, v in pairs(SpawningPercentages) do
+                SpawningCount[k] = {}
                 for k2, v2 in pairs(v) do
-                    table.insert(added_per_wave_names, {k, k2})
+                    if v2 > 0 then
+                        SpawningCount[k][k2] = math.floor((REMAINING_ENEMIES_TO_SPAWN * v2/weight_sum) + 0.5)
+                    end
                 end
             end
-            local added_per_wave_names_c = table_count(added_per_wave_names)
-            for i = tbl_cnt, (REMAINING_ENEMIES_TO_SPAWN-1) do
-                local selected_id = math.random(added_per_wave_names_c)
-                table.insert(ENEMIES_TO_SPAWN_TBL, {added_per_wave_names[selected_id][1], added_per_wave_names[selected_id][2]})
-            end
-        end
+            --print(NanosTable.Dump(SpawningCount))
 
-        if tbl_cnt > REMAINING_ENEMIES_TO_SPAWN then
-            for i = REMAINING_ENEMIES_TO_SPAWN, (tbl_cnt-1) do
-                local selected_id = math.random(tbl_cnt-i + REMAINING_ENEMIES_TO_SPAWN)
-                table.remove(ENEMIES_TO_SPAWN_TBL, selected_id)
-            end
-        end
 
-        --print(table_count(ENEMIES_TO_SPAWN_TBL))
+            --local FastZombiesToSpawnNB = math.floor((Running_Zombies_Percentage_Start + (Added_Running_Zombies_Percentage_At_Each_Wave * (ROUND_NB - 1))) * REMAINING_ENEMIES_TO_SPAWN / 100)
+            --local SlowZombiesToSpawnNB = REMAINING_ENEMIES_TO_SPAWN - FastZombiesToSpawnNB
+            for k, v in pairs(SpawningCount) do
+                for k2, v2 in pairs(v) do
+                    for i = 1, v2 do
+                        table.insert(ENEMIES_TO_SPAWN_TBL, {k, k2})
+                    end
+                end
+            end
+
+            local tbl_cnt = table_count(ENEMIES_TO_SPAWN_TBL)
+            --print(tbl_cnt, REMAINING_ENEMIES_TO_SPAWN)
+            if tbl_cnt < REMAINING_ENEMIES_TO_SPAWN then
+                local added_per_wave_names = {}
+                for k, v in pairs(Enemies_Waves_Weight_Functions) do
+                    for k2, v2 in pairs(v) do
+                        if SpawningPercentages[k][k2] > 0 then -- Only add zombies that can still spawn
+                            table.insert(added_per_wave_names, {k, k2})
+                        end
+                    end
+                end
+                local added_per_wave_names_c = table_count(added_per_wave_names)
+                for i = tbl_cnt, (REMAINING_ENEMIES_TO_SPAWN-1) do
+                    local selected_id = math.random(added_per_wave_names_c)
+                    table.insert(ENEMIES_TO_SPAWN_TBL, {added_per_wave_names[selected_id][1], added_per_wave_names[selected_id][2]})
+                end
+            end
+
+            if tbl_cnt > REMAINING_ENEMIES_TO_SPAWN then
+                for i = REMAINING_ENEMIES_TO_SPAWN, (tbl_cnt-1) do
+                    local selected_id = math.random(tbl_cnt-i + REMAINING_ENEMIES_TO_SPAWN)
+                    table.remove(ENEMIES_TO_SPAWN_TBL, selected_id)
+                end
+            end
+
+            --print(table_count(ENEMIES_TO_SPAWN_TBL))
+        else
+            warn("weight_sum is <= 0, cannot generate Enemies to spawn properly")
+        end
     else
         for i = 1, REMAINING_ENEMIES_TO_SPAWN do
             table.insert(ENEMIES_TO_SPAWN_TBL, {"Hellhound", "hellhound"})
@@ -316,16 +384,31 @@ function StartRound()
             v:SetValue("ZMoney", Player_Start_Money, true)
             v:SetValue("ZScore", 0, false)
             v:SetValue("ZKills", 0, false)
+            v:SetValue("PlayerWaiting", nil, true)
             SpawnCharacterForPlayer(v, k)
+        else
+            if Game_Time_On_Screen then
+                Events.CallRemote("UpdateGameTime", v, math.floor(GAME_TIMER_SECONDS))
+            end
         end
     end
 
-    local Spawn_Enemy_Interval_time = math.ceil(Enemies_Spawn_Cooldown/REMAINING_ENEMIES_TO_SPAWN)
-    if Spawn_Enemy_Interval_time < Enemies_Spawn_Interval_min_time_ms then
-        Spawn_Enemy_Interval_time = Enemies_Spawn_Interval_min_time_ms
+    SPAWN_ENEMY_INTERVAL_TIME = math.ceil(Enemies_Spawn_Cooldown/REMAINING_ENEMIES_TO_SPAWN)
+    if SPAWN_ENEMY_INTERVAL_TIME < Enemies_Spawn_Interval_min_time_ms then
+        SPAWN_ENEMY_INTERVAL_TIME = Enemies_Spawn_Interval_min_time_ms
     end
-    ENEMIES_SPAWN_INTERVAL = Timer.SetInterval(SpawnEnemyIntervalFunc, Spawn_Enemy_Interval_time)
+    ENEMIES_SPAWN_INTERVAL = Timer.SetInterval(SpawnEnemyIntervalFunc, SPAWN_ENEMY_INTERVAL_TIME)
     SpawnEnemyIntervalFunc()
+    if Timed_Waves then
+        SendWaveTimeRemaining()
+        if Timer.IsValid(WAVE_TIMEOUT) then
+            Timer.ClearTimeout(WAVE_TIMEOUT)
+        end
+        WAVE_TIMEOUT = Timer.SetTimeout(function()
+            WAVE_TIMED_OUT = true
+            CheckRoundFinished()
+        end, REMAINING_ENEMIES_TO_SPAWN*(SPAWN_ENEMY_INTERVAL_TIME or 0))
+    end
 
     if Dynamic_Server_Description then
         local new_text = DSD_In_Game_Text[1] .. tostring(ROUND_NB)
@@ -336,9 +419,9 @@ function StartRound()
     end
 
     if ROUND_NB == 1 then
-        Events.Call("VZ_GameStarted")
+        VZ_EVENT_CALL("Events", "VZ_GameStarted")
     end
-    Events.Call("VZ_WaveStarted", ROUND_NB)
+    VZ_EVENT_CALL("Events", "VZ_WaveStarted", ROUND_NB, In_Hellhound_Round)
 end
 
 if Dynamic_Server_Description then

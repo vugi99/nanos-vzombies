@@ -1,6 +1,6 @@
 
 
-Bots_Enabled = true
+Bots_Enabled = false
 No_Players = false -- Won't spawn players, bots will play alone
 Bots_Start_Moving_ms = 7500
 Max_Bots = 1
@@ -12,6 +12,8 @@ Bots_Reach_Acceptance_Radius_sq = (Bots_Acceptance_Radius*4)^2 -- Reach check
 Bots_PreReach_Trigger_Radius = Bots_Acceptance_Radius*7 -- Prepare next order
 
 Bots_Remaining_Ammo_Bag_Buy_Refill = 60
+Bots_No_Ammo_Switch_Weapon = true
+Bots_Smart_Weapon_Switch_Interval_ms = 10000
 
 Bots_CheckTarget_Interval = 2500
 Bots_Target_MaxDistance3D_Sq = 36000000
@@ -19,6 +21,9 @@ Bots_Target_MaxDistance3D_Sq = 36000000
 Bots_Shoot_Inaccuracy_Each_Distance_Unit = 0.02
 
 Bots_Reach_PAP_Around = 100
+Bots_Reach_POWER_Around = 100
+Bots_Reach_Perks_Around = 100
+Bots_Reach_Weapon_Around = 80
 Bots_Reach_Door_Around = 125
 
 Bots_Ragdoll_Get_Up_Timeout_ms = 10000

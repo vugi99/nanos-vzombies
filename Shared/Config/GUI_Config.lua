@@ -16,9 +16,23 @@ Game_Time_Canvas_Update_Interval_ms = 1000
 
 Ping_Canvas_Update_Interval_ms = 30
 
+Max_Players_Money_Displayed = 8
+
 Chat_Config = {Vector2D(-175, 0), Vector2D(400, 300), Vector2D(1, 0.75), Vector2D(1, 0.75), Vector2D(1, 0.75), true, true}
 
 
 Ping_Enabled = true
 Ping_Max_Distance = 5000
 Ping_Display_Time_ms = 20000
+
+Drawn_Text_Screen_Scaling = true
+Drawn_Text_Scaling_Base_Resolution_Size = Vector2D(1920, 1080)
+VZ_GUI_ANCHOR_TOP_LEFT = 0
+VZ_GUI_ANCHOR_MIDDLE_LEFT = 1
+VZ_GUI_ANCHOR_BOTTOM_LEFT = 2
+VZ_GUI_ANCHOR_TOP_MIDDLE = 3
+VZ_GUI_ANCHOR_MIDDLE_MIDDLE = 4
+VZ_GUI_ANCHOR_BOTTOM_MIDDLE = 5
+VZ_GUI_ANCHOR_TOP_RIGHT = 6
+VZ_GUI_ANCHOR_MIDDLE_RIGHT = 7
+VZ_GUI_ANCHOR_BOTTOM_RIGHT = 8

@@ -5,7 +5,7 @@
     # contributors
     author =                "Voltaism"
     # version
-    version =               "3.0.3"
+    version =               "3.1.0-dev"
 
 # game-mode configurations
 [game_mode]
@@ -16,7 +16,7 @@
     # whether to load all level entities on client - only enable it if your package needs to use level static meshes entities
     load_level_entities =   false
     # the game version (major.minor) at the time this package was created, for granting compatibility between breaking changes
-    compatibility_version = "1.64"
+    compatibility_version = "1.97"
     # packages requirements
     packages_requirements = [
                             "default-weapons",
@@ -53,4 +53,5 @@
     PlayerSpeedMultiplier = { label = "Player Speed Multiplier", type = "floating", description = "", default = 1.500000 }
     Player_Start_Money = { label = "Player Start Money", type = "integer", description = "", default = 500 }
     Players_Spawns_Multiplier = { label = "Player Spawns Multiplier", type = "floating", description = "Adds more spawns to the maps (use with caution)", default = 1.500000 }
+    Timed_Waves = { label = "Timed Waves", type = "boolean", description = "Enable Timed Waves, enemies spawn continuously", default = false }
     VZ_SELECTED_GAMEMODE = { label = "SubMode", type = "select", description = "", options = [ "SURVIVAL", "SHARPSHOOTER", "INVISIBLE_ZOMBIES", "GUNGAME", "GRIEF", "TOPDOWN" ], default = "SURVIVAL" }

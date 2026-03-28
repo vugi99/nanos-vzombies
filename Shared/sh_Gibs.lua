@@ -3,19 +3,17 @@
 local EnemiesBonesHealth = {}
 
 function DamageZombieBone(char, bone, damage, goingtodie, instigator)
-    if EnemiesBonesHealth[char:GetID()][bone] then
+    if EnemiesBonesHealth[char:GetID()][bone] and EnemiesBonesHealth[char:GetID()][bone] > 0 then
         if EnemiesBonesHealth[char:GetID()][bone] - damage > 0 then
             EnemiesBonesHealth[char:GetID()][bone] = EnemiesBonesHealth[char:GetID()][bone] - damage
         else
             EnemiesBonesHealth[char:GetID()][bone] = 0
             if GetEnemyTable(char).Gibs[bone].Detach then
                 for i, v in ipairs(GetEnemyTable(char).Gibs[bone].Detach) do
-                    if EnemiesBonesHealth[char:GetID()][v] > 0 then
-                        DamageZombieBone(char, v, EnemiesBonesHealth[char:GetID()][v], goingtodie, instigator)
-                    end
+                    DamageZombieBone(char, v, EnemiesBonesHealth[char:GetID()][v], goingtodie, instigator)
                 end
             end
-            Events.Call("VZ_SpawnGib", char, bone, goingtodie, instigator)
+            VZ_EVENT_CALL("Events", "VZ_SpawnGib", char, bone, goingtodie, instigator)
         end
     end
 end

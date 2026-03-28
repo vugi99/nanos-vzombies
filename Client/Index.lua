@@ -18,6 +18,11 @@ function IsSelfCharacter(char)
     return false
 end
 
+function GetLocalCharacter()
+    local local_player = Client.GetLocalPlayer()
+    return local_player:GetControlledCharacter()
+end
+
 function IsSpectatingPlayerCharacter(char)
     if Spectating_Player then
         local spec_char = Spectating_Player:GetControlledCharacter()
@@ -47,7 +52,7 @@ CLIENT_RECEIVED_SERVER_SETTINGS = nil
 Package.Subscribe("Load", function()
     Packages_Loaded = true
     if _CallVZ_Loaded_Event then
-        Events.Call("VZOMBIES_CLIENT_GAMEMODE_LOADED")
+        VZ_EVENT_CALL("Events", "VZOMBIES_CLIENT_GAMEMODE_LOADED")
     end
 
     print("VZombies " .. Package.GetVersion() .. " Loaded")
@@ -106,6 +111,12 @@ Events.SubscribeRemote("LoadMapConfig", function(MAP_CONFIG)
     end
 
     if VZ_GAMEMODES_CONFIG[VZ_SELECTED_GAMEMODE].Scripts then
+        if VZ_GAMEMODES_CONFIG[VZ_SELECTED_GAMEMODE].Scripts.Shared then
+            for i, v in ipairs(VZ_GAMEMODES_CONFIG[VZ_SELECTED_GAMEMODE].Scripts.Shared) do
+                Package.Require(v)
+            end
+        end
+
         if VZ_GAMEMODES_CONFIG[VZ_SELECTED_GAMEMODE].Scripts.Client then
             for i, v in ipairs(VZ_GAMEMODES_CONFIG[VZ_SELECTED_GAMEMODE].Scripts.Client) do
                 Package.Require(v)
@@ -114,12 +125,14 @@ Events.SubscribeRemote("LoadMapConfig", function(MAP_CONFIG)
     end
 
     if Packages_Loaded then
-        Events.Call("VZOMBIES_CLIENT_GAMEMODE_LOADED")
+        VZ_EVENT_CALL("Events", "VZOMBIES_CLIENT_GAMEMODE_LOADED")
     else
         _CallVZ_Loaded_Event = true
     end
 
     Cl_Gamemode_Loaded = true
+
+    print("Loaded MapConfig from Server")
 end)
 
 
@@ -138,3 +151,11 @@ Events.SubscribeRemote("SendCustomSettingsToClient", function(settings)
 end)
 
 Client.SetEscapeMenuText(Escape_Menu_Text)
+
+--[[VZ_EVENT_SUBSCRIBE("Blueprint", "Spawn", function(v)
+    print("Spawned Blueprint", v, v:GetID())
+end)
+
+VZ_EVENT_SUBSCRIBE_REMOTE("TellSpawnedTest", function()
+    print("Before Goo Spawn")
+end)]]--

@@ -39,8 +39,12 @@ end
 
 function UpgradeWeapon(ply, pap_sm)
     if POWER_ON then
-        if (pap_sm and pap_sm:IsValid()) then
+        if (IsValid(pap_sm)) then
             if pap_sm:GetValue("CanBuyPackAPunch") then
+                if pap_sm:GetValue("PPG_Sabotaged") then
+                    return
+                end
+
                 local char = ply:GetControlledCharacter()
                 if char then
                     if not char:GetValue("PlayerDown") then
@@ -105,7 +109,7 @@ function UpgradeWeapon(ply, pap_sm)
                                                     MAP_PAP_SM:SetValue("CanBuyPackAPunch", true, true)
                                                 end, Pack_a_punch_destroy_weapon_time_ms)
 
-                                                Events.Call("VZ_PAPUpgradedWeapon")
+                                                VZ_EVENT_CALL("Events", "VZ_PAPUpgradedWeapon")
                                             end, Pack_a_punch_upgrade_time_ms)
 
                                             Events.BroadcastRemote("PlayVZSound", {basic_sound_tbl=PAP_Upgrade_Sound}, MAP_PACK_A_PUNCH.location)

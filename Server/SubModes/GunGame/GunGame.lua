@@ -43,7 +43,7 @@ function GunGame_HandleZombieDeath(char, instigator)
                     if weapon_index > table_count(Weapons_Random_Order) then
                         Server.BroadcastChatMessage(instigator:GetAccountName() .. " won the GunGame.")
 
-                        RoundFinished(false, true)
+                        CheckRoundFinished(false, true)
                     else
                         local charInvID = GetCharacterInventory(instig_char)
 

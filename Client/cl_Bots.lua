@@ -1,4 +1,9 @@
 
+
+RegisterPreparedLoop("Powerups", StaticMesh, "GrabPowerup")
+RegisterPreparedLoop("MapWeapons", Weapon, "MapWeaponID")
+RegisterPreparedLoop("MapDoors", StaticMesh, "DoorID")
+
 local BotsAimIntervals = {}
 
 function VZBot.prototype:SetValue(key, value)
@@ -13,7 +18,7 @@ function VZBot.prototype:SetValue(key, value)
 end
 
 function CL_VZBot(Bot_id, tbl)
-    --print("CL_VZBot", Bot_id, NanosUtils.Dump(tbl))
+    --print("CL_VZBot", Bot_id, NanosTable.Dump(tbl))
 
     for k, v in pairs(ALL_BOTS) do
         if v.ID == Bot_id then
@@ -51,7 +56,7 @@ function CL_VZBot(Bot_id, tbl)
                 end
             end
 
-            --print(NanosUtils.Dump(ChangedValues))
+            --print(NanosTable.Dump(ChangedValues))
 
             local OldValues = v.Stored.Values
             v.Stored = tbl
@@ -67,7 +72,7 @@ function CL_VZBot(Bot_id, tbl)
                 end
             end
 
-            --print("CL VZBot end2", NanosUtils.Dump(v))
+            --print("CL VZBot end2", NanosTable.Dump(v))
 
             return v
         end
@@ -97,7 +102,7 @@ function CL_VZBot(Bot_id, tbl)
         end
     end
 
-    --print("CL VZBot end", NanosUtils.Dump(ALL_BOTS[l_count + 1]))
+    --print("CL VZBot end", NanosTable.Dump(ALL_BOTS[l_count + 1]))
 
     return ALL_BOTS[l_count + 1]
 end
@@ -195,7 +200,7 @@ function GetNearestPowerup(char, prereach)
     local char_loc = char:GetLocation()
     local nearest
     local nearest_dist_sq
-    for k, v in pairs(StaticMesh.GetPairs()) do
+    for k, v in pairs(PreparedLoops["Powerups"]) do
         local PowerupID = v:GetValue("GrabPowerup")
         if PowerupID then
             if ((not prereach) or prereach[1] ~= "POWERUPS" or (prereach[1] == "POWERUPS" and prereach[2] ~= PowerupID)) then
@@ -203,7 +208,7 @@ function GetNearestPowerup(char, prereach)
                 local dist_sq = char_loc:DistanceSquared(loc)
                 if (not nearest_dist_sq or nearest_dist_sq > dist_sq) then
                     local path = Navigation.FindPathToLocation(char_loc, loc)
-                    if (path.IsValid and not path.IsPartial) then
+                    if (path.IsValid and (not path.IsPartial)) then
                         nearest = v
                         nearest_dist_sq = dist_sq
                     end
@@ -269,29 +274,6 @@ function GetPerkToBuy(bot, char, prereach)
 
 end
 
-function GetWeaponRank(weapon_name)
-    for i, v in ipairs(Bots_Weapons_Ranks) do
-        if v == weapon_name then
-            return i
-        end
-    end
-    return 0
-end
-
-function GetBestInvWeapon(bot_inv)
-    local Best_Inv_Weapon
-    local Best_Inv_Weapon_Rank = 0
-    for k, v in pairs(bot_inv.weapons) do
-        local rank = GetWeaponRank(v.weapon_name)
-        if rank > Best_Inv_Weapon_Rank then
-            Best_Inv_Weapon_Rank = rank
-            Best_Inv_Weapon = v
-        end
-    end
-
-    return Best_Inv_Weapon, Best_Inv_Weapon_Rank
-end
-
 function GetWeaponOrAmmoToBuy(Bot, char, bot_inv, prereach)
     local Best_Inv_Weapon, Best_Inv_Weapon_Rank = GetBestInvWeapon(bot_inv)
 
@@ -305,7 +287,8 @@ function GetWeaponOrAmmoToBuy(Bot, char, bot_inv, prereach)
     local money = GetBotMoneyConsideringPrereach(Bot, prereach)
     local Best_Can_Buy_Weapon
     local Best_Can_Buy_Weapon_Rank = 0
-    for k, v in pairs(Weapon.GetPairs()) do
+    local Best_Can_Buy_Weapon_Target_Loc
+    for k, v in pairs(PreparedLoops["MapWeapons"]) do
         if v:IsValid() then
             local weapon_id = v:GetValue("MapWeaponID")
             if weapon_id then
@@ -318,6 +301,17 @@ function GetWeaponOrAmmoToBuy(Bot, char, bot_inv, prereach)
                             if (path.IsValid and not path.IsPartial) then
                                 Best_Can_Buy_Weapon = v
                                 Best_Can_Buy_Weapon_Rank = rank
+                                Best_Can_Buy_Weapon_Target_Loc = v:GetLocation()
+                            else
+                                local point_around = Navigation.GetRandomPointInNavigableRadius(v:GetLocation(), Bots_Reach_Weapon_Around)
+                                if (point_around and point_around ~= Vector(0, 0, 0)) then
+                                    local path2 = Navigation.FindPathToLocation(char:GetLocation(), point_around)
+                                    if (path2.IsValid and not path2.IsPartial) then
+                                        Best_Can_Buy_Weapon = v
+                                        Best_Can_Buy_Weapon_Rank = rank
+                                        Best_Can_Buy_Weapon_Target_Loc = point_around
+                                    end
+                                end
                             end
                         end
                     end
@@ -327,7 +321,7 @@ function GetWeaponOrAmmoToBuy(Bot, char, bot_inv, prereach)
     end
 
     if Best_Inv_Weapon_Rank < Best_Can_Buy_Weapon_Rank then
-        return Best_Can_Buy_Weapon
+        return Best_Can_Buy_Weapon, Best_Can_Buy_Weapon_Target_Loc
     else
         local ammo_bag
         if Best_Inv_Weapon.weapon then
@@ -338,7 +332,7 @@ function GetWeaponOrAmmoToBuy(Bot, char, bot_inv, prereach)
 
         --print("ammo_bag", ammo_bag)
         if ammo_bag <= Bots_Remaining_Ammo_Bag_Buy_Refill then
-            for k, v in pairs(Weapon.GetPairs()) do
+            for k, v in pairs(PreparedLoops["MapWeapons"]) do
                 if v:IsValid() then
                     local weapon_id = v:GetValue("MapWeaponID")
                     if weapon_id then
@@ -352,7 +346,15 @@ function GetWeaponOrAmmoToBuy(Bot, char, bot_inv, prereach)
                                 if money >= price then
                                     local path = Navigation.FindPathToLocation(char:GetLocation(), v:GetLocation())
                                     if (path.IsValid and not path.IsPartial) then
-                                        return v
+                                        return v, v:GetLocation()
+                                    else
+                                        local point_around = Navigation.GetRandomPointInNavigableRadius(v:GetLocation(), Bots_Reach_Weapon_Around)
+                                        if (point_around and point_around ~= Vector(0, 0, 0)) then
+                                            local path2 = Navigation.FindPathToLocation(char:GetLocation(), point_around)
+                                            if (path2.IsValid and not path2.IsPartial) then
+                                                return v, point_around
+                                            end
+                                        end
                                     end
                                 end
                                 break
@@ -400,7 +402,8 @@ function GetDoorToOpen(Bot, char, ROOMS_UNLOCKED, prereach)
 
     local CheapestDoorOpenable
     local CheapestDoorOpenablePrice
-    for k, v in pairs(StaticMesh.GetPairs()) do
+    local CheapestDoorTargetLoc
+    for k, v in pairs(PreparedLoops["MapDoors"]) do
         if v:IsValid() then
             local door_id = v:GetValue("DoorID")
             if door_id then
@@ -413,6 +416,7 @@ function GetDoorToOpen(Bot, char, ROOMS_UNLOCKED, prereach)
                                 if (path.IsValid and not path.IsPartial) then
                                     CheapestDoorOpenable = v
                                     CheapestDoorOpenablePrice = price
+                                    CheapestDoorTargetLoc = v:GetLocation()
                                 else
                                     local point_around = Navigation.GetRandomPointInNavigableRadius(v:GetLocation(), Bots_Reach_Door_Around)
                                     if (point_around and point_around ~= Vector(0, 0, 0)) then
@@ -420,6 +424,7 @@ function GetDoorToOpen(Bot, char, ROOMS_UNLOCKED, prereach)
                                         if (path2.IsValid and not path2.IsPartial) then
                                             CheapestDoorOpenable = v
                                             CheapestDoorOpenablePrice = price
+                                            CheapestDoorTargetLoc = point_around
                                         end
                                     end
                                 end
@@ -431,7 +436,7 @@ function GetDoorToOpen(Bot, char, ROOMS_UNLOCKED, prereach)
         end
     end
 
-    return CheapestDoorOpenable
+    return CheapestDoorOpenable, CheapestDoorTargetLoc
 end
 
 function GetNearestCharacterThatNeedRevive(char)
@@ -534,13 +539,17 @@ local Clientside_Bot_Actions = {
                 local SM = GetPowerSM()
                 if SM then
                     local loc = SM:GetLocation()
-                    local path = Navigation.FindPathToLocation(char:GetLocation(), loc)
-                    if (path.IsValid and not path.IsPartial) then
-                        if ZDEV_IsModeEnabled("ZDEV_DEBUG_BOTS_ACTIONS") then
-                            DrawBotMovementCylinder(char:GetLocation(), loc, Color.GREEN, v)
+                    local point_around = Navigation.GetRandomPointInNavigableRadius(loc, Bots_Reach_POWER_Around)
+                    if (point_around and point_around ~= Vector(0, 0, 0)) then
+                        local path = Navigation.FindPathToLocation(char:GetLocation(), point_around)
+                        --print(NanosTable.Dump(path))
+                        if (path.IsValid and (not path.IsPartial)) then
+                            if ZDEV_IsModeEnabled("ZDEV_DEBUG_BOTS_ACTIONS") then
+                                DrawBotMovementCylinder(char:GetLocation(), point_around, Color.GREEN, v)
+                            end
+                            Events.CallRemote("BotAction", bot_id, v, point_around, nil, prereach)
+                            return true
                         end
-                        Events.CallRemote("BotAction", bot_id, v, loc, nil, prereach)
-                        return true
                     end
                 end
             end
@@ -561,24 +570,27 @@ local Clientside_Bot_Actions = {
         local perk_target = GetPerkToBuy(Bot, char, prereach)
         if perk_target then
             local loc = perk_target:GetLocation()
-            local path = Navigation.FindPathToLocation(char:GetLocation(), loc)
-            if (path.IsValid and not path.IsPartial) then
-                if ZDEV_IsModeEnabled("ZDEV_DEBUG_BOTS_ACTIONS") then
-                    DrawBotMovementCylinder(char:GetLocation(), loc, Color.GREEN, v)
+            local point_around = Navigation.GetRandomPointInNavigableRadius(loc, Bots_Reach_Perks_Around)
+            if (point_around and point_around ~= Vector(0, 0, 0)) then
+                local path = Navigation.FindPathToLocation(char:GetLocation(), point_around)
+                if (path.IsValid and not path.IsPartial) then
+                    if ZDEV_IsModeEnabled("ZDEV_DEBUG_BOTS_ACTIONS") then
+                        DrawBotMovementCylinder(char:GetLocation(), point_around, Color.GREEN, v)
+                    end
+                    Events.CallRemote("BotAction", bot_id, v, point_around, perk_target, prereach)
+                    return true
                 end
-                Events.CallRemote("BotAction", bot_id, v, loc, perk_target, prereach)
-                return true
             end
         end
     end,
     WEAPONS = function(Bot, bot_id, bot_inv, ROOMS_UNLOCKED, char, v, prereach)
-        local weapon_target = GetWeaponOrAmmoToBuy(Bot, char, bot_inv, prereach)
-        if weapon_target then
+        local weapon_target, weapon_target_loc = GetWeaponOrAmmoToBuy(Bot, char, bot_inv, prereach)
+        if weapon_target and weapon_target_loc then
             local loc = weapon_target:GetLocation()
             if ZDEV_IsModeEnabled("ZDEV_DEBUG_BOTS_ACTIONS") then
-                DrawBotMovementCylinder(char:GetLocation(), loc, Color.GREEN, v)
+                DrawBotMovementCylinder(char:GetLocation(), weapon_target_loc, Color.GREEN, v)
             end
-            Events.CallRemote("BotAction", bot_id, v, loc, weapon_target, prereach)
+            Events.CallRemote("BotAction", bot_id, v, weapon_target_loc, weapon_target, prereach)
             return true
         end
     end,
@@ -594,7 +606,7 @@ local Clientside_Bot_Actions = {
                         local point_around = Navigation.GetRandomPointInNavigableRadius(loc, Bots_Reach_PAP_Around)
                         if (point_around and point_around ~= Vector(0, 0, 0)) then
                             local path = Navigation.FindPathToLocation(char:GetLocation(), point_around)
-                            --print(NanosUtils.Dump(path))
+                            --print(NanosTable.Dump(path))
                             if (path.IsValid and not path.IsPartial) then
                                 if ZDEV_IsModeEnabled("ZDEV_DEBUG_BOTS_ACTIONS") then
                                     DrawBotMovementCylinder(char:GetLocation(), point_around, Color.GREEN, v)
@@ -609,13 +621,12 @@ local Clientside_Bot_Actions = {
         end
     end,
     DOORS = function(Bot, bot_id, bot_inv, ROOMS_UNLOCKED, char, v, prereach)
-        local door_target = GetDoorToOpen(Bot, char, ROOMS_UNLOCKED, prereach)
-        if door_target then
-            local loc = door_target:GetLocation()
+        local door_target, door_target_loc = GetDoorToOpen(Bot, char, ROOMS_UNLOCKED, prereach)
+        if door_target and door_target_loc then
             if ZDEV_IsModeEnabled("ZDEV_DEBUG_BOTS_ACTIONS") then
-                DrawBotMovementCylinder(char:GetLocation(), loc, Color.GREEN, v)
+                DrawBotMovementCylinder(char:GetLocation(), door_target_loc, Color.GREEN, v)
             end
-            Events.CallRemote("BotAction", bot_id, v, loc, door_target, prereach)
+            Events.CallRemote("BotAction", bot_id, v, door_target_loc, door_target, prereach)
             return true
         end
     end,
@@ -722,7 +733,7 @@ VZ_EVENT_SUBSCRIBE("VZBot", "ValueChange", function(Bot, key, value)
                                             )
                                             if trace.Success then
                                                 --if trace.ActorName ~= "StaticMeshActor" then
-                                                    --print(NanosUtils.Dump(trace))
+                                                    --print(NanosTable.Dump(trace))
                                                 --end
                                                 if (trace.Entity and trace.Entity == v) then
                                                     table.insert(can_shoot_on, v)
@@ -740,18 +751,16 @@ VZ_EVENT_SUBSCRIBE("VZBot", "ValueChange", function(Bot, key, value)
                                 local CanShootOn = char:GetValue("BOTCanShootOn")
                                 CanShootOn = CanShootOn or {}
                                 local same = false
-                                if Shooting_On then
-                                    local same_count = 0
-                                    for i, v in ipairs(can_shoot_on) do
-                                        for i2, v2 in ipairs(CanShootOn) do
-                                            if v:GetID() == v2 then
-                                                same_count = same_count + 1
-                                            end
+                                local same_count = 0
+                                for i, v in ipairs(can_shoot_on) do
+                                    for i2, v2 in ipairs(CanShootOn) do
+                                        if v:GetID() == v2 then
+                                            same_count = same_count + 1
                                         end
                                     end
-                                    if not (same_count == table_count(CanShootOn) and table_count(can_shoot_on) == table_count(CanShootOn)) then
-                                        same = true
-                                    end
+                                end
+                                if (same_count == table_count(CanShootOn) and table_count(can_shoot_on) == table_count(CanShootOn)) then
+                                    same = true
                                 end
 
                                 if not same then

@@ -16,9 +16,9 @@ GunGame_Canvas:Subscribe("Update", function(self, width, height)
         if gungame_cur_weapon then
             local gungame_cur_killcount = local_char:GetValue("WeaponKillCount")
             if gungame_cur_killcount then
-                self:DrawText(tostring(VZ_GetGamemodeConfigValue("Kills_To_Next_Weapon") - gungame_cur_killcount) .. " Kills for next weapon", Vector2D(5, math.floor(Viewport.GetViewportSize().Y * 0.55)), FontType.OpenSans, 13, Color.WHITE, 0, false, true, Color(0, 0, 0, 0), Vector2D(), false, Color.BLACK)
+                self:DrawText(tostring(VZ_GetGamemodeConfigValue("Kills_To_Next_Weapon") - gungame_cur_killcount) .. " Kills for next weapon", GUI_PositionScaling(Vector2D(5, math.floor(Viewport.GetViewportSize().Y * 0.55)), VZ_GUI_ANCHOR_MIDDLE_LEFT), FontType.OpenSans, GUI_TextDrawnScalingSize(13), Color.WHITE, 0, false, true, Color(0, 0, 0, 0), Vector2D(), false, Color.BLACK)
 
-                self:DrawText(tostring(gungame_cur_weapon) .. " / " .. tostring(Total_Weapons) .. " Weapon", Vector2D(5, math.floor(Viewport.GetViewportSize().Y * 0.6)), FontType.OpenSans, 16, Color.WHITE, 0, false, true, Color(0, 0, 0, 0), Vector2D(), false, Color.BLACK)
+                self:DrawText(tostring(gungame_cur_weapon) .. " / " .. tostring(Total_Weapons) .. " Weapon", GUI_PositionScaling(Vector2D(5, math.floor(Viewport.GetViewportSize().Y * 0.6)), VZ_GUI_ANCHOR_MIDDLE_LEFT), FontType.OpenSans, GUI_TextDrawnScalingSize(16), Color.WHITE, 0, false, true, Color(0, 0, 0, 0), Vector2D(), false, Color.BLACK)
             end
         end
     end

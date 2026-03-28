@@ -53,6 +53,7 @@ VZ_CL_Default_Settings = {
     Spectating_Player_Showed = true,
     Game_Time_Showed = true,
     --Player_Names_On_Heads = true,
+    GUI_Auto_Scaling = true,
 
     Ammo_Showed = true,
     Players_Money_Showed = true,

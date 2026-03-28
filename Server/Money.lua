@@ -2,6 +2,10 @@
 
 
 function Buy(ply, price)
+    if (price == 0) then
+        return true
+    end
+
     if ply:GetValue("MM_InfMoney") then
         return true
     end
@@ -16,6 +20,10 @@ end
 Package.Export("Buy", Buy)
 
 function AddMoney(ply, added, only_money)
+    if (added == 0) then
+        return true
+    end
+
     local pmoney = ply:GetValue("ZMoney")
     if pmoney then
         if ACTIVE_POWERUPS.x2 then
@@ -87,10 +95,19 @@ end
 VZ_EVENT_SUBSCRIBE("Weapon", "Interact", InteractMapWeapon)
 
 
-function BuyDoor(ply, door_id)
+function BuyDoor(ply, map_door)
     --print("BuyDoor", ply, door_id)
-    local map_door = GetMapDoorFromID(door_id)
-    if map_door then
+    if type(map_door) ~= "userdata" then
+        return
+    end
+
+    if IsValid(map_door) then
+        local door_id = map_door:GetValue("DoorID")
+        if (type(door_id) ~= "number") then return end
+        if map_door:GetValue("PPG_Sabotaged") then
+            return
+        end
+
         local char = ply:GetControlledCharacter()
         if char then
             if not char:GetValue("PlayerDown") then
@@ -108,7 +125,7 @@ function BuyDoor(ply, door_id)
                         for i, v in ipairs(MAP_DOORS[door_id].between_rooms) do
                             UnlockRoom(v)
                         end
-                        Events.Call("VZ_DoorOpened", char, door_id)
+                        VZ_EVENT_CALL("Events", "VZ_DoorOpened", char, door_id)
                     end
                 else
                     Events.CallRemote("AddNotification", ply, "Cannot Open The Door")

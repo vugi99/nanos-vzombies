@@ -38,7 +38,7 @@ Zombies_Nearest_SmartSpawns_Percentage = {
 }
 
 Enemies_Spawn_Cooldown = 90000 -- All the wave enemies will be spawned (if it doesn't reach the limit) after this time
-Enemies_Spawn_Interval_min_time_ms = 500
+Enemies_Spawn_Interval_min_time_ms = 1500
 
 DestroyEnemy_After_death_ms = 20000
 
@@ -139,6 +139,7 @@ Zombies_Gibs_Bones = {
     },
     head = {
         health_p = 80,
+        emissive_key = "Emissive_value",
         asset = "vzombies-assets::Head",
         materials = {
             "body",
@@ -214,6 +215,11 @@ Vault_Animations = {
     },
 }
 
+Enemy_Under_Ground_Animation = {
+    asset = "vzombies-assets::FreehangClimb",
+    duration_ms = 6100,
+}
+
 Enemies_Config = {
     Zombie = {
 
@@ -259,6 +265,8 @@ Enemies_Config = {
         Collision_Radius = 17.0,
 
         Joker_Chance = 5, -- x amount TakeDamage will lead to joker for 10000 shots
+
+        Emissive_Key = "Emissive_value", -- The key used on scalar parameter of character to disable it on death with SetMaterialScalarParameter
 
         Models = {
             {
@@ -354,6 +362,8 @@ Enemies_Config = {
 
         Health_Mult_By = 0.3, -- From basic health
 
+        Emissive_Key = "Emissive_value",
+
         Models = {
             "vzombies-assets::SK_Wolf",
         },
@@ -400,6 +410,8 @@ Enemies_Config = {
 
         Health_Mult_By = 4,
 
+        Emissive_Key = "Emissive_value",
+
         Models = {
             "vzombies-assets::pumpkinhulk_l_shaw",
         },
@@ -422,7 +434,7 @@ Enemies_Config = {
             },
 
             minimum_round_to_spawn = 10,
-            spawn_chance_per_zombie = 2, -- out of 1000
+            spawn_chance_per_zombie = 1, -- out of 1000
         },
 
         Custom_Anims_Func = function(Custom_Anims_BP, char)
@@ -478,7 +490,7 @@ Enemies_Config = {
             },
 
             minimum_round_to_spawn = 10,
-            spawn_chance_per_zombie = 2, -- out of 1000
+            spawn_chance_per_zombie = 1, -- out of 1000
         },
 
         Custom_Anims_Func = function(Custom_Anims_BP, char)
@@ -516,6 +528,8 @@ Enemies_Config = {
 
         Health_Mult_By = 2,
 
+        Emissive_Key = "Emissive_value",
+
         Models = {
             "vzombies-assets::SK_Zombie_M04_01",
             "vzombies-assets::SK_Zombie_M04_02",
@@ -551,6 +565,77 @@ Enemies_Config = {
 
         Custom_Skeleton = true, -- This one also have the bug
     },
+
+    Skeleton = {
+        Types = {
+            walk = {
+                GaitMode = GaitMode.Walking,
+                Speed_Multiplier = 1,
+                default = true,
+                Ambient_Sounds = RANDOM_SOUNDS.zombie_soft,
+            },
+            run = {
+                GaitMode = GaitMode.Sprinting,
+                Speed_Multiplier = PlayerSpeedMultiplier,
+                Ambient_Sounds = RANDOM_SOUNDS.zombie_sprint,
+            },
+        },
+
+        Behind_Sounds = RANDOM_SOUNDS.zombie_behind,
+        Death_Sounds = RANDOM_SOUNDS.zombie_death,
+        Attack_Sounds = RANDOM_SOUNDS.zombie_attack,
+
+        Boss = true,
+
+        Acceptance_Radius = 70,
+        Damage_Amount = function(char)
+            return math.floor((char:GetMaxHealth()-1000)/2 + 0.5)
+        end,
+        Damage_At_Distance_sq = 30000,
+
+        Collision_Radius = 18.0,
+
+        Health_Mult_By = 3,
+
+        Emissive_Key = "emis",
+
+        Models = {
+            "vzombies-assets::SK_SKnigh_01_full",
+            "vzombies-assets::SK_SKnigh_02_full",
+            "vzombies-assets::SK_SKnight_full_03",
+            "vzombies-assets::SK_SKnight_full_04",
+            "vzombies-assets::SK_SKnight_full_05",
+            "vzombies-assets::SK_SKnight_full_06",
+            "vzombies-assets::SK_SKnight_07_full",
+        },
+
+        Attack_Anims = {
+            {"nanos-world::AM_Mannequin_Melee_Slash_Attack", 500, 2000},
+        },
+
+        Custom_Target_Behavior = {
+            type = "noise",
+            threshold = 60,
+            reduce_interval_ms = 1000,
+            reduce_amount = 2,
+        },
+
+        Spawning_Config = {
+            types = {
+                {
+                    type = "custom_spawns",
+                    table_name = "HELLHOUND_SPAWNS",
+                    room_key = "room",
+                },
+                {
+                    type = "direct_zombie_spawns",
+                },
+            },
+
+            minimum_round_to_spawn = 15,
+            spawn_chance_per_zombie = 1, -- out of 1000
+        },
+    }
 }
 Enemies_Config.BusinessGraber.Attack_Anims = {
     {"vzombies-assets::AS_NAAT_Zombie_Idle_To_Grab", 600, 1000 + Enemies_Config.BusinessGraber.Custom_Attack_Behavior.Grab_Time_ms},
@@ -667,6 +752,7 @@ Enemies_Config.UrbanZombie.Gibs = {
     head = {
         health_p = 80,
         asset = {"vzombies-assets::U_HeadA", "vzombies-assets::U_HeadB"},
+        emissive_key = "Emissive_value",
         materials = {
             "body",
         },
@@ -810,3 +896,5 @@ Napalm_Fire_Radius_sq = 1000000
 Napalm_Fire_Damage = 5
 Napalm_Fire_Damage_Interval = 1500
 Napalm_Explosion_Damage = {150, 0, 150, 1000, 1} -- Grenade SetDamage parameters
+
+Enemies_AI_Avoidance_Settings = {true, 100} -- SetAIAvoidanceSettings

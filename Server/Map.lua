@@ -38,7 +38,6 @@ function GetMapDoorFromID(door_id)
             return v
         end
     end
-    return false
 end
 
 if MAP_POWER then
@@ -70,7 +69,7 @@ function ResetMapPower()
     if MAP_POWER then
         POWER_ON = false
         Events.BroadcastRemote("SetClientPowerON", false)
-        if MAP_POWER_SM_HANDLE:IsValid() then
+        if IsValid(MAP_POWER_SM_HANDLE) then
             MAP_POWER_SM_HANDLE:SetRotation(MAP_POWER.handle_rotation)
         end
     end
@@ -79,7 +78,7 @@ end
 function PlayerTurnPowerON(ply, power_sm)
     --print(ply, power_sm)
     if not POWER_ON then
-        if power_sm:IsValid() then
+        if IsValid(power_sm) then
             if power_sm == MAP_POWER_SM then
                 if ply:GetValue("ZMoney") ~= -666 then -- Means that they shouldn't do anything
                     local char = ply:GetControlledCharacter()
@@ -154,7 +153,7 @@ function UnlockRoom(id)
                 end
             end
         end
-        Events.Call("VZ_RoomUnlocked", id)
+        VZ_EVENT_CALL("Events", "VZ_RoomUnlocked", id)
     end
 end
 
@@ -203,7 +202,7 @@ if MAP_LIGHT_ZONES then
         local trigger = Trigger(v.location, v.rotation, v.scale * 31.5, TriggerType.Box, ZDEV_IsModeEnabled("ZDEV_DEBUG_TRIGGERS"), Color.RED, {"Character"})
 
         VZ_ENT_EVENT_SUBSCRIBE(trigger, "BeginOverlap", function(self, triggered_by)
-            if (triggered_by and triggered_by:IsValid() and triggered_by:IsA(Character)) then
+            if (IsValid(triggered_by) and triggered_by:IsA(Character)) then
                 local ply = triggered_by:GetPlayer()
                 if ply then
                     --print("FL Zone BeginOverlap")
@@ -220,7 +219,7 @@ if MAP_LIGHT_ZONES then
         end)
 
         VZ_ENT_EVENT_SUBSCRIBE(trigger, "EndOverlap", function(self, triggered_by)
-            if (triggered_by and triggered_by:IsValid() and triggered_by:IsA(Character)) then
+            if (IsValid(triggered_by) and triggered_by:IsA(Character)) then
                 local ply = triggered_by:GetPlayer()
                 if ply then
                     --print("FL Zone EndOverlap")
@@ -264,9 +263,17 @@ if MAP_STATIC_MESHES then
     end
 end
 
-function OpenMapDoor(door_id)
-    local map_door = GetMapDoorFromID(door_id)
-    if map_door then
+function OpenMapDoor(ply, map_door)
+    if type(map_door) ~= "userdata" then
+        return
+    end
+
+    --local map_door = GetMapDoorFromID(door_id)
+    if IsValid(map_door) then
+        local door_id = map_door:GetValue("DoorID")
+        if (type(door_id) ~= "number") then
+            return
+        end
         local required_rooms_good = true
         for i, v in ipairs(MAP_DOORS[door_id].required_rooms) do
             if not ROOMS_UNLOCKED[v] then
@@ -280,7 +287,11 @@ function OpenMapDoor(door_id)
             for i, v in ipairs(MAP_DOORS[door_id].between_rooms) do
                 UnlockRoom(v)
             end
-            Events.Call("VZ_DoorOpened", char, door_id)
+            local char
+            if IsValid(ply) then
+                char = ply:GetControlledCharacter()
+            end
+            VZ_EVENT_CALL("Events", "VZ_DoorOpened", char, door_id)
 
             return true
         end
