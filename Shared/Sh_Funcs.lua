@@ -262,7 +262,7 @@ function IsEnemyDisabled(EnemyName)
 end
 
 function VectorGetLookAt(vec1, to)
-    return (to - vec1):Rotation()
+    return (to - vec1):ToOrientationRotator()
 end
 
 function IsPointInRectangle(entity_location, trigger_loc, trigger_rot, extent)
@@ -370,4 +370,14 @@ if ZDEV_IsModeEnabled("ZDEV_DEBUG_FUNCTION_CALLS") then
             end
         end
     end, "c")
+end
+
+function IsAssetPackLoaded(asset_pack)
+    --print(NanosTable.Dump(Assets.GetAssetPacks()))
+    for _, v in ipairs(Assets.GetAssetPacks()) do
+        if v.Path == asset_pack then
+            return true
+        end
+    end
+    return false
 end

@@ -242,7 +242,7 @@ function SpawnEnemy(EnemyName, EnemyType)
                 VZ_EVENT_CALL("Events", "VZ_EnemySpawned", enemy)
             end
         else
-            --Console.Error("VZombies : Can't select a zombie spawn")
+            --Console.Error("Can't select a zombie spawn")
             -- Can go there for bosses when there isn't spawns for them
         end
     end
@@ -380,7 +380,7 @@ function SpawnEnemyIntervalFunc()
 
                 table.remove(ENEMIES_TO_SPAWN_TBL, index)
             else
-                warn("VZombies : Missing enemies in the TO_SPAWN Table")
+                warn("Missing enemies in the TO_SPAWN Table")
             end
 
             --CheckRoundFinished()
@@ -645,7 +645,7 @@ function AttackBarricade(enemy, barricade, start)
 end
 
 function ReachTarget_PrePlayerTargetFailed(enemy)
-    Console.Warn("vzombies : Reach target (blocker) failed, Respawning zombie, the zombie was there : " .. tostring(enemy:GetLocation()))
+    Console.Warn("Reach target (blocker) failed, Respawning zombie, the zombie was there : " .. tostring(enemy:GetLocation()))
     Timer.SetTimeout(function()
         RespawnEnemy(enemy)
     end, 1)

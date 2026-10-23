@@ -64,7 +64,7 @@ function BuyTeleport(ply, teleporter)
                                     end
                                 end
                             elseif Destination_Spawns_Count == 0 then
-                                Console.Error("vzombies : A teleporter doesn't have any destination, teleporter " .. tostring(teleporter_ID))
+                                Console.Error("A teleporter doesn't have any destination, teleporter " .. tostring(teleporter_ID))
                                 return
                             end
 
@@ -86,7 +86,7 @@ function BuyTeleport(ply, teleporter)
                             if MAP_TELEPORTERS[teleporter_ID].teleport_back_ms > 0 then
                                 local TeleportBackCount = table_count(MAP_TELEPORTERS[teleporter_ID].teleport_back)
                                 if TeleportBackCount ~= Destination_Spawns_Count then
-                                    Console.Error("vzombies : Missing back destinations (spawns) for the teleporter " .. tostring(teleporter_ID))
+                                    Console.Error("Missing back destinations (spawns) for the teleporter " .. tostring(teleporter_ID))
                                     return
                                 end
 

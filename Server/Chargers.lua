@@ -21,7 +21,7 @@ function SpawnMapChargers()
                 local mat_index = VZ_GetFeatureValue("Chargers", "charger_emissive_material_index") or -1
                charger_sm:SetMaterialScalarParameter(charger_emissive_key, 0.0, mat_index)
 
-               print("Charger SetMaterialScalarParameter", charger_emissive_key, mat_index)
+               --print("Charger SetMaterialScalarParameter", charger_emissive_key, mat_index)
             end
 
             charger_sm:SetValue("MapChargerAttemptPrice", v.attempt_price, true)

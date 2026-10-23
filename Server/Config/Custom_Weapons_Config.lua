@@ -1,11 +1,16 @@
 
 
 CustomWeaponsPackagesLoad = {
-    modern_weapons = "ModernWeapons",
+    ["modern-weapons"] = {
+        table_name = "ModernWeapons",
+        asset_pack_requirements = {
+            "modern-weapons-assets",
+        }
+    }
 }
 
 CustomWeapons_Mysterybox_Added = {
-    modern_weapons = {
+    ["modern-weapons"] = {
         {
             weapon_name = "RPK",
             max_ammo = 500,

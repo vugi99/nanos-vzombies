@@ -191,7 +191,7 @@ if VZ_GetFeatureValue("Map_Weapons", "spawned") then
             weapon:SetGravityEnabled(false)
             weapon:SetCollision(CollisionType.NoCollision)
         else
-            Console.Error("vzombies : Invalid weapon name '" .. v.weapon_name .. "' in zombie map config (MAP_WEAPONS[" .. tostring(i) .. "])")
+            Console.Error("Invalid weapon name '" .. v.weapon_name .. "' in zombie map config (MAP_WEAPONS[" .. tostring(i) .. "])")
         end
     end
 end

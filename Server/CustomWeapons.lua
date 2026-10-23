@@ -15,22 +15,31 @@ end
 
 
 for k, v in pairs(CustomWeaponsPackagesLoad) do
-    local package_name_w_t = ReplaceLetterInString(k, "_", "-")
-
-    local loaded = Server.LoadPackage(package_name_w_t)
-    --print("LoadPackage", package_name_w_t)
+    local loaded = Server.LoadPackage(k)
+    --print("LoadPackage", k, loaded)
     if loaded then
-        if _ENV[v] then
-            for k2, v2 in pairs(_ENV[v]) do
-                NanosWorldWeapons[k .. " " .. k2] = v2
-
-                local mystery_box_add_table = FindWeaponInMysteryBoxAddList(k, k2)
-                if mystery_box_add_table then
-                    mystery_box_add_table.weapon_name = k .. " " .. k2
-                    table.insert(Mystery_box_weapons, mystery_box_add_table)
-                    --print(NanosTable.Dump(mystery_box_add_table))
+        if _ENV[v.table_name] then
+            local good = true
+            for _, v2 in ipairs(v.asset_pack_requirements) do
+                if not IsAssetPackLoaded(v2) then
+                    good = false
+                    Console.Warn(k .. " asset pack '" .. v2 .. "' not loaded, not adding those weapons")
                 end
             end
+            if good then
+                for k2, v2 in pairs(_ENV[v.table_name]) do
+                    NanosWorldWeapons[k .. " " .. k2] = v2
+
+                    local mystery_box_add_table = FindWeaponInMysteryBoxAddList(k, k2)
+                    if mystery_box_add_table then
+                        mystery_box_add_table.weapon_name = k .. " " .. k2
+                        table.insert(Mystery_box_weapons, mystery_box_add_table)
+                        --print(NanosTable.Dump(mystery_box_add_table))
+                    end
+                end
+            end
+        else
+            Console.Warn(k .. " Weapons table not found")
         end
     end
 end

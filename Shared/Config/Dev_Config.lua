@@ -17,6 +17,6 @@ ZDEV_CONFIG = {
         ZDEV_DEBUG_ENEMIES_PREDICTION = false,
         ZDEV_DEBUG_WEBUIS_DEVTOOLS = false,
         ZDEV_DEBUG_NOISE = false,
-        ZDEV_DEBUG_CUSTOM_CALLED_EVENTS = true,
+        ZDEV_DEBUG_CUSTOM_CALLED_EVENTS = false,
     }
 }

@@ -14,7 +14,7 @@ Package.Require("WonderWeapons.lua")
 Package.Require("Prepare_Loops.lua")
 
 if ZDEV_CONFIG.ENABLED then
-    print("VZombies : DEV MODE ENABLED")
+    print("DEV MODE ENABLED")
 end
 
 local Config_Data = {
@@ -95,9 +95,9 @@ Events.Subscribe("VZOMBIES_MAP_CONFIG", function(...)
 
         LoadServerFiles()
 
-        print("VZombies : Map Config Loaded")
+        print("Map Config Loaded")
     else
-        Console.Warn("VZombies : Trying to load another map config while a map config is already loaded")
+        Console.Warn("Trying to load another map config while a map config is already loaded")
     end
 end)
 
@@ -152,13 +152,14 @@ function LoadServerFiles()
     VZ_EVENT_CALL("Events", "VZOMBIES_GAMEMODE_LOADED")
 end
 
---print(Server.GetMap())
-if not MAP_CONFIG_LOADED then
-    local map_path = Server.GetMap()
-    if map_path then
-        --[[local splited_map_path = split_str(map_path, ":")
-        if (splited_map_path[1] and splited_map_path[2]) then
-            local map_path_in_maps = "Server/Maps/" .. splited_map_path[1] .. ";" .. splited_map_path[2] .. ".lua"
+-- Note: Nanos 1.161 regression: Server.GetMap() returns "" on package reload all, the loading order loads the map package after vz.
+Package.Subscribe("Load", function()
+    print(Server.GetMap())
+    if not MAP_CONFIG_LOADED then
+        local map_path = Server.GetMap()
+        --print(map_path)
+        if map_path then
+            local map_path_in_maps = "Server/Maps/" .. map_path .. ".lua"
             local map_files = Package.GetFiles("Server/Maps", ".lua")
             for i, v in ipairs(map_files) do
                 --print(v)
@@ -167,20 +168,12 @@ if not MAP_CONFIG_LOADED then
                     break
                 end
             end
-        end]]--
-        local map_path_in_maps = "Server/Maps/" .. map_path .. ".lua"
-        local map_files = Package.GetFiles("Server/Maps", ".lua")
-        for i, v in ipairs(map_files) do
-            --print(v)
-            if v == map_path_in_maps then
-                Package.Require(v)
-                break
-            end
         end
+    else
+        Console.Warn("HotReload - Not supported, beware of bugs")
     end
-else
-    Console.Log("VZombies : HotReload")
-end
+end)
+
 
 Package.Subscribe("Load", function()
     print("VZombies " .. Package.GetVersion() .. " Loaded")
