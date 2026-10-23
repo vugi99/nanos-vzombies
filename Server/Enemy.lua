@@ -906,7 +906,7 @@ VZ_EVENT_SUBSCRIBE("Character", "Death", function(char, last_damage_taken, last_
             char:SetValue("AttackB", nil, false)
             char:SetValue("AttackBID", nil, false)
         end
-        print("Death", "RefreshTargetInterval", char:GetValue("RefreshTargetInterval"))
+        --print("Death", "RefreshTargetInterval", char:GetValue("RefreshTargetInterval"))
         if type(char:GetValue("RefreshTargetInterval")) == "number" then
             Timer.ClearInterval(char:GetValue("RefreshTargetInterval"))
         end
