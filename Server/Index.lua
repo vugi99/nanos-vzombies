@@ -152,9 +152,20 @@ function LoadServerFiles()
     VZ_EVENT_CALL("Events", "VZOMBIES_GAMEMODE_LOADED")
 end
 
+-- Patch out the environment to call his Package.Subscribe("Load") callback directly, cannot do it properly due to nanos regression
+-- Note: this is awful, thanks to Syed
+local psub = Package.Subscribe
+local Package_Sub_Load_Call_Env = setmetatable({Package = setmetatable({Subscribe = function(event_name, cback, ...)
+    if event_name == "Load" then
+        return cback()
+    else
+        return psub(event_name, cback, ...)
+    end
+end}, {__index = Package})}, {__index = _ENV})
+
 -- Note: Nanos 1.161 regression: Server.GetMap() returns "" on package reload all, the loading order loads the map package after vz.
 Package.Subscribe("Load", function()
-    print(Server.GetMap())
+    --print(Server.GetMap())
     if not MAP_CONFIG_LOADED then
         local map_path = Server.GetMap()
         --print(map_path)
@@ -164,7 +175,10 @@ Package.Subscribe("Load", function()
             for i, v in ipairs(map_files) do
                 --print(v)
                 if v == map_path_in_maps then
-                    Package.Require(v)
+                    local succ, res = xpcall(Package.LoadFile, debug.traceback, v)
+                    if succ then
+                        res(Package_Sub_Load_Call_Env)
+                    end
                     break
                 end
             end
