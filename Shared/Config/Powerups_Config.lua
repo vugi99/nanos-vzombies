@@ -48,7 +48,7 @@ Powerups_Config = {
     },
     death_machine = {
         duration = 30000,
-        minigun_weapon_name = "modern_weapons Minigun",
+        minigun_weapon_name = "modern-weapons Minigun",
         minigun_clip = 10000,
         sound = death_machine_Sound,
         icon = "images/death_machine_icon.png",

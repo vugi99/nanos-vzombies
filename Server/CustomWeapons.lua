@@ -28,6 +28,7 @@ for k, v in pairs(CustomWeaponsPackagesLoad) do
             end
             if good then
                 for k2, v2 in pairs(_ENV[v.table_name]) do
+                    --print("add weapon", k, k2)
                     NanosWorldWeapons[k .. " " .. k2] = v2
 
                     local mystery_box_add_table = FindWeaponInMysteryBoxAddList(k, k2)

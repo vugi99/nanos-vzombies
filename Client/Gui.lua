@@ -218,7 +218,7 @@ function SetWeaponNameText(text)
     if type(text) == "string" then
         local splited = split_str(text, " ")
         if splited[2] then
-            text = table.concat(splited, " ", 2) -- remove first text before space (eg : modern_weapons text)
+            text = table.concat(splited, " ", 2) -- remove first text before space (eg : modern-weapons text)
         end
     end
     GUI:CallEvent("SetWeaponNameText", text)

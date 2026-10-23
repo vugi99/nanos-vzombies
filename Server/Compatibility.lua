@@ -4,7 +4,7 @@ local found_outdated_no_type
 for k, v in pairs(MAP_ROOMS) do
     for k2, v2 in pairs(v) do
         if not v2.type then
-            found_outdated = true
+            found_outdated_no_type = true
             v2.type = "barricade"
             v2.z_spawns = {}
             table.insert(v2.z_spawns, {
