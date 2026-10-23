@@ -24,7 +24,7 @@ function CreateMapTeleporters()
                 teleporter:SetValue("TeleporterID", i, true)
                 teleporter:SetValue("CanTeleport", true, true)
             else
-                teleporter = Trigger(v.location, Rotator(0, 0, 0), Vector(math.sqrt(v.distance_sq), 0, 0), TriggerType.Sphere, ZDEV_IsModeEnabled("ZDEV_DEBUG_TRIGGERS"), Color.Yellow, {"Character"})
+                teleporter = Trigger(v.location, Rotator(0, 0, 0), Vector(math.sqrt(v.distance_sq), 0, 0), TriggerType.Sphere, ZDEV_IsModeEnabled("ZDEV_DEBUG_TRIGGERS"), Color.YELLOW, {"Character"})
                 teleporter:SetValue("TeleporterID", i, false)
                 teleporter:SetValue("CanTeleport", true, false)
             end
