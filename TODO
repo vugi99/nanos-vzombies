@@ -1,14 +1,3 @@
-2026-10-23 21:55:45 WARNING  [discord] Failed to update Discord Rich Presence. Reason 'ErrorType: 9 Error: '.
-
-2026-10-23 21:56:28 WARNING  Using deprecated Enum 'TextRenderAlignCamera', please rename it to 'Text3DAlignCamera'. 
-	- [1] [Lua Global Shared Library]:104: in metamethod 'index'
-	- [2] [vzombies/Client/Gui.lua]:934: in global 'CheckToAddText3D'
-	- [3] [vzombies/Client/Gui.lua]:946: in function <[string "vzombies/Client/Gui.lua"]:944>
-
-2026-10-23 21:56:28 WARNING  Spawning class 'TextRender' in compatibility mode '1.97'. Please update this constructor to the latest version and update the Compatibility Version of your Package to at least '1.103' otherwise it may stop working in future updates. 
-	- [1] [Default Shared Library]:5: in global 'TextRender'
-	- [2] [vzombies/Client/Gui.lua]:926: in global 'CheckToAddText3D'
-	- [3] [vzombies/Client/Gui.lua]:946: in function <[string "vzombies/Client/Gui.lua"]:944>
 
 2026-10-23 21:55:46 WARNING  Calling a deprecated static function 'Events.CallRemote()' in compatibility mode '1.138'. Please update this method to the latest version and update the Compatibility Version of your Package to at least '1.139' otherwise it may stop working in future updates. See 'https://docs.nanos-world.com/docs/next/core-concepts/packages/compatibility-versions#version-1139' for more information.
         - [1] [vzombies/Server/Bots.lua]:181: in field 'CallRemote'
