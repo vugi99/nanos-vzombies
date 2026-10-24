@@ -923,19 +923,31 @@ if Player_Names_On_Heads then
             end
         end
         if (char:GetPlayer() and not char:GetValue("Text3DEnt")) then
-            local text_3d = TextRender(
+            local text_3d = Text3D(
                 Vector(),
                 Rotator(),
                 char:GetPlayer():GetAccountName(),
                 Player_Name_Text3D_Scale,
                 Color.AZURE,
                 FontType.OpenSans,
-                TextRenderAlignCamera.AlignCameraRotation
+                Text3DAlignCamera.FaceCamera
             )
             text_3d:SetTextSettings(0, 0, 0, TextRenderHorizontalAlignment.Center, TextRenderVerticalAlignment.Center)
             text_3d:AttachTo(char, AttachmentRule.SnapToTarget, "", 0, false)
             text_3d:SetRelativeLocation(Player_Name_Text3D_Head_Offset)
             text_3d:SetMaterialColorParameter("Emissive", Color.AZURE * 2)
+
+            -- Nanos 1.164.0 Broken https://nanos-world.com/feedback/p/textrender-cameraaligned-broken
+            --[[local text_3d = TextRender(
+                Vector(),
+                Rotator(),
+                char:GetPlayer():GetAccountName(),
+                26,
+                Color.AZURE,
+                TextRenderRenderingType.UnlitCameraAligned
+            )
+            text_3d:AttachTo(char, AttachmentRule.SnapToTarget, "", 0, false)
+            text_3d:SetRelativeLocation(Player_Name_Text3D_Head_Offset)]]--
 
             char:SetValue("Text3DEnt", text_3d)
         end

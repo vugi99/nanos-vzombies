@@ -18,6 +18,3 @@
         - [1] [vzombies/Server/Bots.lua]:197: in field 'BroadcastRemote'
         - [2] [vzombies/Server/Rounds.lua]:275: in global 'StartRound'
         - [3] [vzombies/Server/Players.lua]:592: in function <[string "vzombies/Server/Players.lua"]:538>
-
-
-Zombies slow down when getting close to players!!!
