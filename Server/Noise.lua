@@ -11,8 +11,9 @@ VZ_Noise.Instigator_LoopingNoises_Intervals = {}
 function VZ_Noise.CanInstigatorMakeNoise(instigator)
     if not IsValid(instigator) then return false end
     --if not instigator:IsA(Player) then return false end
-    if not instigator.GetControlledCharacter then return false end
-    local char = instigator:GetControlledCharacter()
+    --if not instigator.GetControlledCharacter then return false end
+    if not instigator.GetPlayer then return false end
+    local char = instigator
     if not IsValid(char) then return false end
     if char:GetValue("PlayerDown") then return false end
     return true
@@ -139,7 +140,8 @@ function VZ_Noise.MakeNoise(name, noise, instigator)
     local Falloff = noise.Falloff
     local Falloff_Func = noise.Falloff_Func
 
-    local char = instigator:GetControlledCharacter()
+    --local char = instigator:GetControlledCharacter()
+    local char = instigator
     local char_loc = char:GetLocation()
 
     local marked_deletion = {}
@@ -197,7 +199,7 @@ function VZ_Noise.MakeLoopingNoise(name, noise_conf, instigator)
     Timer.Bind(looping_noise_intervals[name], instigator)
 
     if ZDEV_IsModeEnabled("ZDEV_DEBUG_NOISE") then
-        --print("MakeLoopingNoise '" .. tostring(name) .. "' with instigator: " .. tostring(instigator:GetAccountName()))
+        --print("MakeLoopingNoise '" .. tostring(name) .. "' with instigator: " .. tostring(instigator:GetPlayer():GetAccountName()))
     end
 
     return true
@@ -223,7 +225,7 @@ function VZ_Noise.DoNoiseEvent(name, noise_conf, instigator)
         end
 
         if ZDEV_IsModeEnabled("ZDEV_DEBUG_NOISE") then
-            print("DoNoiseEvent '" .. tostring(name) .. "' of " .. tostring(instigator:GetAccountName()) ..  " Set_Instigator_Values: " .. tostring(NanosTable.Dump(VZ_Noise.InstigatorValues[instigator])))
+            print("DoNoiseEvent '" .. tostring(name) .. "' of " .. tostring(instigator:GetPlayer():GetAccountName()) ..  " Set_Instigator_Values: " .. tostring(NanosTable.Dump(VZ_Noise.InstigatorValues[instigator])))
         end
     end
 
@@ -238,7 +240,9 @@ function VZ_Noise.GetEventInstigator(noise_conf, args)
         local causer = args[noise_conf.causer_arg_index]
         if IsValid(causer) then
             if causer.GetPlayer then
-                instigator = causer:GetPlayer()
+                -- Doesn't work for bots, due to Timer.Bind
+                --instigator = causer:GetPlayer()
+                instigator = causer
             end
         end
     end
@@ -371,28 +375,33 @@ function VZ_Noise.ResetListeningAwarenessAboutInstigator(instigator)
 end
 
 
-function VZ_Noise.ClearLoopingNoiseIntervals(ply)
-    if not IsValid(ply) then return end
-    local looping_noise_intervals = VZ_Noise.Instigator_LoopingNoises_Intervals[ply]
+function VZ_Noise.ClearLoopingNoiseIntervals(char)
+    if not IsValid(char) then return end
+    local looping_noise_intervals = VZ_Noise.Instigator_LoopingNoises_Intervals[char]
     for name, v in pairs(looping_noise_intervals or {}) do
         if Timer.IsValid(v) then
             Timer.ClearInterval(v)
         end
     end
-    VZ_Noise.Instigator_LoopingNoises_Intervals[ply] = nil
+    VZ_Noise.Instigator_LoopingNoises_Intervals[char] = nil
 end
 
 VZ_EVENT_SUBSCRIBE("Character", "Destroy", function(char)
-    local ply = char:GetPlayer()
+    --[[local ply = char:GetPlayer()
     if IsValid(ply) then
         VZ_Noise.ResetListeningAwarenessAboutInstigator(ply)
         VZ_Noise.InstigatorValues[ply] = nil
         VZ_Noise.ClearLoopingNoiseIntervals(ply)
-    end
+    end]]--
+    VZ_Noise.ResetListeningAwarenessAboutInstigator(char)
+    VZ_Noise.InstigatorValues[char] = nil
+    VZ_Noise.ClearLoopingNoiseIntervals(char)
 end)
 
 VZ_EVENT_SUBSCRIBE("Package", "Unload", function()
     for _, v in pairs(Player.GetPairs()) do
-        VZ_Noise.ClearLoopingNoiseIntervals(v)
+        if IsValid(v) then
+            VZ_Noise.ClearLoopingNoiseIntervals(v:GetControlledCharacter())
+        end
     end
 end)
