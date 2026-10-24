@@ -1,9 +1,2 @@
 
-2026-10-23 21:55:46 WARNING  Calling a deprecated static function 'Events.CallRemote()' in compatibility mode '1.138'. Please update this method to the latest version and update the Compatibility Version of your Package to at least '1.139' otherwise it may stop working in future updates. See 'https://docs.nanos-world.com/docs/next/core-concepts/packages/compatibility-versions#version-1139' for more information.
-        - [1] [vzombies/Server/Bots.lua]:181: in field 'CallRemote'
-        - [2] [vzombies/Server/Players.lua]:549: in function <[string "vzombies/Server/Players.lua"]:538>
-
-2026-10-23 21:55:46 WARNING  Calling a deprecated static function 'Events.BroadcastRemote()' in compatibility mode '1.138'. Please update this method to the latest version and update the Compatibility Version of your Package to at least '1.139' otherwise it may stop working in future updates. See 'https://docs.nanos-world.com/docs/next/core-concepts/packages/compatibility-versions#version-1139' for more information.
-        - [1] [vzombies/Server/Bots.lua]:197: in field 'BroadcastRemote'
-        - [2] [vzombies/Server/Rounds.lua]:275: in global 'StartRound'
-        - [3] [vzombies/Server/Players.lua]:592: in function <[string "vzombies/Server/Players.lua"]:538>
+Bots walk, the running is broken
