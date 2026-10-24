@@ -4,3 +4,25 @@ Bots walk, the running is broken
 Ayano health bar broken when he joins
 
 Emissive value on Enemies + Set it for different enemies. (Lower the current value)
+
+Vehicles UI cannot be closed easily (add cross to close)
+
+Perks names show up as dev names, make nice titles for them
+
+Check vehicles health system? Maybe replace with the native one
+
+2026-10-24 21:39:52 WARNING  Calling deprecated VehicleWheeled Constructor: 'VehicleWheeled(Vector, Rotator, string, enum?, boolean?, boolean?, boolean?, string?, string?, string?, string?, string?, boolean?, string?)'. Please update it to a new Constructor:
+        VehicleWheeled(Vector, Rotator, string, enum?, boolean?, boolean?, string?, string?, string?, string?, string?, boolean?, string?, enum?)
+
+        - [1] [vzombies/Shared/Config/Vehicles_Config.lua]:126: in function <[string "vzombies/Shared/Config/Vehicles_Config.lua"]:125>
+        - [2] [vzombies/Server/Vehicles.lua]:5: in global 'SpawnVehicle'
+        - [3] [vzombies/Server/Vehicles.lua]:63: in function <[string "vzombies/Server/Vehicles.lua"]:32>
+2026-10-24 21:39:52 WARNING  Using deprecated 'VehicleWheeled:RecreatePhysics()' method! Please replace it with 'VehicleWheeled:FinishSpawn()'.
+        - [1] [vzombies/Shared/Config/Vehicles_Config.lua]:145: in function <[string "vzombies/Shared/Config/Vehicles_Config.lua"]:125>
+        - [2] [vzombies/Server/Vehicles.lua]:5: in global 'SpawnVehicle'
+        - [3] [vzombies/Server/Vehicles.lua]:63: in function <[string "vzombies/Server/Vehicles.lua"]:32>
+
+End of round sound played twice and executed twice
+died and then he died, game over sound played twice 
+:27 RoundFinished false true
+:29 RoundFinished false true
