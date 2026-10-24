@@ -547,7 +547,7 @@ local Clientside_Bot_Actions = {
                             if ZDEV_IsModeEnabled("ZDEV_DEBUG_BOTS_ACTIONS") then
                                 DrawBotMovementCylinder(char:GetLocation(), point_around, Color.GREEN, v)
                             end
-                            Events.CallRemote("BotAction", bot_id, v, point_around, nil, prereach)
+                            Events.CallRemote("BotAction", Reliability.Reliable, bot_id, v, point_around, nil, prereach)
                             return true
                         end
                     end
@@ -562,7 +562,7 @@ local Clientside_Bot_Actions = {
             if ZDEV_IsModeEnabled("ZDEV_DEBUG_BOTS_ACTIONS") then
                 DrawBotMovementCylinder(char:GetLocation(), nearest_powerup_loc, Color.GREEN, v)
             end
-            Events.CallRemote("BotAction", bot_id, v, nearest_powerup_loc, nearest_powerup:GetValue("GrabPowerup"), prereach)
+            Events.CallRemote("BotAction", Reliability.Reliable, bot_id, v, nearest_powerup_loc, nearest_powerup:GetValue("GrabPowerup"), prereach)
             return true
         end
     end,
@@ -577,7 +577,7 @@ local Clientside_Bot_Actions = {
                     if ZDEV_IsModeEnabled("ZDEV_DEBUG_BOTS_ACTIONS") then
                         DrawBotMovementCylinder(char:GetLocation(), point_around, Color.GREEN, v)
                     end
-                    Events.CallRemote("BotAction", bot_id, v, point_around, perk_target, prereach)
+                    Events.CallRemote("BotAction", Reliability.Reliable, bot_id, v, point_around, perk_target, prereach)
                     return true
                 end
             end
@@ -590,7 +590,7 @@ local Clientside_Bot_Actions = {
             if ZDEV_IsModeEnabled("ZDEV_DEBUG_BOTS_ACTIONS") then
                 DrawBotMovementCylinder(char:GetLocation(), weapon_target_loc, Color.GREEN, v)
             end
-            Events.CallRemote("BotAction", bot_id, v, weapon_target_loc, weapon_target, prereach)
+            Events.CallRemote("BotAction", Reliability.Reliable, bot_id, v, weapon_target_loc, weapon_target, prereach)
             return true
         end
     end,
@@ -611,7 +611,7 @@ local Clientside_Bot_Actions = {
                                 if ZDEV_IsModeEnabled("ZDEV_DEBUG_BOTS_ACTIONS") then
                                     DrawBotMovementCylinder(char:GetLocation(), point_around, Color.GREEN, v)
                                 end
-                                Events.CallRemote("BotAction", bot_id, v, point_around, pack_a_punch, prereach)
+                                Events.CallRemote("BotAction", Reliability.Reliable, bot_id, v, point_around, pack_a_punch, prereach)
                                 return true
                             end
                         end
@@ -626,16 +626,16 @@ local Clientside_Bot_Actions = {
             if ZDEV_IsModeEnabled("ZDEV_DEBUG_BOTS_ACTIONS") then
                 DrawBotMovementCylinder(char:GetLocation(), door_target_loc, Color.GREEN, v)
             end
-            Events.CallRemote("BotAction", bot_id, v, door_target_loc, door_target, prereach)
+            Events.CallRemote("BotAction", Reliability.Reliable, bot_id, v, door_target_loc, door_target, prereach)
             return true
         end
     end,
     MOVE = function(Bot, bot_id, bot_inv, ROOMS_UNLOCKED, char, v, prereach)
         local reachable_loc = GetBotMoveLocation(Bot, char)
         if (reachable_loc and reachable_loc ~= Vector(0, 0, 0)) then
-            Events.CallRemote("BotAction", bot_id, v, reachable_loc, nil, prereach)
+            Events.CallRemote("BotAction", Reliability.Reliable, bot_id, v, reachable_loc, nil, prereach)
         else
-            Events.CallRemote("BotAction", bot_id, "FAILED", nil, prereach)
+            Events.CallRemote("BotAction", Reliability.Reliable, bot_id, "FAILED", nil, prereach)
             Console.Warn("Bot MOVE didn't find ReachablePoint")
         end
         return true
@@ -655,7 +655,7 @@ local Clientside_Bot_Actions = {
                 if ZDEV_IsModeEnabled("ZDEV_DEBUG_BOTS_ACTIONS") then
                     DrawBotMovementCylinder(char:GetLocation(), loc, Color.GREEN, v)
                 end
-                Events.CallRemote("BotAction", bot_id, v, loc, down_char, prereach) -- Go revive
+                Events.CallRemote("BotAction", Reliability.Reliable, bot_id, v, loc, down_char, prereach) -- Go revive
                 return true
             else
                 local reachable_loc = Navigation.GetRandomReachablePointInRadius(down_char:GetLocation(), Bots_Approaching_Down_Character_Radius) -- Try to approach down character
@@ -666,7 +666,7 @@ local Clientside_Bot_Actions = {
                     if ZDEV_IsModeEnabled("ZDEV_DEBUG_BOTS_ACTIONS") then
                         DrawBotMovementCylinder(char:GetLocation(), reachable_loc, Color.GREEN, "Revive_Around")
                     end
-                    Events.CallRemote("BotAction", bot_id, "MOVE", reachable_loc, nil, prereach)
+                    Events.CallRemote("BotAction", Reliability.Reliable, bot_id, "MOVE", reachable_loc, nil, prereach)
                     return true
                 end
             end
@@ -764,7 +764,7 @@ VZ_EVENT_SUBSCRIBE("VZBot", "ValueChange", function(Bot, key, value)
                                 end
 
                                 if not same then
-                                    Events.CallRemote("NewBotTargets", Bot:GetID(), can_shoot_on)
+                                    Events.CallRemote("NewBotTargets", Reliability.Reliable, Bot:GetID(), can_shoot_on)
                                 end
                             end
                         end
@@ -808,11 +808,11 @@ function BotOrder(char, order)
                     if trace.Success then
                         local path = Navigation.FindPathToLocation(char:GetLocation(), trace.Location)
                         if (path.IsValid and not path.IsPartial) then
-                            Events.CallRemote("BotOrder", char, order, trace.Location)
+                            Events.CallRemote("BotOrder", Reliability.Reliable, char, order, trace.Location)
                         end
                     end
                 else
-                    Events.CallRemote("BotOrder", char, order)
+                    Events.CallRemote("BotOrder", Reliability.Reliable, char, order)
                 end
             end
         end

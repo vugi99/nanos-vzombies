@@ -115,7 +115,7 @@ VZ_EVENT_SUBSCRIBE_REMOTE("VZAM_Mapvote", function(ply)
             if StartMapVote then
                 WaitingMapvote = StartMapVote(Mapvote_tbl)
             else
-                Events.CallRemote("AddNotification", ply, "mapvote package not started", 10000)
+                Events.CallRemote("AddNotification", ply, Reliability.Reliable, "mapvote package not started", 10000)
             end
         end
     end

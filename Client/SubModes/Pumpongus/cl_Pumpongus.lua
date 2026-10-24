@@ -121,7 +121,7 @@ end)
 VZ_BIND("Imposter Power", InputEvent.Pressed, function()
     if VZ_IS_PPG_IMPOSTER then
         if PPG_CanActivateImposterPower() then
-            Events.CallRemote("ActivateImposterPower")
+            Events.CallRemote("ActivateImposterPower", Reliability.Reliable)
         end
     end
 end)
@@ -154,7 +154,7 @@ VZ_BIND("Imposter Sabotage", InputEvent.Pressed, function()
                 end, 1000)
                 Timer.Bind(cdown_remaining, char)
 
-                Events.CallRemote("ImposterSabotage")
+                Events.CallRemote("ImposterSabotage", Reliability.Reliable)
             end
         end
     end

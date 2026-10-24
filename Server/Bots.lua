@@ -7,7 +7,7 @@ function VZBot.prototype:Possess(char)
     if self:IsValid(true) then
         if (char and char:IsValid()) then
             self.Stored.Possessed = char
-            Events.BroadcastRemote("BotUpdateValues", self.ID, self.Stored)
+            Events.BroadcastRemote("BotUpdateValues", Reliability.Reliable, self.ID, self.Stored)
         end
     end
 end
@@ -16,7 +16,7 @@ function VZBot.prototype:UnPossess()
     if self:IsValid(true) then
         if self.Stored.Possessed then
             self.Stored.Possessed = nil
-            Events.BroadcastRemote("BotUpdateValues", self.ID, self.Stored)
+            Events.BroadcastRemote("BotUpdateValues", Reliability.Reliable, self.ID, self.Stored)
         end
     end
 end
@@ -35,7 +35,7 @@ function VZBot.prototype:Kick(already_removed)
     if self:IsValid(true) then
         self.Valid = false
 
-        Events.BroadcastRemote("BotLeft", self.ID)
+        Events.BroadcastRemote("BotLeft", Reliability.Reliable, self.ID)
 
         if not already_removed then
             for k, v in pairs(PLAYING_PLAYERS) do
@@ -58,7 +58,7 @@ function VZBot.prototype:SetValue(key, value, sync)
         if (not self.Stored[keyV][key] or self.Stored[keyV][key] ~= value) then
             self.Stored[keyV][key] = value
             if sync then
-                Events.BroadcastRemote("BotUpdateValues", self.ID, self.Stored)
+                Events.BroadcastRemote("BotUpdateValues", Reliability.Reliable, self.ID, self.Stored)
             end
             for k, v in pairs(Sub_Callbacks.ValueChange) do
                 v(self, key, value)
@@ -168,9 +168,9 @@ end
 
 DEFAULT_EREMOTE = Events.CallRemote
 
-function Events.CallRemote(event_name, ply, ...)
+function Events.CallRemote(event_name, ply, rel, ...)
     if ZDEV_IsModeEnabled("ZDEV_DEBUG_SERVER_REMOTE_CALLS") then
-        print("Events.CallRemote", event_name, NanosTable.Dump({...}))
+        print("Events.CallRemote", event_name, rel, NanosTable.Dump({...}))
     end
 
     if ply.BOT then
@@ -178,14 +178,14 @@ function Events.CallRemote(event_name, ply, ...)
         return true
     end
 
-    return DEFAULT_EREMOTE(event_name, ply, ...)
+    return DEFAULT_EREMOTE(event_name, ply, rel, ...)
 end
 
 DEFAULT_EBROADCAST = Events.BroadcastRemote
 
-function Events.BroadcastRemote(event_name, ...)
+function Events.BroadcastRemote(event_name, rel, ...)
     if ZDEV_IsModeEnabled("ZDEV_DEBUG_SERVER_REMOTE_CALLS") then
-        print("Events.BroadcastRemote", event_name, NanosTable.Dump({...}))
+        print("Events.BroadcastRemote", event_name, rel, NanosTable.Dump({...}))
     end
 
     for k, v in pairs(ALL_BOTS) do
@@ -194,7 +194,7 @@ function Events.BroadcastRemote(event_name, ...)
         end
     end
 
-    return DEFAULT_EBROADCAST(event_name, ...)
+    return DEFAULT_EBROADCAST(event_name, rel, ...)
 end
 
 function PlayerLeftCheckSyncPlayers(ply)
@@ -250,7 +250,7 @@ function RequestBotAction(bot, wo_ply, prereach)
         end
         if ply then
             bot:SetValue("RequestedActionFromPlayer", ply:GetID(), false)
-            Events.CallRemote("RequestBotAction", ply, bot.ID, bot.Stored, GetPlayerInventoryTable(bot), ROOMS_UNLOCKED, prereach)
+            Events.CallRemote("RequestBotAction", ply, Reliability.Reliable, bot.ID, bot.Stored, GetPlayerInventoryTable(bot), ROOMS_UNLOCKED, prereach)
         end
     end
 end
@@ -851,7 +851,7 @@ VZ_EVENT_SUBSCRIBE_REMOTE("BotOrder", function(ply, char, order, moveto_location
         if char:GetPlayer():GetValue("RequestedActionFromPlayer") then
             char:GetPlayer():SetValue("RequestedActionFromPlayer", nil, false)
         end
-        Events.CallRemote("AddNotification", ply, char:GetPlayer():GetAccountName() .. " " .. order)
+        Events.CallRemote("AddNotification", ply, Reliability.Reliable, char:GetPlayer():GetAccountName() .. " " .. order)
         if order == "MoveTo" then
             char:SetValue("DoingAction", {"MoveToOrder"}, false)
             char:MoveTo(moveto_location, Bots_Acceptance_Radius)

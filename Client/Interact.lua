@@ -99,7 +99,7 @@ end, Gibs_Interact_Check_Interval_ms)
 function InteractAction(CheckNoPower, event_name, check_valid)
     if (not CheckNoPower or InteractThing ~= "NoPower") then
         if (not check_valid or IsValid(InteractThing)) then
-            Events.CallRemote(event_name, InteractThing)
+            Events.CallRemote(event_name, Reliability.Reliable, InteractThing)
         end
     end
 end
@@ -180,7 +180,7 @@ function RepairBarricadeIFunc()
             SoundType.SFX,
             Barricade_Repair_Sound.volume
         )
-        Events.CallRemote("RepairBarricade", InteractThing:GetValue("BarricadeSpawnID"))
+        Events.CallRemote("RepairBarricade", Reliability.Reliable, InteractThing:GetValue("BarricadeSpawnID"))
     elseif RepairBarricadeInterval then
         Timer.ClearInterval(RepairBarricadeInterval)
         RepairBarricadeInterval = nil
@@ -508,11 +508,11 @@ VZ_EVENT_SUBSCRIBE("Character", "ValueChange", function(char, key, value)
                         RevivingPlayerData = {}
                         RevivingPlayerData.timeout = Timer.SetTimeout(function()
                             RevivingPlayerData = nil
-                            Events.CallRemote("RevivePlayerFinished", char)
+                            Events.CallRemote("RevivePlayerFinished", Reliability.Reliable, char)
                         end, rev_time)
                         RevivingPlayerData.char = char
                     else
-                        Events.CallRemote("RevivePlayerStopped", char)
+                        Events.CallRemote("RevivePlayerStopped", Reliability.Reliable, char)
                     end
                 end
             end

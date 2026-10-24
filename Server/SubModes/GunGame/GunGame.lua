@@ -5,7 +5,7 @@ local Weapons_Random_Order = {}
 Player_Start_Weapon.ammo = VZ_GetGamemodeConfigValue("Weapon_Ammo_Bag")
 
 VZ_EVENT_SUBSCRIBE("Events", "VZ_PlayerJoined", function(ply, waittostart)
-    Events.CallRemote("GunGame_WeaponsNumber", ply, table_count(Weapons_Random_Order))
+    Events.CallRemote("GunGame_WeaponsNumber", ply, Reliability.Reliable, table_count(Weapons_Random_Order))
 end)
 
 VZ_EVENT_SUBSCRIBE("Events", "VZ_PlayerCharacterSpawned", function(char)

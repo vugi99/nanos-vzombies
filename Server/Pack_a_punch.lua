@@ -100,7 +100,7 @@ function UpgradeWeapon(ply, pap_sm)
                                                 PAP_Upgrade_Data.upgraded_weapon:SetMaterial(Pack_a_punch_weapon_material, Pack_a_punch_weapon_material_index)
                                                 PAP_Upgrade_Data.upgraded_weapon:SetValue("PAPWeaponForCharacterID", {char:GetID(), selected_weap, is_pap, repack_effect, ammo_clip, ammo_bag}, false)
 
-                                                Events.BroadcastRemote("PlayVZSound", {basic_sound_tbl=PAP_Ready_Sound}, MAP_PACK_A_PUNCH.location)
+                                                Events.BroadcastRemote("PlayVZSound", Reliability.Reliable, {basic_sound_tbl=PAP_Ready_Sound}, MAP_PACK_A_PUNCH.location)
                                                 PAP_Upgrade_Data.del_timeout = Timer.SetTimeout(function()
                                                     if PAP_Upgrade_Data.upgraded_weapon:IsValid() then
                                                         PAP_Upgrade_Data.upgraded_weapon:Destroy()
@@ -112,7 +112,7 @@ function UpgradeWeapon(ply, pap_sm)
                                                 VZ_EVENT_CALL("Events", "VZ_PAPUpgradedWeapon")
                                             end, Pack_a_punch_upgrade_time_ms)
 
-                                            Events.BroadcastRemote("PlayVZSound", {basic_sound_tbl=PAP_Upgrade_Sound}, MAP_PACK_A_PUNCH.location)
+                                            Events.BroadcastRemote("PlayVZSound", Reliability.Reliable, {basic_sound_tbl=PAP_Upgrade_Sound}, MAP_PACK_A_PUNCH.location)
                                             return true
                                         end
                                     end

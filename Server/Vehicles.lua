@@ -39,7 +39,7 @@ if VEHICLES_PADS then
                     end
                 end
                 if not POWER_ON then
-                    Events.CallRemote("AddNotification", ply, "No Power")
+                    Events.CallRemote("AddNotification", ply, Reliability.Reliable, "No Power")
                     return
                 end
             end
@@ -56,7 +56,7 @@ if VEHICLES_PADS then
                             if VZVehicles[veh_name] then
                                 local is_occupied = CheckIfEntityInRectangle(VehicleWheeled, veh_pad_ground:GetLocation() + Vector(0, 0, 100), veh_pad_ground:GetRotation(), Vector(500, 250, 300)) or CheckIfEntityInRectangle(Character, veh_pad_ground:GetLocation() + Vector(0, 0, 100), veh_pad_ground:GetRotation(), Vector(500, 250, 300))
                                 if is_occupied then
-                                    Events.CallRemote("AddNotification", ply, "Cannot Spawn Vehicle")
+                                    Events.CallRemote("AddNotification", ply, Reliability.Reliable, "Cannot Spawn Vehicle")
                                     return
                                 else
                                     if Buy(ply, VZVehicles[veh_name].price) then

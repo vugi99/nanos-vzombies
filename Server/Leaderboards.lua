@@ -41,7 +41,7 @@ function SaveMapLeaderboard()
         if type(ldb_sanitized) == "string" then
             Leaderboads_DB:Execute("UPDATE maps SET leaderboard = '" .. ldb_sanitized .. "' WHERE map_asset = '" .. Server.GetMap() .. "'")
             --print(JSON.stringify(Current_Map_Leaderboard))
-            Events.BroadcastRemote("SendMapLeaderboard", Current_Map_Leaderboard, Server.GetMap())
+            Events.BroadcastRemote("SendMapLeaderboard", Reliability.Reliable, Current_Map_Leaderboard, Server.GetMap())
         else
             Console.Error("Cannot save leaderboard (2)")
         end
@@ -104,5 +104,5 @@ VZ_EVENT_SUBSCRIBE("Events", "VZ_GameEnding", function(restart_game)
 end)
 
 VZ_EVENT_SUBSCRIBE("Events", "VZ_PlayerJoined", function(ply)
-    Events.CallRemote("SendMapLeaderboard", ply, Current_Map_Leaderboard, Server.GetMap())
+    Events.CallRemote("SendMapLeaderboard", ply, Reliability.Reliable, Current_Map_Leaderboard, Server.GetMap())
 end)

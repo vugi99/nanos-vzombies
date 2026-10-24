@@ -24,7 +24,7 @@ VZ_EVENT_SUBSCRIBE("Events", "VZ_PlayerJoined", function(ply)
             ply:SetValue("PlayerXP", rows[1].xp, false)
             CheckLevelUp(ply)
         end
-        Events.CallRemote("PlayerLevelXPUpdate", ply, ply:GetValue("PlayerLevel"), ply:GetValue("PlayerXP"))
+        Events.CallRemote("PlayerLevelXPUpdate", ply, Reliability.Reliable, ply:GetValue("PlayerLevel"), ply:GetValue("PlayerXP"))
     end
 end)
 

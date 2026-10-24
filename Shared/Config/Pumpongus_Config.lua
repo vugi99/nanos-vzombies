@@ -166,7 +166,7 @@ local PUMPONGUS = {
                     char:SetMaxHealth(1000 + value)
                     local ply = char:GetPlayer()
                     if (IsValid(ply)) then
-                        Events.CallRemote("OverrideUIMaxHealth", ply, value)
+                        Events.CallRemote("OverrideUIMaxHealth", ply, Reliability.Reliable, value)
                     end
                     return true
                 end,

@@ -120,9 +120,7 @@ function BarricadeAction(barricade, action)
         local random_sounds_table = RANDOM_SOUNDS[random_sounds_name]
 
         local play_sound_for_players = GetPlayersInRadius(action_loc, random_sounds_table.falloff_distance)
-        for i, v in ipairs(play_sound_for_players) do
-            Events.CallRemote("PlayVZSound", v, {random_sound_tbl=random_sounds_table, random_sound_selected=VZ_RandomSound(random_sounds_table)}, action_loc)
-        end
+        Events.CallRemotePlayers("PlayVZSound", play_sound_for_players, Reliability.Unreliable, {random_sound_tbl=random_sounds_table, random_sound_selected=VZ_RandomSound(random_sounds_table)}, action_loc)
 
         table.insert(added_barricade_table.barricades, SM_Barricade)
     end

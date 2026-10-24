@@ -263,7 +263,7 @@ function PlayerCharacterDie(char, force_die)
 
             for k, v in pairs(Player.GetPairs()) do
                 if v ~= ply then
-                    Events.CallRemote("AddNotification", v, ply:GetAccountName() .. " died", 10000)
+                    Events.CallRemote("AddNotification", v, Reliability.Reliable, ply:GetAccountName() .. " died", 10000)
                 end
             end
 
@@ -329,7 +329,7 @@ function ApplyGriefFreeze(ply, char)
                 end
             end, VZ_GetGamemodeConfigValue("Freeze_Player_Time_ms")), false)
 
-            Events.CallRemote("PlayVZSound", ply, {basic_sound_tbl=Player_Grief_Sound})
+            Events.CallRemote("PlayVZSound", ply, Reliability.Reliable, {basic_sound_tbl=Player_Grief_Sound})
         end
     end
 end
@@ -524,7 +524,7 @@ VZ_EVENT_SUBSCRIBE("Character", "TakeDamage", function(char, damage, bone, type,
                             else
                                 char:SetHealth(new_health)
                             end
-                            Events.CallRemote("UpdateGUIHealth", ply)
+                            Events.CallRemote("UpdateGUIHealth", ply, Reliability.Reliable)
                         else
                             return false
                         end
@@ -543,29 +543,29 @@ function HandlePlayerJoin(ply, bot, waittostart)
         -- Send required info to players when they join
 
         if Parse_Custom_Settings then
-            Events.CallRemote("SendCustomSettingsToClient", ply, Server.GetCustomSettings())
+            Events.CallRemote("SendCustomSettingsToClient", ply, Reliability.Reliable, Server.GetCustomSettings())
         end
 
-        Events.CallRemote("LoadMapConfig", ply, MAP_CONFIG_TO_SEND)
+        Events.CallRemote("LoadMapConfig", ply, Reliability.Reliable, MAP_CONFIG_TO_SEND)
         if ROUND_NB > 0 then
-            Events.CallRemote("SetClientRoundNumber", ply, ROUND_NB, In_Hellhound_Round)
+            Events.CallRemote("SetClientRoundNumber", ply, Reliability.Reliable, ROUND_NB, In_Hellhound_Round)
             SendEnemiesRemaining(ply)
             SendWaveTimeRemaining(ply)
             if Game_Time_On_Screen then
-                Events.CallRemote("UpdateGameTime", ply, math.floor(GAME_TIMER_SECONDS))
+                Events.CallRemote("UpdateGameTime", ply, Reliability.Reliable, math.floor(GAME_TIMER_SECONDS))
             end
         end
 
         if POWER_ON then
-            Events.CallRemote("SetClientPowerON", ply, true)
+            Events.CallRemote("SetClientPowerON", ply, Reliability.Reliable, true)
         end
 
         if GAME_PAUSED then
-            Events.CallRemote("ClientPauseGame", ply, GAME_PAUSED)
+            Events.CallRemote("ClientPauseGame", ply, Reliability.Reliable, GAME_PAUSED)
         end
 
         if (ply:GetIP() == "127.0.0.1" and Can_Host_Pause_Game) then
-            Events.CallRemote("PlayerCanPause", ply, true)
+            Events.CallRemote("PlayerCanPause", ply, Reliability.Reliable, true)
         end
 
         --ply:SetVOIPSetting(VOIPSetting.Muted)
@@ -766,7 +766,7 @@ function RevivePlayerFinished_RevivedPart(revived_char)
     revived_char:SetHealth(health)
     revived_char:SetMaxHealth(health)
     local revived_ply = revived_char:GetPlayer()
-    Events.CallRemote("UpdateGUIHealth", revived_ply)
+    Events.CallRemote("UpdateGUIHealth", revived_ply, Reliability.Reliable)
     if revived_ply.BOT then
         RequestBotAction(revived_ply)
         revived_ply:SetValue("BotAimPlayer", GetRandomPlayer():GetID(), true)
@@ -832,7 +832,7 @@ VZ_EVENT_SUBSCRIBE_REMOTE("RequestTabData", function(ply)
                 end
             end
         end
-        Events.CallRemote("TabData", ply, tblToSend, id_line_highlight)
+        Events.CallRemote("TabData", ply, Reliability.Reliable, tblToSend, id_line_highlight)
     end
 end)
 
@@ -878,10 +878,10 @@ function SendEnemiesRemaining(ply)
             local remaining = REMAINING_ENEMIES_TO_SPAWN + table_count(ENEMY_CHARACTERS)
             if not ply then
                 if last_sent_value ~= remaining then
-                    Events.BroadcastRemote("SetClientRemainingZombies", remaining)
+                    Events.BroadcastRemote("SetClientRemainingZombies", Reliability.Unreliable, remaining)
                 end
             else
-                Events.CallRemote("SetClientRemainingZombies", ply, remaining)
+                Events.CallRemote("SetClientRemainingZombies", ply, Reliability.Unreliable, remaining)
             end
         end
     end
@@ -893,9 +893,9 @@ function SendWaveTimeRemaining(ply)
             local remaining = REMAINING_ENEMIES_TO_SPAWN*(SPAWN_ENEMY_INTERVAL_TIME or 0)
             if remaining > 0 then
                 if not ply then
-                    Events.BroadcastRemote("SetClientRemainingWaveTime", remaining)
+                    Events.BroadcastRemote("SetClientRemainingWaveTime", Reliability.Reliable, remaining)
                 else
-                    Events.CallRemote("SetClientRemainingWaveTime", ply, remaining)
+                    Events.CallRemote("SetClientRemainingWaveTime", ply, Reliability.Reliable, remaining)
                 end
             end
         end
@@ -918,7 +918,7 @@ VZ_EVENT_SUBSCRIBE_REMOTE("ServerPing", function(ply, location, entity)
         local char = ply:GetControlledCharacter()
         if char then
             --if not char:GetValue("PlayerDown") then
-                Events.BroadcastRemote("SyncPing", ply:GetValue("CharacterColor"), location, entity)
+                Events.BroadcastRemote("SyncPing", Reliability.Reliable, ply:GetValue("CharacterColor"), location, entity)
             --end
         end
     end

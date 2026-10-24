@@ -200,12 +200,12 @@ function OpenActiveMysteryBox(char)
                     PickNewMysteryBox()
                 end, NewMysteryBox_Timeout_ms)
 
-                Events.BroadcastRemote("PlayVZSound", {basic_sound_tbl=Mbox_Changed_Sound})
+                Events.BroadcastRemote("PlayVZSound", Reliability.Reliable, {basic_sound_tbl=Mbox_Changed_Sound})
             end
         end, Mystery_box_weapon_time * 1000),
     }
     OpenedMBoxNewFakeWeapon()
-    Events.BroadcastRemote("OpenMBOXSound", SM_MysteryBoxes[Active_MysteryBox_ID].mbox:GetLocation())
+    Events.BroadcastRemote("OpenMBOXSound", Reliability.Reliable, SM_MysteryBoxes[Active_MysteryBox_ID].mbox:GetLocation())
 end
 
 VZ_EVENT_SUBSCRIBE_REMOTE("BuyMBOX", function(ply, mbox)

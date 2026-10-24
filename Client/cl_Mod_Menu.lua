@@ -10,21 +10,21 @@ AddVZFrameTab("Mod_Menu", "Enemies", "Enemies")
 AddVZFrameTab("Mod_Menu", "World", "World")
 
 AddTabCheckbox("Mod_Menu", "Player", "God Mode", function(checked)
-    Events.CallRemote("VZMM_GodMode", checked)
+    Events.CallRemote("VZMM_GodMode", Reliability.Reliable, checked)
 end, true, false)
 
 AddTabButton("Mod_Menu", "Player", "Noclip", function()
-    Events.CallRemote("VZMM_Noclip")
+    Events.CallRemote("VZMM_Noclip", Reliability.Reliable)
 end, "Toggle Noclip")
 
 VZ_EVENT_SUBSCRIBE_REMOTE("Send_Weapons_Names", function(wn)
     AddTabSelect("Mod_Menu", "Player", "Give Weapon", function(selected)
-        Events.CallRemote("VZMM_GiveWeap", selected)
+        Events.CallRemote("VZMM_GiveWeap", Reliability.Reliable, selected)
     end, wn)
 end)
 
 AddTabSelect("Mod_Menu", "Round", "Give Powerup", function(selected)
-    Events.CallRemote("VZMM_GivePowerup", selected)
+    Events.CallRemote("VZMM_GivePowerup", Reliability.Reliable, selected)
 end, Powerups_Names)
 
 
@@ -33,7 +33,7 @@ for k, v in pairs(PERKS_CONFIG) do
     table.insert(_Perks_Names, k)
 end
 AddTabSelect("Mod_Menu", "Player", "Give Perk", function(selected)
-    Events.CallRemote("VZMM_GivePerk", selected)
+    Events.CallRemote("VZMM_GivePerk", Reliability.Reliable, selected)
 end, _Perks_Names)
 
 
@@ -60,15 +60,15 @@ AddTabCheckbox("Mod_Menu", "Enemies", "Highlight Enemies", function(checked)
 end, false, false)
 
 AddTabCheckbox("Mod_Menu", "Enemies", "Don't Target Player", function(checked)
-    Events.CallRemote("VZMM_DontTarget", checked)
+    Events.CallRemote("VZMM_DontTarget", Reliability.Reliable, checked)
 end, false, false)
 
 AddTabCheckbox("Mod_Menu", "Player", "Infinite Grenades", function(checked)
-    Events.CallRemote("VZMM_InfGrenades", checked)
+    Events.CallRemote("VZMM_InfGrenades", Reliability.Reliable, checked)
 end, false, false)
 
 AddTabButton("Mod_Menu", "Player", "PAP Weapon", function()
-    Events.CallRemote("VZMM_PAP")
+    Events.CallRemote("VZMM_PAP", Reliability.Reliable)
 end, "Toggle PAP on Weapon")
 
 local _PAP_Repack_Names = {}
@@ -76,7 +76,7 @@ for k, v in pairs(PAP_Repack_Config) do
     table.insert(_PAP_Repack_Names, k)
 end
 AddTabSelect("Mod_Menu", "Player", "Set PAP Repack Effect", function(selected)
-    Events.CallRemote("VZMM_PAP", selected)
+    Events.CallRemote("VZMM_PAP", Reliability.Reliable, selected)
 end, _PAP_Repack_Names)
 
 AddTabTextInput("Mod_Menu", "Round", "Set Round", function(text)
@@ -84,7 +84,7 @@ AddTabTextInput("Mod_Menu", "Round", "Set Round", function(text)
         local nb = tonumber(text)
         if nb then
             if math.floor(nb) == nb then
-                Events.CallRemote("VZMM_SetRound", nb)
+                Events.CallRemote("VZMM_SetRound", Reliability.Reliable, nb)
             end
         end
     end
@@ -99,7 +99,7 @@ for k, v in pairs(Player_Models) do
 end
 
 AddTabSelect("Mod_Menu", "Player", "Set Player Model", function(selected)
-    Events.CallRemote("VZMM_SetPM", selected)
+    Events.CallRemote("VZMM_SetPM", Reliability.Reliable, selected)
 end, _PM_Names)
 
 local _Cam_Modes_Names = {}
@@ -108,7 +108,7 @@ for k, v in pairs(CameraMode) do
 end
 
 AddTabSelect("Mod_Menu", "Player", "Set Camera Mode", function(selected)
-    Events.CallRemote("VZMM_SetCamMode", selected)
+    Events.CallRemote("VZMM_SetCamMode", Reliability.Reliable, selected)
 end, _Cam_Modes_Names)
 
 AddTabTextInput("Mod_Menu", "World", "Set Time", function(text)
@@ -129,7 +129,7 @@ AddTabTextInput("Mod_Menu", "World", "Set Time", function(text)
 end, "hours:minutes", false)
 
 AddTabButton("Mod_Menu", "World", "Open Map Doors", function()
-    Events.CallRemote("VZMM_OpenAllDoors")
+    Events.CallRemote("VZMM_OpenAllDoors", Reliability.Reliable)
 end, "Open Map Doors (Can depend on Power)")
 
 AddTabTextInput("Mod_Menu", "Player", "Set Money", function(text)
@@ -137,18 +137,18 @@ AddTabTextInput("Mod_Menu", "Player", "Set Money", function(text)
         local nb = tonumber(text)
         if nb then
             if math.floor(nb) == nb then
-                Events.CallRemote("VZMM_SetMoney", nb)
+                Events.CallRemote("VZMM_SetMoney", Reliability.Reliable, nb)
             end
         end
     end
 end, "number", false)
 
 AddTabCheckbox("Mod_Menu", "Player", "Infinite Money", function(checked)
-    Events.CallRemote("VZMM_InfiniteMoney", checked)
+    Events.CallRemote("VZMM_InfiniteMoney", Reliability.Reliable, checked)
 end, true, false)
 
 AddTabButton("Mod_Menu", "World", "Power", function()
-    Events.CallRemote("VZMM_Power")
+    Events.CallRemote("VZMM_Power", Reliability.Reliable)
 end, "Enable Power")
 
 local _Weather_Type_Names = {}
@@ -166,6 +166,6 @@ if VZ_GetFeatureValue("Vehicles", "script_loaded") then
         table.insert(_Vehicles_Names, k)
     end
     AddTabSelect("Mod_Menu", "World", "Spawn Vehicle", function(selected)
-        Events.CallRemote("VZMM_SpawnVehicle", selected)
+        Events.CallRemote("VZMM_SpawnVehicle", Reliability.Reliable, selected)
     end, _Vehicles_Names)
 end

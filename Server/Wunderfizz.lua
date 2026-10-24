@@ -137,10 +137,11 @@ function OpenActiveWunderfizz(char)
 
         local random_move = math.random(100)
         if (random_move <= Wonderfizz_Move_Percentage and table_count(SM_Wunderfizzes) > 1) then
-            local players_sound = GetPlayersInRadius(SM_Wunderfizzes[Active_Wunderfizz_ID].body:GetLocation() + Wonderfizz_Bottles_Offset, Wunderfizz_leave_Sound.falloff_distance)
-            for k, v in pairs(players_sound) do
-                Events.CallRemote("PlayVZSound", v, {basic_sound_tbl=Wunderfizz_leave_Sound}, SM_Wunderfizzes[Active_Wunderfizz_ID].body:GetLocation() + Wonderfizz_Bottles_Offset)
-            end
+            --local players_sound = GetPlayersInRadius(SM_Wunderfizzes[Active_Wunderfizz_ID].body:GetLocation() + Wonderfizz_Bottles_Offset, Wunderfizz_leave_Sound.falloff_distance)
+            --for k, v in pairs(players_sound) do
+                --Events.CallRemote("PlayVZSound", v, {basic_sound_tbl=Wunderfizz_leave_Sound}, SM_Wunderfizzes[Active_Wunderfizz_ID].body:GetLocation() + Wonderfizz_Bottles_Offset)
+            --end
+            Events.BroadcastRemoteInRadius("PlayVZSound", SM_Wunderfizzes[Active_Wunderfizz_ID].body:GetLocation() + Wonderfizz_Bottles_Offset, Wunderfizz_leave_Sound.falloff_distance, Reliability.Reliable, {basic_sound_tbl=Wunderfizz_leave_Sound}, SM_Wunderfizzes[Active_Wunderfizz_ID].body:GetLocation() + Wonderfizz_Bottles_Offset)
 
             PickNewWunderfizz()
         else

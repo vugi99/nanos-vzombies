@@ -11,10 +11,10 @@ function BuildVehiclePadUI(frame_id, pad_id)
                 ShowVZFrame(frame_id, false)
                 Input.SetMouseEnabled(false)
                 if InteractType == "MapVPad" then
-                    Events.CallRemote("BuyVehicle", InteractThing, k)
+                    Events.CallRemote("BuyVehicle", Reliability.Reliable, InteractThing, k)
                 end
             else
-                Events.CallRemote("BuyVehicle", pad_id, k)
+                Events.CallRemote("BuyVehicle", Reliability.Reliable, pad_id, k)
             end
         end, "Buy " .. k .. " (" .. tostring(v.price) .. "$)")
         AddTabEmptySpace(frame_id, "Vehicles", 35, true)

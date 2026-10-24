@@ -65,7 +65,7 @@ function GiveCharacterPerk(char, perk_name)
                 local new_h = 1000 + PERKS_CONFIG.juggernog.PlayerHealth
                 char:SetHealth(new_h)
                 char:SetMaxHealth(new_h)
-                Events.CallRemote("UpdateGUIHealth", ply)
+                Events.CallRemote("UpdateGUIHealth", ply, Reliability.Reliable)
             elseif perk_name == "stamin_up" then
                 char:SetSpeedMultiplier(PERKS_CONFIG.stamin_up.Speed_Multiplier)
             elseif perk_name == "speed_cola" then

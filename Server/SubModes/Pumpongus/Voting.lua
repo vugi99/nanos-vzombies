@@ -53,22 +53,11 @@ VZ_EVENT_SUBSCRIBE("Events", "VZ_GameEnding", function()
         CurVoteTimer = nil
     end
     VotesOpen = false
-    Events.BroadcastRemote("PPG_HideVotingUI")
+    Events.BroadcastRemote("PPG_HideVotingUI", Reliability.Reliable)
     for k, v in pairs(Player.GetPairs()) do
         v:SetVOIPGlobalChannelSetting(3, VOIPSetting.None)
     end
 end)
-
-
-function PPG_CallRemotes(event_name, plys, ...)
-    if type(plys) == "table" then
-        for _, v in pairs(plys) do
-            Events.CallRemote(event_name, v, ...)
-        end
-    else
-        error("CallRemotes plys is not a table")
-    end
-end
 
 function PPG_BroadcastRemoteWithout(event_name, ply, ...)
     for _, v in pairs(Player.GetPairs()) do
@@ -196,11 +185,11 @@ function PPG_FinishVote()
         PPG_BuildVotingConfigPlayers()
         local results = PPG_CalculateVoteResults()
         PPG_HandleResults(results)
-        Events.BroadcastRemote("PPG_VotingPhaseClosed", PPG_Voting_With_Alive_Field, results)
+        Events.BroadcastRemote("PPG_VotingPhaseClosed", Reliability.Reliable, PPG_Voting_With_Alive_Field, results)
 
         CurVoteTimer = Timer.SetTimeout(function()
             CurVoteTimer = nil
-            Events.BroadcastRemote("PPG_HideVotingUI")
+            Events.BroadcastRemote("PPG_HideVotingUI", Reliability.Reliable)
 
             for k, v in pairs(PLAYING_PLAYERS) do
                 v:SetVOIPGlobalChannelSetting(3, VOIPSetting.None)
@@ -259,7 +248,7 @@ VZ_EVENT_SUBSCRIBE("Events", "VZ_WaveFinished", function(wave_nb)
             PPG_votes = {}
             PPG_BuildVotingConfigPlayers()
 
-            Events.BroadcastRemote("PPG_StartDiscussionPhase", PPG_Voting_With_Alive_Field)
+            Events.BroadcastRemote("PPG_StartDiscussionPhase", Reliability.Reliable, PPG_Voting_With_Alive_Field)
 
             for k, v in pairs(PLAYING_PLAYERS) do
                 local char = v:GetControlledCharacter()
@@ -278,7 +267,7 @@ VZ_EVENT_SUBSCRIBE("Events", "VZ_WaveFinished", function(wave_nb)
                     if IsValid(VZ_PPG_IMPOSTER) then
                         -- Discuss time finished, votes opened !
                         PPG_BuildVotingConfigPlayers()
-                        Events.BroadcastRemote("PPG_StartVotingPhase", PPG_Voting_With_Alive_Field)
+                        Events.BroadcastRemote("PPG_StartVotingPhase", Reliability.Reliable, PPG_Voting_With_Alive_Field)
 
                         VotesOpen = true
 
@@ -294,7 +283,7 @@ end)
 
 --[[VZ_EVENT_SUBSCRIBE("Events", "VZ_WaveStarted", function(wave_nb)
     if IsValid(VZ_PPG_IMPOSTER) then
-        Events.BroadcastRemote("PPG_HideVotingUI")
+        Events.BroadcastRemote("PPG_HideVotingUI", Reliability.Reliable)
     end
 end)]]--
 
@@ -302,7 +291,7 @@ VZ_EVENT_SUBSCRIBE_REMOTE("PPG_PlayerVote", function(ply, targetSteamId)
     if VotesOpen then
         if PPG_IsValidVote(ply, targetSteamId) then
             PPG_votes[ply:GetSteamID()] = targetSteamId
-            PPG_BroadcastRemoteWithout("PPG_SyncVote", ply, ply:GetSteamID(), targetSteamId)
+            PPG_BroadcastRemoteWithout("PPG_SyncVote", ply, Reliability.Reliable, ply:GetSteamID(), targetSteamId)
             PPG_CheckFinishVote()
         end
     end
@@ -311,10 +300,10 @@ end)
 VZ_EVENT_SUBSCRIBE("Events", "VZ_PlayerLeft", function(ply)
     if VotesOpen then
         PPG_votes[ply:GetSteamID()] = nil
-        PPG_BroadcastRemoteWithout("PPG_SyncVote", ply, ply:GetSteamID(), nil)
+        PPG_BroadcastRemoteWithout("PPG_SyncVote", ply, Reliability.Reliable, ply:GetSteamID(), nil)
 
         PPG_BuildVotingConfigPlayers(ply)
-        PPG_BroadcastRemoteWithout("PPG_VotingSetPlayers", ply, PPG_Voting_With_Alive_Field)
+        PPG_BroadcastRemoteWithout("PPG_VotingSetPlayers", ply, Reliability.Reliable, PPG_Voting_With_Alive_Field)
         PPG_CheckFinishVote()
     end
 end)
@@ -324,10 +313,10 @@ VZ_EVENT_SUBSCRIBE("Events", "VZ_CharacterDown", function(char)
     if IsValid(ply) then
         if VotesOpen then
             PPG_votes[ply:GetSteamID()] = nil
-            Events.BroadcastRemote("PPG_SyncVote", ply:GetSteamID(), nil)
+            Events.BroadcastRemote("PPG_SyncVote", Reliability.Reliable, ply:GetSteamID(), nil)
 
             PPG_BuildVotingConfigPlayers(ply)
-            Events.BroadcastRemote("PPG_VotingSetPlayers", PPG_Voting_With_Alive_Field)
+            Events.BroadcastRemote("PPG_VotingSetPlayers", Reliability.Reliable, PPG_Voting_With_Alive_Field)
             PPG_CheckFinishVote()
         end
     end

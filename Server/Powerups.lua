@@ -34,7 +34,7 @@ function DestroyPowerups()
         Timer.ClearTimeout(v.timeout)
     end
     ACTIVE_POWERUPS = {}
-    Events.BroadcastRemote("RemoveGUIPowerups")
+    Events.BroadcastRemote("RemoveGUIPowerups", Reliability.Reliable)
 end
 
 function Carpenter_Repair_Func()
@@ -53,7 +53,7 @@ end
 function PowerupGrabbed(powerup_name, by_char)
     if Powerups_Config[powerup_name] then
         local ply = by_char:GetPlayer()
-        Events.CallRemote("PlayVZSound", ply, {basic_sound_tbl=Powerup_Grab_Sound})
+        Events.CallRemote("PlayVZSound", ply, Reliability.Unreliable, {basic_sound_tbl=Powerup_Grab_Sound})
         if powerup_name == "carpenter" then
             if Carpenter_Interval_ID then
                 Timer.ClearInterval(Carpenter_Interval_ID)
@@ -80,7 +80,7 @@ function PowerupGrabbed(powerup_name, by_char)
                                     v.ammo_bag = max_ammo
                                     if v.weapon then
                                         v.weapon:SetAmmoBag(max_ammo)
-                                        Events.CallRemote("UpdateAmmoText", char:GetPlayer())
+                                        Events.CallRemote("UpdateAmmoText", char:GetPlayer(), Reliability.Reliable)
                                     end
                                 else
                                     Console.Error("PowerupGrabbed:max_ammo, GetWeaponNameMaxAmmo doesn't work for weapon : " .. tostring(v.weapon_name))
@@ -113,7 +113,7 @@ function PowerupGrabbed(powerup_name, by_char)
         elseif powerup_name == "instakill" then
             local remove_Active_Timeout = Timer.SetTimeout(function()
                 ACTIVE_POWERUPS.instakill = nil
-                Events.BroadcastRemote("DurationPowerupRemoved", "instakill")
+                Events.BroadcastRemote("DurationPowerupRemoved", Reliability.Reliable, "instakill")
             end, Powerups_Config.instakill.duration)
             if ACTIVE_POWERUPS.instakill then
                 Timer.ClearTimeout(ACTIVE_POWERUPS.instakill.timeout)
@@ -126,7 +126,7 @@ function PowerupGrabbed(powerup_name, by_char)
         elseif powerup_name == "x2" then
             local remove_Active_Timeout = Timer.SetTimeout(function()
                 ACTIVE_POWERUPS.x2 = nil
-                Events.BroadcastRemote("DurationPowerupRemoved", "x2")
+                Events.BroadcastRemote("DurationPowerupRemoved", Reliability.Reliable, "x2")
             end, Powerups_Config.x2.duration)
             if ACTIVE_POWERUPS.x2 then
                 Timer.ClearTimeout(ACTIVE_POWERUPS.x2.timeout)
@@ -196,7 +196,7 @@ function PowerupGrabbed(powerup_name, by_char)
         if powerup_name == "death_machine" then
             return
         end
-        Events.BroadcastRemote("PowerupGrabbed", powerup_name)
+        Events.BroadcastRemote("PowerupGrabbed", Reliability.Reliable, powerup_name)
     end
 end
 

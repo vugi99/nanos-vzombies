@@ -6,17 +6,17 @@ CreateVZFrame(GUI, "Admin_Menu", "65%", "65%", "Admin Menu", "VZ Admin Menu", tr
 AddVZFrameTab("Admin_Menu", "Admin", "Admin")
 
 AddTabButton("Admin_Menu", "Admin", "Skip Round", function()
-    Events.CallRemote("VZAM_SkipRound")
+    Events.CallRemote("VZAM_SkipRound", Reliability.Reliable)
 end, "Skip Round")
 
 AddTabTextInput("Admin_Menu", "Admin", "Unban", function(text)
     if (text and text ~= "") then
-        Events.CallRemote("VZAM_Unban", text)
+        Events.CallRemote("VZAM_Unban", Reliability.Reliable, text)
     end
 end, "nanos account id", false)
 
 AddTabButton("Admin_Menu", "Admin", "Start Mapvote", function()
-    Events.CallRemote("VZAM_Mapvote")
+    Events.CallRemote("VZAM_Mapvote", Reliability.Reliable)
 end, "Start Mapvote")
 
 AddTabEmptySpace("Admin_Menu", "Admin", 35, true)
@@ -58,36 +58,36 @@ end, "reason", false)
 
 AddTabButton("Admin_Menu", "Admin", "Ban", function()
     if (a_target_ply and a_target_ply:IsValid()) then
-        Events.CallRemote("VZAM_Ban", a_target_ply, a_reason)
+        Events.CallRemote("VZAM_Ban", Reliability.Reliable, a_target_ply, a_reason)
     end
 end, "Ban")
 
 AddTabButton("Admin_Menu", "Admin", "Kick", function()
     if (a_target_ply and a_target_ply:IsValid()) then
-        Events.CallRemote("VZAM_Kick", a_target_ply, a_reason)
+        Events.CallRemote("VZAM_Kick", Reliability.Reliable, a_target_ply, a_reason)
     end
 end, "Kick")
 
 AddTabButton("Admin_Menu", "Admin", "Mute (chat)", function()
     if (a_target_ply and a_target_ply:IsValid()) then
-        Events.CallRemote("VZAM_MuteChat", a_target_ply)
+        Events.CallRemote("VZAM_MuteChat", Reliability.Reliable, a_target_ply)
     end
 end, "Mute (chat)")
 
 AddTabButton("Admin_Menu", "Admin", "Mute (VOIP)", function()
     if (a_target_ply and a_target_ply:IsValid()) then
-        Events.CallRemote("VZAM_MuteVOIP", a_target_ply)
+        Events.CallRemote("VZAM_MuteVOIP", Reliability.Reliable, a_target_ply)
     end
 end, "Mute (VOIP)")
 
 AddTabButton("Admin_Menu", "Admin", "UnMute (chat)", function()
     if (a_target_ply and a_target_ply:IsValid()) then
-        Events.CallRemote("VZAM_UnMuteChat", a_target_ply)
+        Events.CallRemote("VZAM_UnMuteChat", Reliability.Reliable, a_target_ply)
     end
 end, "UnMute (chat)")
 
 AddTabButton("Admin_Menu", "Admin", "UnMute (VOIP)", function()
     if (a_target_ply and a_target_ply:IsValid()) then
-        Events.CallRemote("VZAM_UnMuteVOIP", a_target_ply)
+        Events.CallRemote("VZAM_UnMuteVOIP", Reliability.Reliable, a_target_ply)
     end
 end, "UnMute (VOIP)")

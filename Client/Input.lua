@@ -47,7 +47,7 @@ Selected_Bot_For_Order = nil
 VZ_BIND("Scoreboard", InputEvent.Pressed, function()
     if (not RequestedTabData and not Tab_Open) then
         RequestedTabData = true
-        Events.CallRemote("RequestTabData")
+        Events.CallRemote("RequestTabData", Reliability.Reliable)
     end
 end)
 
@@ -80,13 +80,13 @@ Interact_Actions_TBL = {
     MapCustom = function()
         --print("MAP CUSTOM CALL", InteractThing.event_name)
         VZ_EVENT_CALL("Events", InteractThing.event_name, InteractThing)
-        Events.CallRemote("CustomMapInteract", InteractThing)
+        Events.CallRemote("CustomMapInteract", Reliability.Reliable, InteractThing)
     end,
     MapTeleporter = function()
         if InteractThing ~= "NoPower" then
             if IsValid(InteractThing) then
                 if InteractThing:GetValue("CanTeleport") then
-                    Events.CallRemote("BuyTeleport", InteractThing)
+                    Events.CallRemote("BuyTeleport", Reliability.Reliable, InteractThing)
                 end
             end
         end
@@ -94,14 +94,14 @@ Interact_Actions_TBL = {
     Gib = function()
         if IsValid(InteractThing) then
             if IsValid(GetLocalCharacter()) and GetLocalCharacter():GetValue("CanPickupGibs") then
-                Events.CallRemote("PickupGib", InteractThing:GetValue("GibData"))
+                Events.CallRemote("PickupGib", Reliability.Reliable, InteractThing:GetValue("GibData"))
                 InteractThing:Destroy()
             end
         end
     end,
     MapBank = function()
         if IsValid(InteractThing) and IsValid(InteractThing[1]) then
-            Events.CallRemote("BankAction", InteractThing[1], InteractThing[2])
+            Events.CallRemote("BankAction", Reliability.Reliable, InteractThing[1], InteractThing[2])
         end
     end,
     MapVPad = function()
@@ -194,7 +194,7 @@ VZ_BIND("Interact", InputEvent.Released, function()
     elseif (InteractType == "RevivePlayer" and RevivingPlayerData) then
         Timer.ClearTimeout(RevivingPlayerData.timeout)
         GUIStopRevive()
-        Events.CallRemote("RevivePlayerStopped", RevivingPlayerData.char)
+        Events.CallRemote("RevivePlayerStopped", Reliability.Reliable, RevivingPlayerData.char)
         RevivingPlayerData = nil
     end
 end)
@@ -234,7 +234,7 @@ VZ_BIND("VZ Switch Weapon", InputEvent.Pressed, function()
     local local_char = local_player:GetControlledCharacter()
     if local_char then
         if not local_char:GetValue("PlayerDown") then
-            Events.CallRemote("VZ_Switch_Weapon")
+            Events.CallRemote("VZ_Switch_Weapon", Reliability.Reliable)
         end
     end
 end)
@@ -254,7 +254,7 @@ VZ_BIND("Grenade", InputEvent.Pressed, function()
                     local grenades = char:GetValue("ZGrenadesNB")
                     if (grenades and grenades > 0) then
                         if (not char:GetPicked() or not char:GetPicked():IsA(Grenade)) then
-                            Events.CallRemote("PickupGrenade")
+                            Events.CallRemote("PickupGrenade", Reliability.Reliable)
                         end
                     end
                 end
@@ -268,7 +268,7 @@ VZ_BIND("Grenade", InputEvent.Released, function()
     local char = ply:GetControlledCharacter()
     if char then
         if (char:GetPicked() and char:GetPicked():IsA(Grenade)) then
-            Events.CallRemote("ThrowGrenade")
+            Events.CallRemote("ThrowGrenade", Reliability.Reliable)
         end
     end
 end)
@@ -281,7 +281,7 @@ VZ_BIND("Knife", InputEvent.Pressed, function()
         if not char:GetValue("PlayerDown") then
             if not char:GetVehicle() then
                 if char:GetValue("CanUseKnife") then
-                    Events.CallRemote("UseKnife")
+                    Events.CallRemote("UseKnife", Reliability.Reliable)
                 end
             end
         end
@@ -290,7 +290,7 @@ end)
 
 
 VZ_BIND("Lock Aim", InputEvent.Pressed, function()
-    Events.CallRemote("ToggleLockAim")
+    Events.CallRemote("ToggleLockAim", Reliability.Reliable)
 end)
 
 
@@ -329,7 +329,7 @@ end)
 
 VZ_BIND("Pause", InputEvent.Pressed, function()
     if PlayerCanPause then
-        Events.CallRemote("TogglePauseGame")
+        Events.CallRemote("TogglePauseGame", Reliability.Reliable)
     end
 end)
 
@@ -390,7 +390,7 @@ VZ_BIND("Suicide", InputEvent.Pressed, function()
     local char = ply:GetControlledCharacter()
     if char then
         if not char:GetValue("PlayerDown") then
-            Events.CallRemote("ServerSuicide")
+            Events.CallRemote("ServerSuicide", Reliability.Reliable)
         end
     end
 end)
@@ -413,12 +413,12 @@ if Ping_Enabled then
                 if trace.Success then
                     if trace.Entity then
                         if trace.Entity:GetID() > 0 then -- Check if serverside entity
-                            Events.CallRemote("ServerPing", trace.Location, trace.Entity)
+                            Events.CallRemote("ServerPing", Reliability.Reliable, trace.Location, trace.Entity)
                         else
-                            Events.CallRemote("ServerPing", trace.Location)
+                            Events.CallRemote("ServerPing", Reliability.Reliable, trace.Location)
                         end
                     else
-                        Events.CallRemote("ServerPing", trace.Location)
+                        Events.CallRemote("ServerPing", Reliability.Reliable, trace.Location)
                     end
                 end
             --end

@@ -96,7 +96,7 @@ function PPG_AddPumpkinsCollected(char, added)
 
         if IsValid(VZ_PPG_IMPOSTER) then
             if char == VZ_PPG_IMPOSTER:GetControlledCharacter() then
-                Events.CallRemote("UpdateClientPumpkins", VZ_PPG_IMPOSTER, new_p)
+                Events.CallRemote("UpdateClientPumpkins", VZ_PPG_IMPOSTER, Reliability.Reliable, new_p)
             end
         end
 
@@ -141,7 +141,7 @@ VZ_EVENT_SUBSCRIBE("Events", "VZ_PlayerCharacterSpawned", function(char)
             char:GetPlayer():SetValue("PPG_Imposter", nil, false)
         end
 
-        --Events.CallRemote("TellSpawnedTest", char:GetPlayer())
+        --Events.CallRemote("TellSpawnedTest", char:GetPlayer(), Reliability.Reliable)
 
         --[[local loc = char:GetLocation()
         local goo = GooTentacles(loc)
@@ -236,7 +236,7 @@ function PPG_Game_Chose_Imposter(imp)
 
     imp:SetValue("PPG_Imposter", true, false)
 
-    Events.CallRemote("PPG_Imposter_Notice", imp)
+    Events.CallRemote("PPG_Imposter_Notice", imp, Reliability.Reliable)
     --print("Sent PPG_Imposter_Notice to " .. imp:GetAccountName())
     print("PPG Imposter: ", imp:GetAccountName() .. " (ID: " .. imp:GetID() .. ")")
 

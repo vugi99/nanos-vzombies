@@ -214,10 +214,11 @@ function SpawnEnemy(EnemyName, EnemyType)
                     enemy:SetValue("GroundAnim", true, false)
                     enemy:PlayAnimation(Enemy_Under_Ground_Animation.asset, AnimationSlotType.FullBody, false, 0, 0)
 
-                    local players_sound = GetPlayersInRadius(selected_spawn.location, RANDOM_SOUNDS.spawn_dirt_sound.falloff_distance)
-                    for k, v in pairs(players_sound) do
-                        Events.CallRemote("ZombieGroundDirt", v, VZ_RandomSound(RANDOM_SOUNDS.spawn_dirt_sound), selected_spawn.location)
-                    end
+                    --local players_sound = GetPlayersInRadius(selected_spawn.location, RANDOM_SOUNDS.spawn_dirt_sound.falloff_distance)
+                    --for k, v in pairs(players_sound) do
+                        --Events.CallRemote("ZombieGroundDirt", v, VZ_RandomSound(RANDOM_SOUNDS.spawn_dirt_sound), selected_spawn.location)
+                    --end
+                    Events.BroadcastRemoteInRadius("ZombieGroundDirt", selected_spawn.location, RANDOM_SOUNDS.spawn_dirt_sound.falloff_distance, Reliability.Unreliable, VZ_RandomSound(RANDOM_SOUNDS.spawn_dirt_sound), selected_spawn.location)
 
                     Timer.SetTimeout(function()
                         if enemy:IsValid() then
@@ -579,10 +580,11 @@ end
 function EnemyAttackSound(enemy)
     local enemy_table = GetEnemyTable(enemy)
     local zombie_loc = enemy:GetLocation()
-    local play_sound_for_players = GetPlayersInRadius(zombie_loc, enemy_table.Attack_Sounds.falloff_distance)
-    for i, v in ipairs(play_sound_for_players) do
-        Events.CallRemote("PlayVZSound", v, {random_sound_tbl=enemy_table.Attack_Sounds, random_sound_selected=VZ_RandomSound(enemy_table.Attack_Sounds)}, zombie_loc)
-    end
+    --local play_sound_for_players = GetPlayersInRadius(zombie_loc, enemy_table.Attack_Sounds.falloff_distance)
+    --for i, v in ipairs(play_sound_for_players) do
+        --Events.CallRemote("PlayVZSound", v, {random_sound_tbl=enemy_table.Attack_Sounds, random_sound_selected=VZ_RandomSound(enemy_table.Attack_Sounds)}, zombie_loc)
+    --end
+    Events.BroadcastRemoteInRadius("PlayVZSound", zombie_loc, enemy_table.Attack_Sounds.falloff_distance, Reliability.Unreliable, {random_sound_tbl=enemy_table.Attack_Sounds, random_sound_selected=VZ_RandomSound(enemy_table.Attack_Sounds)}, zombie_loc)
 end
 
 function AttackBarricade(enemy, barricade, start)
@@ -1017,7 +1019,7 @@ function RandomEnemyJoker(char)
                 if rand1000 <= joker_chance then
                     --print("Joker")
                     char:SetRagdollMode(true)
-                    Events.BroadcastRemote("JokerZombieSound", char)
+                    Events.BroadcastRemote("JokerZombieSound", Reliability.Unreliable, char)
                 end
             end
         end
@@ -1424,7 +1426,7 @@ Timer.SetInterval(function()
                             if napalm_loc:DistanceSquared(char_loc) <= Napalm_Fire_Radius_sq then
                                 if not v2:GetValue("MM_GodMode") then
                                     char:ApplyDamage(Napalm_Fire_Damage)
-                                    Events.CallRemote("PlayVZSound", v2, {random_sound_tbl=RANDOM_SOUNDS.napalm_fire_sound})
+                                    Events.CallRemote("PlayVZSound", v2, Reliability.Unreliable, {random_sound_tbl=RANDOM_SOUNDS.napalm_fire_sound})
                                 end
                             end
                         end

@@ -71,7 +71,7 @@ VZ_EVENT_SUBSCRIBE_REMOTE("BankAction", function(ply, bank, action)
                                 ply:SetValue("PlayerStoredMoney", ply:GetValue("PlayerStoredMoney") + amount, true)
                             end
                         else
-                            Events.CallRemote("AddNotification", ply, "Bank Full")
+                            Events.CallRemote("AddNotification", ply, Reliability.Reliable, "Bank Full")
                         end
                     elseif action == "Withdraw" then
                         if ply:GetValue("PlayerStoredMoney") > 0 then

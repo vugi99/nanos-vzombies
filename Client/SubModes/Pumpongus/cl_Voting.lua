@@ -74,5 +74,5 @@ PPG_UI:Subscribe("VotingUIClosed", function()
 end)
 
 PPG_UI:Subscribe("LocalPlayerVote", function(targetId)
-    Events.CallRemote("PPG_PlayerVote", targetId)
+    Events.CallRemote("PPG_PlayerVote", Reliability.Reliable, targetId)
 end)

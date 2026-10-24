@@ -80,7 +80,7 @@ function BuyTeleport(ply, teleporter)
                                 end
 
 
-                                Events.CallRemote("PlayVZSound", v, {basic_sound_tbl=Player_Teleport_Sound})
+                                Events.CallRemote("PlayVZSound", v, Reliability.Unreliable, {basic_sound_tbl=Player_Teleport_Sound})
                             end
 
                             if MAP_TELEPORTERS[teleporter_ID].teleport_back_ms > 0 then
@@ -103,7 +103,7 @@ function BuyTeleport(ply, teleporter)
                                                         SetCharacterNotTargeted(char_to_tp, false)
                                                     end
 
-                                                    Events.CallRemote("PlayVZSound", v, {basic_sound_tbl=Player_Teleport_Sound})
+                                                    Events.CallRemote("PlayVZSound", v, Reliability.Unreliable, {basic_sound_tbl=Player_Teleport_Sound})
                                                 end
                                             end
                                         end

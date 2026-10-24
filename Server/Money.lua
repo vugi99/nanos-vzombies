@@ -14,7 +14,7 @@ function Buy(ply, price)
         ply:SetValue("ZMoney", pmoney - price, true)
         return true
     else
-        Events.CallRemote("AddNotification", ply, "Not Enough Money", 3000)
+        Events.CallRemote("AddNotification", ply, Reliability.Reliable, "Not Enough Money", 3000)
     end
 end
 Package.Export("Buy", Buy)
@@ -38,7 +38,7 @@ function AddMoney(ply, added, only_money)
             end
             ply:SetValue("ZScore", ply:GetValue("ZScore") + added, false)
         elseif VZ_GetFeatureValue("Levels", "script_loaded") then
-            Events.CallRemote("PlayerLevelXPUpdate", ply, ply:GetValue("PlayerLevel"), ply:GetValue("PlayerXP")) -- Prevent xp desync
+            Events.CallRemote("PlayerLevelXPUpdate", ply, Reliability.Reliable, ply:GetValue("PlayerLevel"), ply:GetValue("PlayerXP")) -- Prevent xp desync
         end
         return true
     end
@@ -81,7 +81,7 @@ function InteractMapWeapon(weapon, char)
                                 PlayersCharactersWeapons[charInvID].weapons[ammo_id].ammo_bag = MAP_WEAPONS[m_weap_id].max_ammo
                                 if PlayersCharactersWeapons[charInvID].weapons[ammo_id].weapon then
                                     PlayersCharactersWeapons[charInvID].weapons[ammo_id].weapon:SetAmmoBag(MAP_WEAPONS[m_weap_id].max_ammo)
-                                    Events.CallRemote("UpdateAmmoText", ply)
+                                    Events.CallRemote("UpdateAmmoText", ply, Reliability.Reliable)
                                 end
                             end
                         end
@@ -128,7 +128,7 @@ function BuyDoor(ply, map_door)
                         VZ_EVENT_CALL("Events", "VZ_DoorOpened", char, door_id)
                     end
                 else
-                    Events.CallRemote("AddNotification", ply, "Cannot Open The Door")
+                    Events.CallRemote("AddNotification", ply, Reliability.Reliable, "Cannot Open The Door")
                 end
             end
         end

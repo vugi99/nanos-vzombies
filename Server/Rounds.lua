@@ -54,7 +54,7 @@ function RoundFinished(reset_all, restart_game, ply_left)
         if v:IsValid() then
             if not v.BOT then
                 if v:GetValue("PlayerXP") then
-                    Events.CallRemote("PlayerLevelXPUpdate", v, v:GetValue("PlayerLevel"), v:GetValue("PlayerXP"))
+                    Events.CallRemote("PlayerLevelXPUpdate", v, Reliability.Reliable, v:GetValue("PlayerLevel"), v:GetValue("PlayerXP"))
                 end
             end
         end
@@ -119,7 +119,7 @@ function RoundFinished(reset_all, restart_game, ply_left)
         end
 
         ALL_BOTS = {}
-        Events.BroadcastRemote("AllBotsLeft")
+        Events.BroadcastRemote("AllBotsLeft", Reliability.Reliable)
         PLAYING_PLAYERS = New_Playing_Players
         PLAYING_PLAYERS_NB = table_count(PLAYING_PLAYERS)
 
@@ -150,13 +150,13 @@ function RoundFinished(reset_all, restart_game, ply_left)
             t = GameOverInterval_ms
             if WaitingNewRound_Timer then
                 if WaitingNewWave then
-                    Events.BroadcastRemote("PlayVZSound", {basic_sound_tbl=GameOver_Sound})
+                    Events.BroadcastRemote("PlayVZSound", Reliability.Reliable, {basic_sound_tbl=GameOver_Sound})
                     Timer.ClearTimeout(WaitingNewRound_Timer)
                     WaitingNewRound_Timer = nil
                     WaitingNewWave = false
                 end
             else
-                Events.BroadcastRemote("PlayVZSound", {basic_sound_tbl=GameOver_Sound})
+                Events.BroadcastRemote("PlayVZSound", Reliability.Reliable, {basic_sound_tbl=GameOver_Sound})
                 --print(WaitingMapvote)
             end
             if WaitingMapvote == nil then
@@ -169,7 +169,7 @@ function RoundFinished(reset_all, restart_game, ply_left)
                 Timer.ClearTimeout(WaitingNewRound_Timer)
                 WaitingNewRound_Timer = nil
             end
-            Events.BroadcastRemote("PlayVZSound", {basic_sound_tbl=WaveFinished_Sound})
+            Events.BroadcastRemote("PlayVZSound", Reliability.Reliable, {basic_sound_tbl=WaveFinished_Sound})
             WaitingNewWave = true
         end
         if not WaitingNewRound_Timer then
@@ -247,7 +247,7 @@ function StartRound()
                 --for k, v in pairs(Player.GetAll()) do
                     --v:SetValue("PlayerWaiting", "Waiting_More_Players", true)
                 --end
-                Events.BroadcastRemote("SetGlobalPlayerWaitingValue", "Waiting_More_Players")
+                Events.BroadcastRemote("SetGlobalPlayerWaitingValue", Reliability.Reliable, "Waiting_More_Players")
                 return
             end
         end
@@ -272,7 +272,7 @@ function StartRound()
 
         GAME_TIMER_SECONDS = 0
         if Game_Time_On_Screen then
-            Events.BroadcastRemote("UpdateGameTime", 0)
+            Events.BroadcastRemote("UpdateGameTime", Reliability.Reliable, 0)
         end
 
         if Bots_Enabled then
@@ -292,7 +292,7 @@ function StartRound()
 
     WAVE_TIMED_OUT = nil
     ROUND_NB = ROUND_NB + 1
-    Events.BroadcastRemote("SetClientRoundNumber", ROUND_NB, CanStartHellhoundRound())
+    Events.BroadcastRemote("SetClientRoundNumber", Reliability.Reliable, ROUND_NB, CanStartHellhoundRound())
     REMAINING_ENEMIES_TO_SPAWN = CalculateEnemiesToSpawn(ROUND_NB)
     if CanStartHellhoundRound() then
         if Enemies_Config.Hellhound.Spawning_Config.Number_To_Spawn_mult then
@@ -388,7 +388,7 @@ function StartRound()
             SpawnCharacterForPlayer(v, k)
         else
             if Game_Time_On_Screen then
-                Events.CallRemote("UpdateGameTime", v, math.floor(GAME_TIMER_SECONDS))
+                Events.CallRemote("UpdateGameTime", v, Reliability.Reliable, math.floor(GAME_TIMER_SECONDS))
             end
         end
     end
@@ -457,7 +457,7 @@ VZ_EVENT_SUBSCRIBE_REMOTE("TogglePauseGame", function(ply)
             GAME_PAUSED = not GAME_PAUSED
             print("Game Paused", GAME_PAUSED)
 
-            Events.BroadcastRemote("ClientPauseGame", GAME_PAUSED)
+            Events.BroadcastRemote("ClientPauseGame", Reliability.Reliable, GAME_PAUSED)
 
             if GAME_PAUSED then
                 -- Stop or kills zombies

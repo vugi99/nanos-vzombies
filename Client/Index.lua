@@ -139,7 +139,8 @@ end)
 if Send_Errors_To_Server then
     Console.Subscribe("LogEntry", function(text, type)
         if (type == LogType.Error or type == LogType.Fatal or type == LogType.ScriptingError) then
-            Events.CallRemote("LogErrorFromClient", text, type)
+            -- We don't want to lose errors, maybe add a config for the reliability flag?
+            Events.CallRemote("LogErrorFromClient", Reliability.Reliable, text, type)
         end
     end)
 end

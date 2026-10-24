@@ -26,7 +26,7 @@ VZ_EVENT_SUBSCRIBE("Events", "VZ_PlayerJoined", function(ply)
         table.insert(_Weapons_Names, k)
     end
 
-    Events.CallRemote("Send_Weapons_Names", ply, _Weapons_Names)
+    Events.CallRemote("Send_Weapons_Names", ply, Reliability.Reliable, _Weapons_Names)
     ply:SetValue("MM_GodMode", true, false)
     ply:SetValue("MM_InfMoney", true, false)
 end)

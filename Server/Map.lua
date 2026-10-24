@@ -68,7 +68,7 @@ end
 function ResetMapPower()
     if MAP_POWER then
         POWER_ON = false
-        Events.BroadcastRemote("SetClientPowerON", false)
+        Events.BroadcastRemote("SetClientPowerON", Reliability.Reliable, false)
         if IsValid(MAP_POWER_SM_HANDLE) then
             MAP_POWER_SM_HANDLE:SetRotation(MAP_POWER.handle_rotation)
         end
@@ -87,7 +87,7 @@ function PlayerTurnPowerON(ply, power_sm)
                             POWER_ON = true
                             ROOMS_UNLOCKED[-1] = true
                             MAP_POWER_SM_HANDLE:RotateTo(MAP_POWER.rotation, 2, 0)
-                            Events.BroadcastRemote("PowerONSound")
+                            Events.BroadcastRemote("PowerONSound", Reliability.Reliable)
 
                             for i, v in ipairs(MAP_DOORS) do
                                 if v.price == 0 then

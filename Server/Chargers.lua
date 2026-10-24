@@ -97,9 +97,9 @@ function CanChargeModule(ply, sm)
     local charger_data = MAP_CHARGERS[charger_id]
     if not charger_data then return end
 
-    if sm:GetValue("Charged") then return Events.CallRemote("AddNotification", ply, "Module already charged") end
-    if sm:GetValue("Charging") then return Events.CallRemote("AddNotification", ply, "Module is already charging") end
-    if sm:GetValue("InCooldown") then return Events.CallRemote("AddNotification", ply, "Module is in cooldown") end
+    if sm:GetValue("Charged") then return Events.CallRemote("AddNotification", ply, Reliability.Reliable, "Module already charged") end
+    if sm:GetValue("Charging") then return Events.CallRemote("AddNotification", ply, Reliability.Reliable, "Module is already charging") end
+    if sm:GetValue("InCooldown") then return Events.CallRemote("AddNotification", ply, Reliability.Reliable, "Module is in cooldown") end
 
     local charger_sphere_loc = charger_data.location + charger_data.sphere_offset
 
@@ -121,7 +121,7 @@ function CanChargeModule(ply, sm)
         return
     end
 
-    if charger_data.wait_all_alive_players and #players_characters_in_zone < GetPlayersAliveNB() then return Events.CallRemote("AddNotification", ply, "All Players need to be here to charge this module") end
+    if charger_data.wait_all_alive_players and #players_characters_in_zone < GetPlayersAliveNB() then return Events.CallRemote("AddNotification", ply, Reliability.Reliable, "All Players need to be here to charge this module") end
 
     return charger_data, players_characters_in_zone
 end
@@ -172,7 +172,7 @@ function SetCharacterChargingID(char, charging_id, abort_no_error)
         return
     end
 
-    Events.CallRemote("ClientSetChargingID", ply, charging_id, GAME_TIMER_SECONDS)
+    Events.CallRemote("ClientSetChargingID", ply, Reliability.Reliable, charging_id, GAME_TIMER_SECONDS)
 end
 
 function ChargeModule(sm, players_characters_in_zone)
