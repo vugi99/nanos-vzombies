@@ -28,3 +28,6 @@ End of round sound played twice and executed twice
 died and then he died, game over sound played twice 
 :27 RoundFinished false true
 :29 RoundFinished false true
+
+Screenshot mode: hide all UIs
+Also add more checkboxes to hide everything correctly, one by one.
