@@ -752,6 +752,7 @@ if Bots_Enabled then
                 local ply = v:GetPlayer()
                 if (ply and ply.BOT) then
                     if (not v:IsInRagdollMode() and not v:GetValue("PlayerDown")) then
+                        --print(v, "GaitMode:", v:GetGaitMode())
                         if not v:GetValue("BOTReloading") then
                             if not v:GetValue("BOTShootInterval") then
                                 local weapon = v:GetPicked()
