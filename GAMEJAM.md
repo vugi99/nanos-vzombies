@@ -18,7 +18,7 @@ Scavenge points with every shot, unlock barricaded doorways, purchase weapons of
 Survive as many escalating rounds of the undead horde as you can. Every round defeated brings faster, tougher, and more numerous enemies. If all players are downed, the game ends.
 
 ### 2. Basic Controls & Getting Started
-* **Movement:** `W`, `A`, `S`, `D` to move, `Shift` to sprint, `Space` to jump, `C` / `Ctrl` to crouch or prone.
+* **Movement:** `W`, `A`, `S`, `D` to move, `Shift` to sprint, `Space` to jump, `C` / `Ctrl` to crouch.
 * **Combat:** `Left Click` to fire, `Right Click` to aim down sights (ADS), `R` to reload.
 * **Interaction:** Press `E` (or your contextual interact key) to:
   * Rebuild broken window barricades.
@@ -77,7 +77,6 @@ Survive as many escalating rounds of the undead horde as you can. Every round de
 * **Stamin-Up:** Enhances sprint duration and movement speed to outrun fast sprinters.
 * **Mule Kick / Three Gun:** Grants the ability to carry a third primary weapon.
 * **Der Wunderfizz:** Dynamic orb machine dispensing random perks across the map.
-* **Secret Prone Easter Egg:** Prone in front of perk machines for 100 bonus starting points!
 
 ---
 

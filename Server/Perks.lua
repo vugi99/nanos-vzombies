@@ -16,7 +16,7 @@ function SpawnPerk(perk_name, location, rotation)
     )
     SM:SetScale(PERKS_CONFIG[perk_name].scale)
     SM:SetValue("MapPerk", perk_name, true)
-    SM:SetValue("ProneMoney", true, false)
+    --SM:SetValue("ProneMoney", true, false)
     return SM
 end
 Package.Export("SpawnPerk", SpawnPerk)
@@ -80,6 +80,8 @@ function GiveCharacterPerk(char, perk_name)
     end
 end
 
+-- Prone doesn't exist anymore on nanos
+--[[
 if Prone_Perk_Config.enabled then
     VZ_EVENT_SUBSCRIBE("Character", "StanceModeChange", function(char, old_state, new_state)
         local ply = char:GetPlayer()
@@ -106,6 +108,7 @@ if Prone_Perk_Config.enabled then
         end
     end)
 end
+]]--
 
 function Weapon:ActivateSpeedReload(enable)
     --print(self:GetAnimationReload())
