@@ -1,8 +1,6 @@
 
 Bots walk, the running is broken
 
-Perks names show up as dev names, make nice titles for them
-
 Check vehicles health system? Maybe replace with the native one
 
 2026-10-24 21:39:52 WARNING  Calling deprecated VehicleWheeled Constructor: 'VehicleWheeled(Vector, Rotator, string, enum?, boolean?, boolean?, boolean?, string?, string?, string?, string?, string?, boolean?, string?)'. Please update it to a new Constructor:

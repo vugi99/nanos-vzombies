@@ -2,6 +2,7 @@
 
 PERKS_CONFIG = {
     juggernog = {
+        Name = "Juggernog",
         price = 2500,
         PlayerHealth = 250,
         Asset = "vzombies-assets::juggernog",
@@ -16,6 +17,7 @@ PERKS_CONFIG = {
         },
     },
     quick_revive = {
+        Name = "Quick Revive",
         price = 1500,
         ReviveTime_ms = 2500,
         Solo_ReviveTime_ms = 10000,
@@ -31,6 +33,7 @@ PERKS_CONFIG = {
         },
     },
     doubletap = {
+        Name = "Double Tap",
         price = 2000,
         MultDamage = 1.33,
         Asset = "vzombies-assets::doubletap",
@@ -45,6 +48,7 @@ PERKS_CONFIG = {
         },
     },
     three_gun = {
+        Name = "Three Gun",
         price = 4000,
         Asset = "vzombies-assets::three_gun",
         scale = Vector(0.01, 0.01, 0.01),
@@ -58,6 +62,7 @@ PERKS_CONFIG = {
         },
     },
     stamin_up = {
+        Name = "Stamin-Up",
         price = 2000,
         Speed_Multiplier = 1.6,
         Asset = "vzombies-assets::stamin_up",
@@ -72,6 +77,7 @@ PERKS_CONFIG = {
         },
     },
     speed_cola = {
+        Name = "Speed Cola",
         price = 3000,
         Reload_Speed_Timescale = 1.3,
         Asset = "vzombies-assets::speed_cola",
@@ -87,7 +93,7 @@ PERKS_CONFIG = {
     },
 }
 
-
+-- Gone since nanos removed proning
 Prone_Perk_Config = {
     enabled = true,
     money = 100,

@@ -452,10 +452,6 @@ function UpdateHealth(char, health)
         if not IsValid(char) then return end
 
         local max_health = PlayerHealth
-        --[[local perks = char:GetValue("OwnedPerks")
-        if (perks and perks["juggernog"]) then
-            max_health = PERKS_CONFIG.juggernog.PlayerHealth
-        end]]--
         if char:GetMaxHealth() > 0 then
             max_health = char:GetMaxHealth()-1000
         end

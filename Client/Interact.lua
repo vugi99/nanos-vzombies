@@ -239,13 +239,13 @@ RegisterPreparedLoop("Perks", StaticMesh, "MapPerk")
 if VZ_GetFeatureValue("Perks", "can_interact") then
     InteractCheck("MapPerk", {LoopFunc = PreparedLoops["Perks"], check_is_valid = true}, Perk_Interact_Check_Interval_ms, function(local_player, local_char, local_char_location, v)
         local perk = v:GetValue("MapPerk")
-        if (perk and not CurPerks[perk]) then
+        if (perk and (not CurPerks[perk])) then
             local distance_sq = local_char_location:DistanceSquared(v:GetLocation())
             if distance_sq <= Perk_Interact_Check_Distance_Squared_Max then
                 InteractType = "MapPerk"
                 if POWER_ON then
                     InteractThing = v
-                    BuyText(perk .. " Perk", tostring(PERKS_CONFIG[perk].price))
+                    BuyText(PERKS_CONFIG[perk].Name .. " Perk", tostring(PERKS_CONFIG[perk].price))
                 else
                     InteractThing = "NoPower"
                     InteractText("Missing Power")
@@ -313,7 +313,7 @@ InteractCheck("WunderBottle", {LoopFunc = PreparedLoops["Wunder_Bottles"], check
                     if distance_sq <= Wunderfizz_Bottle_Interact_Check_Distance_Squared_Max then
                         InteractType = "WunderBottle"
 
-                        InteractText("Take " .. wunder_bottle[2] .. " Perk")
+                        InteractText("Take " .. PERKS_CONFIG[wunder_bottle[2]].Name .. " Perk")
                         InteractThing = v
 
                         return true
