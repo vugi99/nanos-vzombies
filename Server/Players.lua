@@ -115,6 +115,10 @@ function SpawnCharacterForPlayer(ply, spawn_id)
 
     if ply.BOT then
         new_char:SetGaitMode(GaitMode.Sprinting)
+        -- Nanos regression
+        --new_char:SetBrakingSettings(2, 2, 1000)
+
+        --print("Bot Character spawned", ply:GetAccountName(), new_char, new_char:GetMesh())
     end
 
     for i, v in ipairs(PM_Data.Parameters) do
