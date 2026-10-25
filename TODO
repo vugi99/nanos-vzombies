@@ -19,5 +19,8 @@ died and then he died, game over sound played twice
 :27 RoundFinished false true
 :29 RoundFinished false true
 
-Screenshot mode: hide all UIs
+Screenshot mode: 
+Add checkboxes to hide webuis entirely
+And checkboxes for each canvas, they are separate from individual toggles
+
 Also add more checkboxes to hide everything correctly, one by one.
