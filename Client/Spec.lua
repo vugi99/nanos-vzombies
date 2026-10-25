@@ -85,7 +85,7 @@ function SpectatePlayer(to_spec)
                 GUINewPerk(k)
             end
 
-            UpdateHealth(char, char:GetHealth())
+            UpdateHealth(char, char:GetHealth()-1000)
         else
             One_Time_Updates_Canvas:Repaint()
         end
