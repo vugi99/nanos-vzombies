@@ -267,6 +267,8 @@ Enemies_Config = {
         Joker_Chance = 5, -- x amount TakeDamage will lead to joker for 10000 shots
 
         Emissive_Key = "Emissive_value", -- The key used on scalar parameter of character to disable it on death with SetMaterialScalarParameter
+        Emissive_Spawn_Value = 10,
+        Emissive_Material_Index = 3, -- -1 for all
 
         Models = {
             {
@@ -363,6 +365,8 @@ Enemies_Config = {
         Health_Mult_By = 0.3, -- From basic health
 
         Emissive_Key = "Emissive_value",
+        Emissive_Spawn_Value = 10,
+        Emissive_Material_Index = 0,
 
         Models = {
             "vzombies-assets::SK_Wolf",
@@ -411,6 +415,8 @@ Enemies_Config = {
         Health_Mult_By = 4,
 
         Emissive_Key = "Emissive_value",
+        Emissive_Spawn_Value = 10,
+        Emissive_Material_Index = 0,
 
         Models = {
             "vzombies-assets::pumpkinhulk_l_shaw",
@@ -529,6 +535,8 @@ Enemies_Config = {
         Health_Mult_By = 2,
 
         Emissive_Key = "Emissive_value",
+        Emissive_Spawn_Value = 10,
+        Emissive_Material_Index = 1,
 
         Models = {
             "vzombies-assets::SK_Zombie_M04_01",
@@ -598,6 +606,8 @@ Enemies_Config = {
         Health_Mult_By = 3,
 
         Emissive_Key = "emis",
+        Emissive_Spawn_Value = 10,
+        Emissive_Material_Index = 0,
 
         Models = {
             "vzombies-assets::SK_SKnigh_01_full",
@@ -649,6 +659,7 @@ Enemies_Config.BusinessGraber.Attack_Anims = {
 
 
 Enemies_Config.UrbanZombie = TableDeepCopy(Enemies_Config.Zombie)
+Enemies_Config.UrbanZombie.Emissive_Material_Index = 0
 Enemies_Config.UrbanZombie.Models = {
     {
         asset = "vzombies-assets::SK_UrbanZombie_Body_A",
@@ -804,6 +815,7 @@ Enemies_Config.UrbanZombie.Gibs = {
 }
 
 Enemies_Config.HoodieZombie = TableDeepCopy(Enemies_Config.UrbanZombie)
+Enemies_Config.HoodieZombie.Emissive_Material_Index = 0
 Enemies_Config.HoodieZombie.Models = {
     {
         asset = "vzombies-assets::SK_Urban_Zombie_Hoodie_A",
@@ -870,6 +882,7 @@ Enemies_Config.HoodieZombie.Gibs.upperarm_r = {
 }
 
 Enemies_Config.TankTopZombie = TableDeepCopy(Enemies_Config.UrbanZombie)
+Enemies_Config.TankTopZombie.Emissive_Material_Index = 0
 Enemies_Config.TankTopZombie.Models = {
     {
         asset = "vzombies-assets::SK_Urban_Zombie_TankTop_A",

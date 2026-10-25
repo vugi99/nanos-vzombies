@@ -208,6 +208,11 @@ function SpawnEnemy(EnemyName, EnemyType)
             enemy:SetAIAvoidanceSettings(table.unpack(Enemies_AI_Avoidance_Settings))
             --enemy:SetBrakingSettings(0, 0)
 
+            if enemy_table.Emissive_Key and enemy_table.Emissive_Spawn_Value then
+                enemy:SetMaterialScalarParameter(enemy_table.Emissive_Key, enemy_table.Emissive_Spawn_Value, enemy_table.Emissive_Material_Index or -1)
+                --print("SetMaterialScalarParameter", enemy_table.Emissive_Key, enemy_table.Emissive_Spawn_Value)
+            end
+
             if (enemy_table.Spawning_Config.type == "zombie_spawns" or enemy_table.Spawning_Config.type == "direct_zombie_spawns") then
                 if (not is_ground_anim_disabled) then
                     enemy:SetFlyingMode(true)
