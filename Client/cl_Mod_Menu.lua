@@ -3,7 +3,7 @@
 
 VZ_Register_Input("Mod Menu", "M")
 
-CreateVZFrame(GUI, "Mod_Menu", "65%", "65%", "Mod Menu", "Mod Menu", true)
+CreateVZFrame(GUI, "Mod_Menu", "65%", "65%", "Mod Menu", "Mod Menu", true, true)
 AddVZFrameTab("Mod_Menu", "Player", "Player")
 AddVZFrameTab("Mod_Menu", "Round", "Round")
 AddVZFrameTab("Mod_Menu", "Enemies", "Enemies")

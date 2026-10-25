@@ -1,7 +1,7 @@
 
 
 
-CreateVZFrame(GUI, "Settings", "65%", "65%", "Settings", "Settings", true)
+CreateVZFrame(GUI, "Settings", "65%", "65%", "Settings", "Settings", true, true)
 AddVZFrameTab("Settings", "HUD", "HUD")
 AddVZFrameTab("Settings", "Other", "Other")
 

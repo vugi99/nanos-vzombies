@@ -2,18 +2,69 @@
 
 
 VZFrames = {}
+local SubscribedWebUIs = {}
 
-function CreateVZFrame(webui, frame_id, width, height, header_text, bind_name, main_frame)
-    --Console.Log("CreateVZFrame " .. frame_id .. ", " .. tostring(width) .. ", " .. tostring(height) .. ", " .. tostring(header_text) .. ", " .. tostring(bind_name) .. ", " .. tostring(main_frame))
+local function HandleVZFrameClose(frame_id)
+    if VZFrames[frame_id] and VZFrames[frame_id].Open then
+        ShowVZFrame(frame_id, false)
 
-    webui:CallEvent("CreateVZFrame", frame_id, width, height, header_text)
+        local any_main_open = false
+        for k, v in pairs(VZFrames) do
+            if k ~= frame_id and v.Open and v.main_frame then
+                any_main_open = true
+                break
+            end
+        end
+
+        Input.SetMouseEnabled(any_main_open)
+        if not GAME_PAUSED then
+            Input.SetInputEnabled(true)
+        end
+
+        VZ_EVENT_CALL("Events", "VZFrameClosed", frame_id)
+        Events.Call("VZFrameClosed", frame_id)
+        VZ_EVENT_CALL("Events", "VZFrameCloseButtonPressed", frame_id)
+        Events.Call("VZFrameCloseButtonPressed", frame_id)
+    end
+end
+
+function CloseVZFrame(frame_id)
+    HandleVZFrameClose(frame_id)
+end
+Package.Export("CloseVZFrame", CloseVZFrame)
+
+function SetVZFrameCloseButton(frame_id, enabled)
+    if VZFrames[frame_id] then
+        enabled = (enabled == true)
+        VZFrames[frame_id].close_button = enabled
+        VZFrames[frame_id].webui:CallEvent("SetVZFrameCloseButton", frame_id, enabled)
+    end
+end
+Package.Export("SetVZFrameCloseButton", SetVZFrameCloseButton)
+
+function CreateVZFrame(webui, frame_id, width, height, header_text, bind_name, main_frame, close_button)
+    close_button = (close_button == true)
+    --Console.Log("CreateVZFrame " .. frame_id .. ", " .. tostring(width) .. ", " .. tostring(height) .. ", " .. tostring(header_text) .. ", " .. tostring(bind_name) .. ", " .. tostring(main_frame) .. ", " .. tostring(close_button))
+
+    webui:CallEvent("CreateVZFrame", frame_id, width, height, header_text, close_button)
 
     VZFrames[frame_id] = {
         Open = false,
         main_frame = main_frame,
+        close_button = close_button,
         _saved_event_names = {},
         webui = webui,
     }
+
+    if not SubscribedWebUIs[webui] then
+        SubscribedWebUIs[webui] = true
+        webui:Subscribe("CloseVZFrame", function(id)
+            HandleVZFrameClose(id)
+        end)
+        webui:Subscribe("VZFrameCloseButtonPressed", function(id)
+            HandleVZFrameClose(id)
+        end)
+    end
 
     if bind_name then
         VZ_BIND(bind_name, InputEvent.Pressed, function()

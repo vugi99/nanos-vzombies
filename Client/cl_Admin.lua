@@ -2,7 +2,7 @@
 
 VZ_Register_Input("VZ Admin Menu", "U")
 
-CreateVZFrame(GUI, "Admin_Menu", "65%", "65%", "Admin Menu", "VZ Admin Menu", true)
+CreateVZFrame(GUI, "Admin_Menu", "65%", "65%", "Admin Menu", "VZ Admin Menu", true, true)
 AddVZFrameTab("Admin_Menu", "Admin", "Admin")
 
 AddTabButton("Admin_Menu", "Admin", "Skip Round", function()

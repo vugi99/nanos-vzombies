@@ -4,7 +4,7 @@ VZ_Register_Input("Leaderboard", "I")
 
 Current_Map_Leaderboard = {}
 
-CreateVZFrame(GUI, "Leaderboard", "65%", "65%", "Leaderboard", "Leaderboard", false)
+CreateVZFrame(GUI, "Leaderboard", "65%", "65%", "Leaderboard", "Leaderboard", false, true)
 AddVZFrameTab("Leaderboard", "Leaderboard", "Leaderboard")
 
 VZ_EVENT_SUBSCRIBE_REMOTE("SendMapLeaderboard", function(ml, map)

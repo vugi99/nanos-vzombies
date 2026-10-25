@@ -30,7 +30,7 @@ if VEHICLES_PADS then
         end
 
         VZ_EVENT_SUBSCRIBE("Events", "VZOMBIES_CLIENT_GAMEMODE_LOADED", function()
-            CreateVZFrame(GUI, "Vehicle_Spawn", "65%", "65%", "Vehicle Spawn", nil, true)
+            CreateVZFrame(GUI, "Vehicle_Spawn", "65%", "65%", "Vehicle Spawn", nil, true, true)
             BuildVehiclePadUI("Vehicle_Spawn")
         end)
     else

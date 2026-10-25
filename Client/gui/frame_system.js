@@ -2,7 +2,7 @@
 
 let VZ_Frames = {}
 
-Events.Subscribe("CreateVZFrame", function(id, width, height, header_text) {
+Events.Subscribe("CreateVZFrame", function(id, width, height, header_text, close_button) {
     let div = document.createElement("div")
     div.classList.add("hidden")
     div.classList.add("Frame_Container")
@@ -16,6 +16,19 @@ Events.Subscribe("CreateVZFrame", function(id, width, height, header_text) {
 
     div.appendChild(frame_header)
 
+    let close_btn = null
+    if (close_button) {
+        close_btn = document.createElement("button")
+        close_btn.innerText = "X"
+        close_btn.classList.add("Frame_Close_Button")
+        close_btn.onclick = function() {
+            div.classList.add("hidden")
+            Events.Call("CloseVZFrame", id)
+            Events.Call("VZFrameCloseButtonPressed", id)
+        }
+        div.appendChild(close_btn)
+    }
+
     let th = document.createElement("div")
     th.classList.add("Tabs_Header")
     div.appendChild(th)
@@ -26,8 +39,34 @@ Events.Subscribe("CreateVZFrame", function(id, width, height, header_text) {
         Tabs_Header: th,
         Tabs: {},
         Items_Containers: {},
+        Close_Button: close_btn,
     }
     document.body.appendChild(div)
+})
+
+Events.Subscribe("SetVZFrameCloseButton", function(id, enabled) {
+    if (VZ_Frames[id]) {
+        if (enabled) {
+            if (!VZ_Frames[id].Close_Button) {
+                let close_btn = document.createElement("button")
+                close_btn.innerText = "X"
+                close_btn.classList.add("Frame_Close_Button")
+                close_btn.onclick = function() {
+                    VZ_Frames[id].Frame.classList.add("hidden")
+                    Events.Call("CloseVZFrame", id)
+                    Events.Call("VZFrameCloseButtonPressed", id)
+                }
+                VZ_Frames[id].Frame.appendChild(close_btn)
+                VZ_Frames[id].Close_Button = close_btn
+            } else {
+                VZ_Frames[id].Close_Button.classList.remove("hidden")
+            }
+        } else {
+            if (VZ_Frames[id].Close_Button) {
+                VZ_Frames[id].Close_Button.classList.add("hidden")
+            }
+        }
+    }
 })
 
 Events.Subscribe("ShowVZFrame", function(id, show) {

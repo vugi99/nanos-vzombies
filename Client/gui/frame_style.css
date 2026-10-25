@@ -18,6 +18,36 @@
     font-size: 50px;
     text-shadow: 1px 1px 2px black;
     border-bottom: 1px solid black;
+    position: relative;
+}
+
+.Frame_Close_Button {
+    position: absolute;
+    top: 6px;
+    right: 18px;
+    width: 36px;
+    height: 36px;
+    line-height: 36px;
+    font-size: 24px;
+    font-weight: bold;
+    font-family: Verdana, Arial, sans-serif;
+    color: white;
+    background-color: rgba(180, 40, 40, 0.85);
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    text-align: center;
+    z-index: 10;
+    padding: 0;
+    user-select: none;
+}
+
+.Frame_Close_Button:hover {
+    background-color: rgba(220, 50, 50, 1);
+}
+
+.Frame_Close_Button:active {
+    background-color: rgba(140, 20, 20, 1);
 }
 
 .Tabs_Header {
@@ -125,4 +155,5 @@ button:hover {
 
 .Item_Image {
     margin-top: 3px;
+    object-fit: contain;
 }
