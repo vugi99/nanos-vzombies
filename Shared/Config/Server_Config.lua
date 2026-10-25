@@ -4,8 +4,8 @@ Send_Errors_To_Server = true
 
 Auto_Set_Server_MaxPlayers = true
 
-
-Dynamic_Server_Description = true
+-- Note: This is broken since a lot of time on Nanos, updated descriptions don't show up
+Dynamic_Server_Description = false
 
 DSD_In_Game_Text = {"Gamemode like COD:Zombies, Current wave : ", ", Join to help"} -- Wave number in the middle
 DSD_Idle_Text = "Gamemode like COD:Zombies, Waiting for players"
