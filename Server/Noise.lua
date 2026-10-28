@@ -97,6 +97,7 @@ function VZ_Noise.HearNoise(instigator, ent, amount)
         Timer.ResetElapsedTime(ent_listening.Reduce_Intervals[instigator])
     else
         ent_listening.Reduce_Intervals[instigator] = Timer.SetInterval(function()
+            if not IsValid(instigator) then return end
             local ri_ent_listening = VZ_Noise.ListeningEntities[ent]
             if not ri_ent_listening then return end
             if not ri_ent_listening.Current_Awarenesses[instigator] then return end
@@ -119,7 +120,7 @@ function VZ_Noise.HearNoise(instigator, ent, amount)
                 end
             end
         end, ent_listening.Config.reduce_interval_ms)
-        Timer.Bind(ent_listening.Reduce_Intervals[instigator], instigator)
+        --Timer.Bind(ent_listening.Reduce_Intervals[instigator], instigator)
         Timer.Bind(ent_listening.Reduce_Intervals[instigator], ent)
     end
 
