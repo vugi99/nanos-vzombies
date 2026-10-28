@@ -192,9 +192,10 @@ function VZ_Noise.MakeLoopingNoise(name, noise_conf, instigator)
         Timer.ClearInterval(looping_noise_intervals[name])
     end
     looping_noise_intervals[name] = Timer.SetInterval(function()
+        if not IsValid(instigator) then return end
         VZ_Noise.MakeNoise(name, noise_conf.Noise, instigator)
     end, noise_conf.Interval_ms)
-    Timer.Bind(looping_noise_intervals[name], instigator)
+    --Timer.Bind(looping_noise_intervals[name], instigator)
 
     if ZDEV_IsModeEnabled("ZDEV_DEBUG_NOISE") then
         --print("MakeLoopingNoise '" .. tostring(name) .. "' with instigator: " .. tostring(instigator:GetAccountName()))
