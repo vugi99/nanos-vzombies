@@ -1,11 +1,5 @@
 
 
-Screenshot mode: 
-Add checkboxes to hide webuis entirely
-And checkboxes for each canvas, they are separate from individual toggles
-
-Also add more checkboxes to hide everything correctly, one by one.
-
 Check how zombies react to nanos distance culling/optimizations. This may lead to critical issues
 
 Check Noise system changes (skeleton boss), may be broken
