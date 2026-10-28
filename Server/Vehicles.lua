@@ -14,7 +14,21 @@ function SpawnVehicle(veh_name, location, rotation)
     return veh
 end
 
+-- Used when the map requires vehicles
+function LoadNanosVehicles()
+    if not NanosWorldVehicles then
+        local success = Server.LoadPackage("default-vehicles")
+        if not success then return Console.Warn("Couldn't load default-vehicles") end
+        if not NanosWorldVehicles then return error("Loaded default-vehicles but NanosWorldVehicles is invalid?") end
+        ParseAndInjectVehicles(NanosWorldVehicles)
+    else
+        ParseAndInjectVehicles(NanosWorldVehicles)
+    end
+end
+
 if VEHICLES_PADS then
+    LoadNanosVehicles()
+
     for i, v in ipairs(VEHICLES_PADS) do
         local veh_pad = StaticMesh(v.location, v.rotation, "vzombies-assets::station_low")
         veh_pad:SetScale(Vector(1, 0.5, 0.5))

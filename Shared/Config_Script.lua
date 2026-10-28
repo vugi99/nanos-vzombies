@@ -148,3 +148,26 @@ Package.Subscribe("Load", function()
         end
     end
 end)
+
+
+-- Load nanos vehicles into VZVehicles for known entries and inject the VZ fields
+VZVehicles = {}
+Package.Export("VZVehicles", VZVehicles)
+
+function ParseAndInjectVehicles(tbl)
+    if type(tbl) ~= "table" then return error("Tried to parse an invalid vehicles table") end
+    for veh_name, vclass in pairs(tbl) do
+        local vfields = VZ_Vehicles_Config[veh_name]
+        if vfields then
+            for k2, v2 in pairs(vfields) do
+                vclass[k2] = v2
+            end
+
+            VZVehicles[veh_name] = vclass
+        else
+            --Console.Warn("Vehicle %s not found in VZ_Vehicles_Config, ignoring", veh_name)
+        end
+    end
+
+    print(table_count(VZVehicles) .. " Vehicles loaded")
+end

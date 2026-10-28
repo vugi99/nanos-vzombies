@@ -23,6 +23,10 @@ end
 
 
 if VEHICLES_PADS then
+    if NanosWorldVehicles then
+        ParseAndInjectVehicles(NanosWorldVehicles)
+    end
+
     if not WebUI3d2d then
         Console.Warn("WebUI3d2d lib not found, running in compatibility mode")
         for k, v in pairs(VEHICLES_PADS) do
