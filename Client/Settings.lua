@@ -73,6 +73,41 @@ end, VZ_CL_Current_Settings["Chat_Visibility"], true)
 Chat.SetVisibility(VZ_CL_Current_Settings["Chat_Visibility"])
 
 
+AddTabEmptySpace("Settings", "HUD", 35, true)
+AddTabText("Settings", "HUD", "Technical")
+
+local Canvas_Technical_Settings = {}
+
+function Add_Technical_Canvas_Setting(setting_key)
+    if Canvas_Technical_Settings[setting_key] then return end
+    VZ_CL_Default_Settings[setting_key] = true
+    VZ_CL_Current_Settings[setting_key] = true
+
+    Canvas_Technical_Settings[setting_key] = setting_key
+    local item_name = string.gsub(setting_key, "_", " ")
+
+    local function Tech_Canvas_cback(checked)
+        if IsValid(_ENV[setting_key]) then
+            _ENV[setting_key]:SetVisibility(checked)
+        else
+            Console.Warn("Canvas Technical setting key '%s' not found in _ENV", setting_key)
+        end
+    end
+
+    VZ_CL_Current_Settings[setting_key] = AddTabCheckbox("Settings", "HUD", item_name, Tech_Canvas_cback, VZ_CL_Current_Settings[setting_key], true)
+    Tech_Canvas_cback(VZ_CL_Current_Settings[setting_key])
+end
+
+
+VZ_EVENT_SUBSCRIBE("Events", "VZ_CLIENTSIDE_LOADED", function()
+    for setting_key, canvas in pairs(VZ_GetCanvases()) do
+        Add_Technical_Canvas_Setting(setting_key)
+    end
+
+    VZ_EVENT_SUBSCRIBE("Events", "VZ_Canvas_Created", function(key, canvas)
+        Add_Technical_Canvas_Setting(key)
+    end)
+end)
 
 
 VZ_CL_Current_Settings["Clientside_Gibs"] = AddTabCheckbox("Settings", "Other", "Clientside Gibs", function(checked)
@@ -97,6 +132,9 @@ VZ_CL_Current_Settings["Player_Names_On_Heads"] = AddTabCheckbox("Settings", "Ot
         SpawnText3Ds()
     end
 end, VZ_CL_Current_Settings["Clientside_Gibs"], true)
+if not VZ_CL_Current_Settings["Player_Names_On_Heads"] then
+    CleanupText3Ds()
+end
 
 -- TODO: Reset should call all settings callbacks with the correct checked value?
 AddTabButton("Settings", "Other", "Reset Settings", function()
@@ -112,4 +150,10 @@ AddTabButton("Settings", "Other", "Reset Settings", function()
         GUI:CallEvent("ShowElementByID", v, VZ_CL_Current_Settings[k])
     end
     Chat.SetVisibility(VZ_CL_Current_Settings["Chat_Visibility"])
+
+    for k, v in pairs(Canvas_Technical_Settings) do
+        if IsValid(v) then
+            v:SetVisibility(true)
+        end
+    end
 end, "Reset")

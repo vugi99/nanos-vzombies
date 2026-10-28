@@ -2,7 +2,7 @@
 
 local Total_Weapons = 0
 
-GunGame_Canvas = Canvas(
+GunGame_Canvas = VZ_Canvas("GunGame_Canvas",
     true,
     Color(0, 0, 0, 0),
     -1,

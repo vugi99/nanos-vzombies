@@ -69,9 +69,27 @@ Viewport.Subscribe("Resize", function(new_size)
     end
 end)
 
+local VZ_Canvases = {}
+
+function VZ_Canvas(key, ...)
+    local canvas = Canvas(...)
+    if VZ_Canvases[key] then return error(string.format("Trying to create %s canvas that already exists", key)) end
+    _ENV[key] = canvas
+    VZ_Canvases[key] = canvas
+    VZ_ENT_EVENT_SUBSCRIBE(canvas, "Destroy", function(self)
+        VZ_EVENT_CALL("Events", "VZ_Canvas_Destroy", key, self)
+        VZ_Canvases[key] = nil
+    end)
+    VZ_EVENT_CALL("Events", "VZ_Canvas_Created", key, canvas)
+    return canvas
+end
+
+function VZ_GetCanvases()
+    return VZ_Canvases
+end
 
 -- This canvas will be completly frozen
-Frozen_Canvas = Canvas(
+Frozen_Canvas = VZ_Canvas("Frozen_Canvas",
     true,
     Color(0, 0, 0, 0),
     -1,
@@ -102,7 +120,7 @@ end)
 Frozen_Canvas:Repaint()
 
 -- This canvas will be used for one time updates
-One_Time_Updates_Canvas = Canvas(
+One_Time_Updates_Canvas = VZ_Canvas("One_Time_Updates_Canvas",
     true,
     Color(0, 0, 0, 0),
     -1,
@@ -857,60 +875,8 @@ VZ_EVENT_SUBSCRIBE("Character", "Destroy", function(char)
     end
 end)
 
---[[PNOH_Canvas = Canvas(
-    true,
-    Color(0, 0, 0, 0),
-    Player_Names_On_Heads_Canvas_Update_Interval_ms / 1000,
-    true
-)
-PNOH_Canvas:Subscribe("Update", function(self, width, height)
-    if VZ_CL_Current_Settings.Player_Names_On_Heads then
-        local self_char = Client.GetLocalPlayer():GetControlledCharacter()
-        local self_loc
-        if self_char then
-            self_loc = self_char:GetLocation()
-        elseif Spectating_Player then
-            local specing_char = Spectating_Player:GetControlledCharacter()
-            if specing_char then
-                self_loc = specing_char:GetLocation()
-            end
-        else
-            self_loc = Client.GetLocalPlayer():GetCameraLocation()
-        end
-        for k, v in pairs(Character.GetPairs()) do
-            local ply = v:GetPlayer()
-            if ply then
-                if ply ~= Client.GetLocalPlayer() then
-                    local char_loc = v:GetLocation()
-                    local dist_sq = self_loc:DistanceSquared(char_loc)
-                    if dist_sq <= Player_Name_Displayed_at_dist_sq then
-                        local Vector_head_text = Get3DLocationOnScreen(char_loc + Vector(0, 0, 97))
-                        if Vector_head_text then
-                            self:DrawText(
-                                ply:GetAccountName(),
-                                Vector_head_text,
-                                FontType.Roboto,
-                                GUI_TextDrawnScalingSize(16),
-                                Color.AZURE,
-                                0,
-                                true,
-                                true,
-                                Color(0, 0, 0, 0),
-                                Vector2D(),
-                                true,
-                                Color.BLACK
-                            )
-                        end
-                    end
-                end
-            end
-        end
-    end
-end)]]--
-
 local Text3Ds = {}
-
-Text3D.Subscribe("Destroy", function(text_3d)
+VZ_EVENT_SUBSCRIBE("Text3D", "Destroy", function(text_3d)
     for i, v in ipairs(Text3Ds) do
         if v == text_3d then
             table.remove(Text3Ds, i)
@@ -985,7 +951,7 @@ end
 SpawnText3Ds()
 
 if Game_Time_On_Screen then
-    GAME_TIME_Canvas = Canvas(
+    GAME_TIME_Canvas = VZ_Canvas("GAME_TIME_Canvas",
         true,
         Color(0, 0, 0, 0),
         Game_Time_Canvas_Update_Interval_ms / 1000,
@@ -1001,7 +967,7 @@ if Game_Time_On_Screen then
 end
 
 if Ping_Enabled then
-    Ping_Canvas = Canvas(
+    Ping_Canvas = VZ_Canvas("Ping_Canvas",
         true,
         Color(0, 0, 0, 0),
         -1,
@@ -1189,21 +1155,22 @@ VZ_EVENT_SUBSCRIBE("Weapon", "ValueChange", function(weap, key, value)
 end)
 
 
-local ui_charging_canvas
+UI_Charging_Canvas = nil
 local ui_charging_canvas_data
 
 function UI_MakeChargingCanvas()
-    if ui_charging_canvas then return ui_charging_canvas end
+    if UI_Charging_Canvas then return UI_Charging_Canvas end
+    if not VZ_CL_Current_Settings["UI_Charging_Canvas"] then return end
 
     ui_charging_canvas_data = {}
 
-    ui_charging_canvas = Canvas(
+    UI_Charging_Canvas = VZ_Canvas("UI_Charging_Canvas",
         true,
         Color(0, 0, 0, 0),
         0,
         true
     )
-    ui_charging_canvas:Subscribe("Update", function(self, width, height)
+    UI_Charging_Canvas:Subscribe("Update", function(self, width, height)
         if not ui_charging_canvas_data then return end
         if not IsValid(ui_charging_canvas_data.charging_entity) then return end
         local time_remaining = math.ceil((ui_charging_canvas_data.charge_time or 0) - ((GAME_TIMER_SECONDS or 0) - (ui_charging_canvas_data.charger_begin_time or 0)))
@@ -1240,13 +1207,13 @@ function UI_MakeChargingCanvas()
         )
         end
     end)
-    return ui_charging_canvas
+    return UI_Charging_Canvas
 end
 
 function UI_DestroyChargingCanvas()
-    if ui_charging_canvas then
-        ui_charging_canvas:Destroy()
-        ui_charging_canvas = nil
+    if UI_Charging_Canvas then
+        UI_Charging_Canvas:Destroy()
+        UI_Charging_Canvas = nil
         ui_charging_canvas_data = nil
     end
 end

@@ -40,7 +40,7 @@ end
 local Packages_Loaded = false
 local _CallVZ_Loaded_Event = false
 
-local Pre_Game_Canvas = Canvas(true, 	Color.TRANSPARENT, -1, true, true)
+Pre_Game_Canvas = Canvas(true, Color.TRANSPARENT, -1, true, true)
 Pre_Game_Canvas:Subscribe("Update", function(self, width, height)
     self:DrawText("MISSING VZOMBIES MAP CONFIGURATION", Vector2D(math.floor(Viewport.GetViewportSize().X * 0.5), 10), FontType.OpenSans, 16, Color.RED, 0, true, true, Color(0, 0, 0, 0), Vector2D(), false, Color.WHITE)
 end)
@@ -131,6 +131,8 @@ Events.SubscribeRemote("LoadMapConfig", function(MAP_CONFIG)
     end
 
     Cl_Gamemode_Loaded = true
+
+    VZ_EVENT_CALL("Events", "VZ_CLIENTSIDE_LOADED")
 
     print("Loaded MapConfig from Server")
 end)

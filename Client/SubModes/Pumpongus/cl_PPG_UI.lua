@@ -14,7 +14,7 @@ local PPG_Voting_Showed = false
 PPG_One_Time_Update_Data = {}
 
 -- This canvas will be used for one time updates
-PPG_One_Time_Updates_Canvas = Canvas(
+PPG_One_Time_Updates_Canvas = VZ_Canvas("PPG_One_Time_Updates_Canvas",
     true,
     Color(0, 0, 0, 0),
     -1,
