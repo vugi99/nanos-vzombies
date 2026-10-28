@@ -65,6 +65,7 @@ VZ_CL_Default_Settings = {
     VOIP_Indicators_Showed = true,
     Levels_Showed = true,
     Notifications_Showed = true,
+    Weapon_Name = true,
 
     Chat_Visibility = true,
 

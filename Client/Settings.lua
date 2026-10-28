@@ -62,6 +62,7 @@ if VZ_GetFeatureValue("Levels", "script_loaded") then
     Add_WebUI_Setting("Levels", "Levels_Showed", "lvls_container")
 end
 Add_WebUI_Setting("Notifications", "Notifications_Showed", "Notifications-container")
+Add_WebUI_Setting("Weapon Name", "Weapon_Name", "weapon_name")
 
 AddTabEmptySpace("Settings", "HUD", 35, true)
 AddTabText("Settings", "HUD", "Game")
@@ -108,6 +109,37 @@ VZ_EVENT_SUBSCRIBE("Events", "VZ_CLIENTSIDE_LOADED", function()
         Add_Technical_Canvas_Setting(key)
     end)
 end)
+
+-- k: webui, v: default visibility
+-- Settings UI is part of the WebUI so we cannot hide it
+--[[local WebUI_Technical_Settings = {}
+
+function Add_Technical_WebUI_Setting(setting_key)
+    if WebUI_Technical_Settings[setting_key] then return end
+    if not _ENV[setting_key] then return error(string.format("Settings '%s' WebUI not found", setting_key)) end
+
+    VZ_CL_Default_Settings[setting_key] = true
+    VZ_CL_Current_Settings[setting_key] = true
+
+    WebUI_Technical_Settings[setting_key] = _ENV[setting_key]:GetVisibility()
+    local item_name = string.gsub(setting_key, "_", " ") .. " WebUI"
+
+    local function Tech_WebUI_cback(checked)
+        if IsValid(_ENV[setting_key]) then
+            _ENV[setting_key]:SetVisibility((checked and WebUI_Technical_Settings[setting_key]) or WidgetVisibility.Hidden)
+        else
+            Console.Warn("WebUI Technical setting key '%s' not found in _ENV", setting_key)
+        end
+    end
+
+    VZ_CL_Current_Settings[setting_key] = AddTabCheckbox("Settings", "HUD", item_name, Tech_WebUI_cback, VZ_CL_Current_Settings[setting_key], true)
+    Tech_WebUI_cback(VZ_CL_Current_Settings[setting_key])
+end
+
+VZ_EVENT_SUBSCRIBE("Events", "VZ_CLIENTSIDE_LOADED", function()
+    Add_Technical_WebUI_Setting("GUI")
+    --Add_Technical_WebUI_Setting("PPG_UI")
+end)]]--
 
 
 VZ_CL_Current_Settings["Clientside_Gibs"] = AddTabCheckbox("Settings", "Other", "Clientside Gibs", function(checked)
@@ -156,4 +188,10 @@ AddTabButton("Settings", "Other", "Reset Settings", function()
             v:SetVisibility(true)
         end
     end
+
+    --[[for k, v in pairs(WebUI_Technical_Settings) do
+        if IsValid(k) then
+            k:SetVisibility(v)
+        end
+    end]]--
 end, "Reset")
