@@ -27,7 +27,6 @@ Add_Canvas_Setting("Enemies Remaining", "Zombies_Remaining_Showed")
 Add_Canvas_Setting("Selected Submode", "Selected_Gamemode_Showed", true)
 Add_Canvas_Setting("Spectating Player", "Spectating_Player_Showed")
 Add_Canvas_Setting("Game Time", "Game_Time_Showed")
---Add_Canvas_Setting("Player Names On Heads", "Player_Names_On_Heads")
 if Drawn_Text_Screen_Scaling then
     Add_Canvas_Setting("GUI Auto Scaling", "GUI_Auto_Scaling", nil, true)
 end
@@ -90,12 +89,23 @@ VZ_CL_Current_Settings["Clientside_Gibs"] = AddTabCheckbox("Settings", "Other", 
     end
 end, VZ_CL_Current_Settings["Clientside_Gibs"], true)
 
+VZ_CL_Current_Settings["Player_Names_On_Heads"] = AddTabCheckbox("Settings", "Other", "Player Names On Heads", function(checked)
+    VZ_CL_Current_Settings["Player_Names_On_Heads"] = checked
+    if not checked then
+        CleanupText3Ds()
+    else
+        SpawnText3Ds()
+    end
+end, VZ_CL_Current_Settings["Clientside_Gibs"], true)
 
+-- TODO: Reset should call all settings callbacks with the correct checked value?
 AddTabButton("Settings", "Other", "Reset Settings", function()
     ResetVZFrameSaved("Settings")
     VZ_CL_Current_Settings = TableDeepCopy(VZ_CL_Default_Settings)
     One_Time_Updates_Canvas:Repaint()
     Frozen_Canvas:Repaint()
+
+    SpawnText3Ds()
 
     for k, v in pairs(WebUI_Settings) do
         --print(v, VZ_CL_Current_Settings[k])

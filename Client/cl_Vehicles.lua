@@ -52,7 +52,7 @@ if VEHICLES_PADS then
             sm:SetRotation(v.screen_rotation)
             veh_pad_screen_webui:AddMouseAliasKey(Input.GetMappedKeys("Interact")[1], "LeftMouseButton")
             veh_pad_screen_webui:SetKeyboardEventsEnabled(true)
-            CreateVZFrame(veh_pad_screen_webui, "Vehicle_Spawn_" .. tostring(i), "100%", "100%", "Vehicle Spawn", nil, true)
+            CreateVZFrame(veh_pad_screen_webui, "Vehicle_Spawn_" .. tostring(i), "100%", "100%", "Vehicle Spawn", nil, false)
             BuildVehiclePadUI("Vehicle_Spawn_" .. tostring(i), i)
             ShowVZFrame("Vehicle_Spawn_" .. tostring(i), true)
         end

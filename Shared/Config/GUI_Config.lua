@@ -2,9 +2,8 @@
 
 Remaining_Enemies_Text = true
 
-Player_Names_On_Heads = true
+--Player_Names_On_Heads = true
 --Player_Name_Displayed_at_dist_sq = 1440000
---Player_Names_On_Heads_Canvas_Update_Interval_ms = 100
 Player_Name_Text3D_Head_Offset = Vector(0, 0, 135)
 Player_Name_Text3D_Scale = Vector(0.37, 0.37, 0.37)
 

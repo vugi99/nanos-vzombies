@@ -11,6 +11,7 @@ local function HandleVZFrameClose(frame_id)
         local any_main_open = false
         for k, v in pairs(VZFrames) do
             if k ~= frame_id and v.Open and v.main_frame then
+                print("main Open", k)
                 any_main_open = true
                 break
             end
@@ -22,9 +23,6 @@ local function HandleVZFrameClose(frame_id)
         end
 
         VZ_EVENT_CALL("Events", "VZFrameClosed", frame_id)
-        Events.Call("VZFrameClosed", frame_id)
-        VZ_EVENT_CALL("Events", "VZFrameCloseButtonPressed", frame_id)
-        Events.Call("VZFrameCloseButtonPressed", frame_id)
     end
 end
 

@@ -857,110 +857,132 @@ VZ_EVENT_SUBSCRIBE("Character", "Destroy", function(char)
     end
 end)
 
-if Player_Names_On_Heads then
-    --[[PNOH_Canvas = Canvas(
-        true,
-        Color(0, 0, 0, 0),
-        Player_Names_On_Heads_Canvas_Update_Interval_ms / 1000,
-        true
-    )
-    PNOH_Canvas:Subscribe("Update", function(self, width, height)
-        if VZ_CL_Current_Settings.Player_Names_On_Heads then
-            local self_char = Client.GetLocalPlayer():GetControlledCharacter()
-            local self_loc
-            if self_char then
-                self_loc = self_char:GetLocation()
-            elseif Spectating_Player then
-                local specing_char = Spectating_Player:GetControlledCharacter()
-                if specing_char then
-                    self_loc = specing_char:GetLocation()
-                end
-            else
-                self_loc = Client.GetLocalPlayer():GetCameraLocation()
+--[[PNOH_Canvas = Canvas(
+    true,
+    Color(0, 0, 0, 0),
+    Player_Names_On_Heads_Canvas_Update_Interval_ms / 1000,
+    true
+)
+PNOH_Canvas:Subscribe("Update", function(self, width, height)
+    if VZ_CL_Current_Settings.Player_Names_On_Heads then
+        local self_char = Client.GetLocalPlayer():GetControlledCharacter()
+        local self_loc
+        if self_char then
+            self_loc = self_char:GetLocation()
+        elseif Spectating_Player then
+            local specing_char = Spectating_Player:GetControlledCharacter()
+            if specing_char then
+                self_loc = specing_char:GetLocation()
             end
-            for k, v in pairs(Character.GetPairs()) do
-                local ply = v:GetPlayer()
-                if ply then
-                    if ply ~= Client.GetLocalPlayer() then
-                        local char_loc = v:GetLocation()
-                        local dist_sq = self_loc:DistanceSquared(char_loc)
-                        if dist_sq <= Player_Name_Displayed_at_dist_sq then
-                            local Vector_head_text = Get3DLocationOnScreen(char_loc + Vector(0, 0, 97))
-                            if Vector_head_text then
-                                self:DrawText(
-                                    ply:GetAccountName(),
-                                    Vector_head_text,
-                                    FontType.Roboto,
-                                    GUI_TextDrawnScalingSize(16),
-                                    Color.AZURE,
-                                    0,
-                                    true,
-                                    true,
-                                    Color(0, 0, 0, 0),
-                                    Vector2D(),
-                                    true,
-                                    Color.BLACK
-                                )
-                            end
+        else
+            self_loc = Client.GetLocalPlayer():GetCameraLocation()
+        end
+        for k, v in pairs(Character.GetPairs()) do
+            local ply = v:GetPlayer()
+            if ply then
+                if ply ~= Client.GetLocalPlayer() then
+                    local char_loc = v:GetLocation()
+                    local dist_sq = self_loc:DistanceSquared(char_loc)
+                    if dist_sq <= Player_Name_Displayed_at_dist_sq then
+                        local Vector_head_text = Get3DLocationOnScreen(char_loc + Vector(0, 0, 97))
+                        if Vector_head_text then
+                            self:DrawText(
+                                ply:GetAccountName(),
+                                Vector_head_text,
+                                FontType.Roboto,
+                                GUI_TextDrawnScalingSize(16),
+                                Color.AZURE,
+                                0,
+                                true,
+                                true,
+                                Color(0, 0, 0, 0),
+                                Vector2D(),
+                                true,
+                                Color.BLACK
+                            )
                         end
                     end
                 end
             end
         end
-    end)]]--
+    end
+end)]]--
 
-    function CheckToAddText3D(char)
-        --print(char, char:GetPlayer())
-        local local_ply = Client.GetLocalPlayer()
-        if local_ply then
-            local local_char = local_ply:GetControlledCharacter()
-            if local_char == char then
-                return
-            end
-        end
-        if (char:GetPlayer() and not char:GetValue("Text3DEnt")) then
-            local text_3d = Text3D(
-                Vector(),
-                Rotator(),
-                char:GetPlayer():GetAccountName(),
-                Player_Name_Text3D_Scale,
-                Color.AZURE,
-                FontType.OpenSans,
-                Text3DAlignCamera.FaceCamera
-            )
-            text_3d:SetTextSettings(0, 0, 0, TextRenderHorizontalAlignment.Center, TextRenderVerticalAlignment.Center)
-            text_3d:AttachTo(char, AttachmentRule.SnapToTarget, "", 0, false)
-            text_3d:SetRelativeLocation(Player_Name_Text3D_Head_Offset)
-            text_3d:SetMaterialColorParameter("Emissive", Color.AZURE * 2)
+local Text3Ds = {}
 
-            -- Nanos 1.164.0 Broken https://nanos-world.com/feedback/p/textrender-cameraaligned-broken
-            --[[local text_3d = TextRender(
-                Vector(),
-                Rotator(),
-                char:GetPlayer():GetAccountName(),
-                26,
-                Color.AZURE,
-                TextRenderRenderingType.UnlitCameraAligned
-            )
-            text_3d:AttachTo(char, AttachmentRule.SnapToTarget, "", 0, false)
-            text_3d:SetRelativeLocation(Player_Name_Text3D_Head_Offset)]]--
-
-            char:SetValue("Text3DEnt", text_3d)
+Text3D.Subscribe("Destroy", function(text_3d)
+    for i, v in ipairs(Text3Ds) do
+        if v == text_3d then
+            table.remove(Text3Ds, i)
+            break
         end
     end
+end)
 
-    VZ_EVENT_SUBSCRIBE("Character", "ValueChange", function(char, key, value)
-        if key == "OwnedPerks" then
-            CheckToAddText3D(char)
+function CheckToAddText3D(char)
+    --print(char, char:GetPlayer())
+    if not VZ_CL_Current_Settings.Player_Names_On_Heads then return end
+    local local_ply = Client.GetLocalPlayer()
+    if local_ply then
+        local local_char = local_ply:GetControlledCharacter()
+        if local_char == char then
+            return
         end
-    end)
+    end
+    if (char:GetPlayer() and (not IsValid(char:GetValue("Text3DEnt")))) then
+        local text_3d = Text3D(
+            Vector(),
+            Rotator(),
+            char:GetPlayer():GetAccountName(),
+            Player_Name_Text3D_Scale,
+            Color.AZURE,
+            FontType.OpenSans,
+            Text3DAlignCamera.FaceCamera
+        )
+        text_3d:SetTextSettings(0, 0, 0, TextRenderHorizontalAlignment.Center, TextRenderVerticalAlignment.Center)
+        text_3d:AttachTo(char, AttachmentRule.SnapToTarget, "", 0, false)
+        text_3d:SetRelativeLocation(Player_Name_Text3D_Head_Offset)
+        text_3d:SetMaterialColorParameter("Emissive", Color.AZURE * 2)
 
-    for k, v in pairs(Character.GetPairs()) do
-        if v:GetValue("OwnedPerks") then
-            CheckToAddText3D(v)
+        -- Nanos 1.164.0 Broken https://nanos-world.com/feedback/p/textrender-cameraaligned-broken
+        --[[local text_3d = TextRender(
+            Vector(),
+            Rotator(),
+            char:GetPlayer():GetAccountName(),
+            26,
+            Color.AZURE,
+            TextRenderRenderingType.UnlitCameraAligned
+        )
+        text_3d:AttachTo(char, AttachmentRule.SnapToTarget, "", 0, false)
+        text_3d:SetRelativeLocation(Player_Name_Text3D_Head_Offset)]]--
+
+        char:SetValue("Text3DEnt", text_3d)
+        table.insert(Text3Ds, text_3d)
+    end
+end
+
+VZ_EVENT_SUBSCRIBE("Character", "ValueChange", function(char, key, value)
+    if key == "OwnedPerks" then
+        CheckToAddText3D(char)
+    end
+end)
+
+RegisterPreparedLoop("PlayerCharacters", Character, "OwnedPerks")
+
+function CleanupText3Ds()
+    for i, v in ipairs(TableDeepCopy(Text3Ds)) do
+        if IsValid(v) then
+            v:Destroy()
         end
     end
 end
+
+function SpawnText3Ds()
+    for k, v in pairs(PreparedLoops["PlayerCharacters"]) do
+        CheckToAddText3D(v)
+    end
+end
+SpawnText3Ds()
 
 if Game_Time_On_Screen then
     GAME_TIME_Canvas = Canvas(
