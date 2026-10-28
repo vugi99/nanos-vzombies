@@ -36,6 +36,9 @@ end
 function RoundFinished(reset_all, restart_game, ply_left)
     --print(NanosTable.Dump(debug.getinfo(2)))
 
+    -- The round is restarting/resetting, abort anything, do not try to finish again.
+    if (ROUND_NB == 0 and ((WaitingNewRound_Timer ~= nil) and (Timer.IsValid(WaitingNewRound_Timer)) or WaitingMapvote ~= nil)) then return print("RoundFinished aborted", reset_all, reset_all) end
+
     print("RoundFinished", reset_all, restart_game)
     if Timer.IsValid(ENEMIES_SPAWN_INTERVAL) then
         Timer.ClearInterval(ENEMIES_SPAWN_INTERVAL)
