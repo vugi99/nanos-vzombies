@@ -54,4 +54,4 @@
     Player_Start_Money = { label = "Player Start Money", type = "integer", description = "", default = 500 }
     Players_Spawns_Multiplier = { label = "Player Spawns Multiplier", type = "floating", description = "Adds more spawns to the maps (use with caution)", default = 1.500000 }
     Timed_Waves = { label = "Timed Waves", type = "boolean", description = "Enable Timed Waves, enemies spawn continuously", default = false }
-    VZ_SELECTED_GAMEMODE = { label = "SubMode", type = "select", description = "", options = [ "SURVIVAL", "SHARPSHOOTER", "INVISIBLE_ZOMBIES", "GUNGAME", "GRIEF", "TOPDOWN" ], default = "SURVIVAL" }
+    VZ_SELECTED_GAMEMODE = { label = "SubMode", type = "select", description = "", options = [ "SURVIVAL", "SHARPSHOOTER", "INVISIBLE_ZOMBIES", "GUNGAME", "GRIEF", "TOPDOWN", "PUMPONGUS" ], default = "SURVIVAL" }
