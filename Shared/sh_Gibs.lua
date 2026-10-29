@@ -28,7 +28,10 @@ local function InitEnemiesBonesHealth(char)
     local health = char:GetHealth()
     EnemiesBonesHealth[char:GetID()] = {}
     --print("Init EnemiesBonesHealth", char, char:GetID())
-    for k, v in pairs(GetEnemyTable(char).Gibs) do
+    local enemy_table = GetEnemyTable(char)
+    if not enemy_table then return end
+    if not enemy_table.Gibs then return end
+    for k, v in pairs(enemy_table.Gibs) do
         EnemiesBonesHealth[char:GetID()][k] = (health * v.health_p) / 100
         --print((health * v.health_p) / 100)
     end
