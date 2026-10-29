@@ -22,20 +22,7 @@ Zombies_Health_Start = {
 }
 Zombies_Health_Multiplier_At_Each_Wave = 1.1
 
-Zombies_Nearest_SmartSpawns_Percentage = {
-    16,
-    15,
-    14,
-    12,
-    10,
-    9,
-    8,
-    6,
-    4,
-    3,
-    2,
-    1
-}
+Zombies_Nearest_SmartSpawns_Percentage = { 22, 18, 14, 11, 9, 7, 6, 5, 3, 2, 2, 1 }
 
 Enemies_Spawn_Cooldown = 90000 -- All the wave enemies will be spawned (if it doesn't reach the limit) after this time
 Enemies_Spawn_Interval_min_time_ms = 1500

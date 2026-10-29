@@ -309,49 +309,49 @@ function SmartSpawnLogic(spawns_table)
     end
 
     local players_alive = GetPlayersAlive()
+    if table_count(players_alive) == 0 then
+        return
+    end
 
     local random_player = players_alive[math.random(table_count(players_alive))]
-    local loc = random_player:GetControlledCharacter():GetLocation()
+    local character = random_player:GetControlledCharacter()
+    if not character then
+        return
+    end
+    local loc = character:GetLocation()
 
-    local Percentages_Count = table_count(Zombies_Nearest_SmartSpawns_Percentage)
-
-    local nearest_spawns = {}
-    for k, v in pairs(spawns_table) do
-        local dist_sq = loc:DistanceSquared(v.location)
-        if table_count(nearest_spawns) < Percentages_Count then
-            table.insert(nearest_spawns, {v, dist_sq})
-        elseif nearest_spawns[Percentages_Count][2] > dist_sq then
-            for i2, v2 in ipairs(nearest_spawns) do
-                if v2[2] > dist_sq then
-                    nearest_spawns[i2] = {v, dist_sq}
-                    break
-                end
-            end
-        end
+    -- Collect every spawn with its distance
+    local sorted_spawns = {}
+    for _, v in pairs(spawns_table) do
+        sorted_spawns[#sorted_spawns + 1] = {
+            spawn = v,
+            dist_sq = loc:DistanceSquared(v.location)
+        }
     end
 
-    local selected_spawn
+    -- Sort nearest -> farthest
+    table.sort(sorted_spawns, function(a, b)
+        return a.dist_sq < b.dist_sq
+    end)
 
-    local random_percentage_to = 100
-    if table_count(nearest_spawns) < Percentages_Count then
-        random_percentage_to = 0
-        for i = 1, table_count(nearest_spawns) do
-            random_percentage_to = random_percentage_to + Zombies_Nearest_SmartSpawns_Percentage[i]
-        end
+    -- Only as many candidates as we have weights for
+    local candidates = math.min(#sorted_spawns, #Zombies_Nearest_SmartSpawns_Percentage)
+
+    -- Total weight of the candidates actually available
+    local total = 0
+    for i = 1, candidates do
+        total = total + Zombies_Nearest_SmartSpawns_Percentage[i]
     end
 
-    local random_percentage = math.random(random_percentage_to)
-    local cur_percentage = 0
-    for i, v in ipairs(Zombies_Nearest_SmartSpawns_Percentage) do
-        cur_percentage = cur_percentage + v
-        if cur_percentage >= random_percentage then
-            --print("Selected spawn " .. tostring(i))
-            selected_spawn = nearest_spawns[i][1]
-            break
+    local roll = math.random(total)
+    local cur = 0
+    for i = 1, candidates do
+        cur = cur + Zombies_Nearest_SmartSpawns_Percentage[i]
+        if roll <= cur then
+            --print("Selected spawn rank " .. i)
+            return sorted_spawns[i].spawn
         end
     end
-
-    return selected_spawn
 end
 
 function SpawnEnemyIntervalFunc()
