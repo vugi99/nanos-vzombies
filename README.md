@@ -13,6 +13,7 @@ Press **H** to open the in-game *How to play* menu.
 * [default-vehicles](https://github.com/nanos-world/default-vehicles)
 * [modern-weapons](https://github.com/vugi99/nanos-modern-weapons)
 * [webui3d2d](https://github.com/Timmy-the-nobody/WebUI3d2d)
+* [mapvote](https://github.com/vugi99/nanos-mapvote)
 * [vzombies-survivors-assets](https://nanos-world.com/store/assets/vzombies-survivors-assets)
 
 ## Global Features
