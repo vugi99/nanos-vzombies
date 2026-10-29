@@ -8,6 +8,7 @@ if (not MAP_SETTINGS or MAP_SETTINGS.spawn_nanos_sky) then
         weather_exists = true
     end
     Sky.Spawn(weather_exists)
+    --print("Sky.Spawn", weather_exists)
 end
 
 local HoursToSet = SKY_TIME[1]
