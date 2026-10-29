@@ -137,11 +137,13 @@ function SpawnEnemy(EnemyName, EnemyType)
 
             local random_enemy_model_id = math.random(table_count(enemy_table.Models))
             local random_enemy_model_asset
+            local random_enemy_model_table
             local enemy_mats = nil
             if type(enemy_table.Models[random_enemy_model_id]) == "string" then
                 random_enemy_model_asset = enemy_table.Models[random_enemy_model_id]
             else
                 random_enemy_model_asset = enemy_table.Models[random_enemy_model_id].asset
+                random_enemy_model_table = enemy_table.Models[random_enemy_model_id]
                 if enemy_table.Models[random_enemy_model_id].materials_slots then
                     if (enemy_table.Enemy_Materials_Assets and enemy_table.Enemy_Materials_Assets[random_enemy_model_id]) then
                         local e_mat_assets = enemy_table.Enemy_Materials_Assets[random_enemy_model_id]
@@ -209,7 +211,8 @@ function SpawnEnemy(EnemyName, EnemyType)
             --enemy:SetBrakingSettings(0, 0)
 
             if enemy_table.Emissive_Key and enemy_table.Emissive_Spawn_Value then
-                enemy:SetMaterialScalarParameter(enemy_table.Emissive_Key, enemy_table.Emissive_Spawn_Value, enemy_table.Emissive_Material_Index or -1)
+                local mat_index = (random_enemy_model_table and random_enemy_model_table.Emissive_Material_Index) or enemy_table.Emissive_Material_Index
+                enemy:SetMaterialScalarParameter(enemy_table.Emissive_Key, enemy_table.Emissive_Spawn_Value, mat_index or -1)
                 --print("SetMaterialScalarParameter", enemy_table.Emissive_Key, enemy_table.Emissive_Spawn_Value)
             end
 

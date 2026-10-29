@@ -548,17 +548,40 @@ Enemies_Config = {
 
         Emissive_Key = "Emissive_value",
         Emissive_Spawn_Value = 10,
-        Emissive_Material_Index = 1,
 
         Models = {
-            "vzombies-assets::SK_Zombie_M04_01",
-            "vzombies-assets::SK_Zombie_M04_02",
-            "vzombies-assets::SK_Zombie_M04_03",
-            "vzombies-assets::SK_Zombie_M04_04",
-            "vzombies-assets::SK_Zombie_M04_05",
-            "vzombies-assets::SK_Zombie_M04_06",
-            "vzombies-assets::SK_Zombie_M04_07",
-            "vzombies-assets::SK_Zombie_M04_08",
+            {
+                asset = "vzombies-assets::SK_Zombie_M04_01",
+                Emissive_Material_Index = 1,
+            },
+            {
+                asset = "vzombies-assets::SK_Zombie_M04_02",
+                Emissive_Material_Index = 1,
+            },
+            {
+                asset = "vzombies-assets::SK_Zombie_M04_03",
+                Emissive_Material_Index = 1,
+            },
+            {
+                asset = "vzombies-assets::SK_Zombie_M04_04",
+                Emissive_Material_Index = 1,
+            },
+            {
+                asset = "vzombies-assets::SK_Zombie_M04_05",
+                Emissive_Material_Index = 2,
+            },
+            {
+                asset = "vzombies-assets::SK_Zombie_M04_06",
+                Emissive_Material_Index = 2,
+            },
+            {
+                asset = "vzombies-assets::SK_Zombie_M04_07",
+                Emissive_Material_Index = 2,
+            },
+            {
+                asset = "vzombies-assets::SK_Zombie_M04_08",
+                Emissive_Material_Index = 2,
+            },
         },
 
         Custom_Attack_Behavior = {
