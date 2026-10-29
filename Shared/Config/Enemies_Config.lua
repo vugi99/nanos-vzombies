@@ -70,6 +70,7 @@ Zombies_Gibs_Bones = {
     foot_l = {
         health_p = 10,
         asset = "vzombies-assets::FootL",
+        emissive_key = "Emissive_value",
         materials = {
             "bottom",
         },
@@ -77,6 +78,7 @@ Zombies_Gibs_Bones = {
     foot_r = {
         health_p = 10,
         asset = "vzombies-assets::FootR",
+        emissive_key = "Emissive_value",
         materials = {
             "bottom",
         },
@@ -84,6 +86,7 @@ Zombies_Gibs_Bones = {
     lowerarm_l = {
         health_p = 30,
         asset = "vzombies-assets::ForeArmL",
+        emissive_key = "Emissive_value",
         Detach = {
             "hand_l",
         },
@@ -94,6 +97,7 @@ Zombies_Gibs_Bones = {
     lowerarm_r = {
         health_p = 30,
         asset = "vzombies-assets::ForeArmR",
+        emissive_key = "Emissive_value",
         Detach = {
             "hand_r",
         },
@@ -104,6 +108,7 @@ Zombies_Gibs_Bones = {
     hand_l = {
         health_p = 10,
         asset = "vzombies-assets::HandL",
+        emissive_key = "Emissive_value",
         materials = {
             "body",
         },
@@ -111,6 +116,7 @@ Zombies_Gibs_Bones = {
     hand_r = {
         health_p = 10,
         asset = "vzombies-assets::HandR",
+        emissive_key = "Emissive_value",
         materials = {
             "body",
         },
@@ -118,6 +124,7 @@ Zombies_Gibs_Bones = {
     upperarm_l = {
         health_p = 50,
         asset = "vzombies-assets::ArmL",
+        emissive_key = "Emissive_value",
         Detach = {
             "lowerarm_l",
         },
@@ -129,6 +136,7 @@ Zombies_Gibs_Bones = {
     upperarm_r = {
         health_p = 50,
         asset = "vzombies-assets::ArmR",
+        emissive_key = "Emissive_value",
         Detach = {
             "lowerarm_r",
         },
@@ -148,6 +156,7 @@ Zombies_Gibs_Bones = {
     },
     calf_l = {
         health_p = 30,
+        emissive_key = "Emissive_value",
         asset = "vzombies-assets::KneeL",
         Detach = {
             "foot_l",
@@ -158,6 +167,7 @@ Zombies_Gibs_Bones = {
     },
     calf_r = {
         health_p = 30,
+        emissive_key = "Emissive_value",
         asset = "vzombies-assets::KneeR",
         Detach = {
             "foot_r",
@@ -168,6 +178,7 @@ Zombies_Gibs_Bones = {
     },
     thigh_l = {
         health_p = 50,
+        emissive_key = "Emissive_value",
         asset = "vzombies-assets::LegL",
         Detach = {
             "calf_l",
@@ -178,6 +189,7 @@ Zombies_Gibs_Bones = {
     },
     thigh_r = {
         health_p = 50,
+        emissive_key = "Emissive_value",
         asset = "vzombies-assets::LegR",
         Detach = {
             "calf_r",
@@ -692,6 +704,7 @@ Enemies_Config.UrbanZombie.Enemy_Materials_Assets[2] = Enemies_Config.UrbanZombi
 Enemies_Config.UrbanZombie.Gibs = {
     foot_l = {
         health_p = 10,
+        emissive_key = "Emissive_value",
         asset = "vzombies-assets::U_FootL",
         materials = {
             "trousers",
@@ -700,6 +713,7 @@ Enemies_Config.UrbanZombie.Gibs = {
     },
     foot_r = {
         health_p = 10,
+        emissive_key = "Emissive_value",
         asset = "vzombies-assets::U_FootR",
         materials = {
             "trousers",
@@ -708,6 +722,7 @@ Enemies_Config.UrbanZombie.Gibs = {
     },
     lowerarm_l = {
         health_p = 30,
+        emissive_key = "Emissive_value",
         asset = "vzombies-assets::U_ForeArmL",
         Detach = {
             "hand_l",
@@ -718,6 +733,7 @@ Enemies_Config.UrbanZombie.Gibs = {
     },
     lowerarm_r = {
         health_p = 30,
+        emissive_key = "Emissive_value",
         asset = "vzombies-assets::U_ForeArmR",
         Detach = {
             "hand_r",
@@ -728,6 +744,7 @@ Enemies_Config.UrbanZombie.Gibs = {
     },
     hand_l = {
         health_p = 10,
+        emissive_key = "Emissive_value",
         asset = "vzombies-assets::U_HandL",
         materials = {
             "body",
@@ -735,6 +752,7 @@ Enemies_Config.UrbanZombie.Gibs = {
     },
     hand_r = {
         health_p = 10,
+        emissive_key = "Emissive_value",
         asset = "vzombies-assets::U_HandR",
         materials = {
             "body",
@@ -742,6 +760,7 @@ Enemies_Config.UrbanZombie.Gibs = {
     },
     upperarm_l = {
         health_p = 50,
+        emissive_key = "Emissive_value",
         asset = "vzombies-assets::U_ArmL",
         Detach = {
             "lowerarm_l",
@@ -752,6 +771,7 @@ Enemies_Config.UrbanZombie.Gibs = {
     },
     upperarm_r = {
         health_p = 50,
+        emissive_key = "Emissive_value",
         asset = "vzombies-assets::U_ArmR",
         Detach = {
             "lowerarm_r",
@@ -762,6 +782,7 @@ Enemies_Config.UrbanZombie.Gibs = {
     },
     head = {
         health_p = 80,
+        emissive_key = "Emissive_value",
         asset = {"vzombies-assets::U_HeadA", "vzombies-assets::U_HeadB"},
         emissive_key = "Emissive_value",
         materials = {
@@ -770,6 +791,7 @@ Enemies_Config.UrbanZombie.Gibs = {
     },
     calf_l = {
         health_p = 30,
+        emissive_key = "Emissive_value",
         asset = "vzombies-assets::U_KneeL",
         Detach = {
             "foot_l",
@@ -781,6 +803,7 @@ Enemies_Config.UrbanZombie.Gibs = {
     },
     calf_r = {
         health_p = 30,
+        emissive_key = "Emissive_value",
         asset = "vzombies-assets::U_KneeR",
         Detach = {
             "foot_r",
@@ -792,6 +815,7 @@ Enemies_Config.UrbanZombie.Gibs = {
     },
     thigh_l = {
         health_p = 50,
+        emissive_key = "Emissive_value",
         asset = "vzombies-assets::U_LegL",
         Detach = {
             "calf_l",
@@ -803,6 +827,7 @@ Enemies_Config.UrbanZombie.Gibs = {
     },
     thigh_r = {
         health_p = 50,
+        emissive_key = "Emissive_value",
         asset = "vzombies-assets::U_LegR",
         Detach = {
             "calf_r",

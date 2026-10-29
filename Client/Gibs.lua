@@ -68,6 +68,7 @@ function CL_VZ_SpawnGib(char, bone, goingtodie, instigator)
 
                 if enemy_table.Gibs[bone].emissive_key then
                     gib:SetMaterialScalarParameter(enemy_table.Gibs[bone].emissive_key, 0.0)
+                    --print(gib, enemy_table.Gibs[bone].emissive_key, "SetMaterialScalarParameter", 0.0)
                 end
             else
                 --print("Gib aborted")
