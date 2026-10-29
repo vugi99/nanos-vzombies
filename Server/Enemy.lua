@@ -1051,131 +1051,131 @@ end
 local DoubleDamage_Applied = false
 
 VZ_EVENT_SUBSCRIBE("Character", "TakeDamage", function(char, damage, bone, dtype, from_direction, instigator, causer)
-    if (char:GetValue("Enemy") == true and damage > 0) then
-        --print("TakeDamage", char:GetValue("EnemyType"), damage, bone, dtype, from_direction, instigator, causer)
+    if not (char:GetValue("Enemy") == true and damage > 0) then DoubleDamage_Applied = false; return end
+    if char:IsDead() then DoubleDamage_Applied = false; return end
+    --print("TakeDamage", char:GetValue("EnemyType"), damage, bone, dtype, from_direction, instigator, causer)
 
-        if causer then
-            if causer:IsValid() then
-                if not causer:IsA(Character) then
-                    local instig_char
-                    if IsAVehicle(causer) then
-                        instig_char = causer:GetPassenger(0)
-                    else
-                        instig_char = causer:GetHandler()
-                    end
-                    if instig_char then
-                        local bot = instig_char:GetPlayer()
-                        if (bot and bot.BOT) then
-                            instigator = bot
-                        end
+    if causer then
+        if causer:IsValid() then
+            if not causer:IsA(Character) then
+                local instig_char
+                if IsAVehicle(causer) then
+                    instig_char = causer:GetPassenger(0)
+                else
+                    instig_char = causer:GetHandler()
+                end
+                if instig_char then
+                    local bot = instig_char:GetPlayer()
+                    if (bot and bot.BOT) then
+                        instigator = bot
                     end
                 end
             end
         end
-        if instigator then
-            if not DoubleDamage_Applied then
-                AddMoney(instigator, Player_Zombie_Damage_Money)
-                local instig_char = instigator:GetControlledCharacter()
+    end
+    if instigator then
+        if not DoubleDamage_Applied then
+            AddMoney(instigator, Player_Zombie_Damage_Money)
+            local instig_char = instigator:GetControlledCharacter()
 
-                local enemy_table = GetEnemyTable(char)
-                if (ACTIVE_POWERUPS.instakill and not enemy_table.Boss) then
-                    local instigator_passed = instigator
-                    if instigator.BOT then
-                        instigator_passed = "BOT"
+            local enemy_table = GetEnemyTable(char)
+            if (ACTIVE_POWERUPS.instakill and not enemy_table.Boss) then
+                local instigator_passed = instigator
+                if instigator.BOT then
+                    instigator_passed = "BOT"
+                end
+                VZ_EVENT_CALL("Events", "VZ_ZombieKill_InstaKill", char, damage, bone, dtype, from_direction, instigator_passed, causer)
+
+                local zkills = instigator:GetValue("ZKills")
+                if zkills then
+                    AddMoney(instigator, Player_Zombie_Kill_Money)
+                    ZombieDie_SpawnRandomPowerup(char)
+                    instigator:SetValue("ZKills", zkills + 1, false)
+                    char:SetHealth(0)
+                    KILL_COUNT = KILL_COUNT + 1
+                end
+            elseif (instig_char and not char:GetValue("ApplyingRepack")) then
+                if (not causer or (not causer:IsValid()) or ((not causer:IsA(Melee)) and (not causer:IsA(Grenade)) and (not IsAVehicle(causer)))) then
+                    local perks = instig_char:GetValue("OwnedPerks")
+                    local mult = 1
+                    local added_damage = 0
+                    if (perks and perks["doubletap"]) then
+                        mult = mult * PERKS_CONFIG.doubletap.MultDamage
                     end
-                    VZ_EVENT_CALL("Events", "VZ_ZombieKill_InstaKill", char, damage, bone, dtype, from_direction, instigator_passed, causer)
+                    local charInvID = GetCharacterInventory(instig_char)
+                    if charInvID then
+                        local Inv = PlayersCharactersWeapons[charInvID]
+                        if Inv.selected_slot then
+                            for i, v in ipairs(Inv.weapons) do
+                                if (v.slot == Inv.selected_slot and v.weapon) then
+                                    if v.weapon:IsValid() then
+                                        if v.pap then
+                                            mult = mult * Pack_a_punch_damage_mult
+                                            if v.pap_repack_effect then
+                                                if not instigator:GetValue("RepackCooldown") then
+                                                    --print("PAP Repack Apply", v.pap_repack_effect)
 
-                    local zkills = instigator:GetValue("ZKills")
-                    if zkills then
-                        AddMoney(instigator, Player_Zombie_Kill_Money)
-                        ZombieDie_SpawnRandomPowerup(char)
-                        instigator:SetValue("ZKills", zkills + 1, false)
-                        char:SetHealth(0)
-                        KILL_COUNT = KILL_COUNT + 1
-                    end
-                elseif (instig_char and not char:GetValue("ApplyingRepack")) then
-                    if (not causer or (not causer:IsValid()) or ((not causer:IsA(Melee)) and (not causer:IsA(Grenade)) and (not IsAVehicle(causer)))) then
-                        local perks = instig_char:GetValue("OwnedPerks")
-                        local mult = 1
-                        local added_damage = 0
-                        if (perks and perks["doubletap"]) then
-                            mult = mult * PERKS_CONFIG.doubletap.MultDamage
-                        end
-                        local charInvID = GetCharacterInventory(instig_char)
-                        if charInvID then
-                            local Inv = PlayersCharactersWeapons[charInvID]
-                            if Inv.selected_slot then
-                                for i, v in ipairs(Inv.weapons) do
-                                    if (v.slot == Inv.selected_slot and v.weapon) then
-                                        if v.weapon:IsValid() then
-                                            if v.pap then
-                                                mult = mult * Pack_a_punch_damage_mult
-                                                if v.pap_repack_effect then
-                                                    if not instigator:GetValue("RepackCooldown") then
-                                                        --print("PAP Repack Apply", v.pap_repack_effect)
+                                                    added_damage = added_damage + PAP_Repack_Config[v.pap_repack_effect].damage_on_target
+                                                    instigator:SetValue("RepackCooldown", true, false)
+                                                    Timer.SetTimeout(function()
+                                                        if instigator:IsValid() then
+                                                            instigator:SetValue("RepackCooldown", nil, false)
+                                                        end
+                                                    end, PAP_Repack_Config[v.pap_repack_effect].cooldown_ms)
+                                                    AttachRepackParticle(char, v.pap_repack_effect)
 
-                                                        added_damage = added_damage + PAP_Repack_Config[v.pap_repack_effect].damage_on_target
-                                                        instigator:SetValue("RepackCooldown", true, false)
-                                                        Timer.SetTimeout(function()
-                                                            if instigator:IsValid() then
-                                                                instigator:SetValue("RepackCooldown", nil, false)
-                                                            end
-                                                        end, PAP_Repack_Config[v.pap_repack_effect].cooldown_ms)
-                                                        AttachRepackParticle(char, v.pap_repack_effect)
-
-                                                        for k2, v2 in pairs(Character.GetAll()) do
-                                                            if (v2:IsValid() and v2:GetHealth() > 0 and v2 ~= char and v2:GetValue("Enemy")) then
-                                                                local dist_sq = v2:GetLocation():DistanceSquared(char:GetLocation())
-                                                                if (dist_sq > 0 and dist_sq < PAP_Repack_Config[v.pap_repack_effect].radius_sq) then
-                                                                    v2:SetValue("ApplyingRepack", true, false)
-                                                                    AttachRepackParticle(v2, v.pap_repack_effect)
-                                                                    local ap_dam_instig = instigator
-                                                                    if instigator.BOT then
-                                                                        ap_dam_instig = nil
-                                                                    end
-                                                                    v2:ApplyDamage(math.max(1, math.floor(PAP_Repack_Config[v.pap_repack_effect].damage_func(dist_sq) + 0.5)), bone, DamageType.Unknown, Vector(), ap_dam_instig, causer)
+                                                    for k2, v2 in pairs(Character.GetAll()) do
+                                                        if (v2:IsValid() and v2:GetHealth() > 0 and v2 ~= char and v2:GetValue("Enemy")) then
+                                                            local dist_sq = v2:GetLocation():DistanceSquared(char:GetLocation())
+                                                            if (dist_sq > 0 and dist_sq < PAP_Repack_Config[v.pap_repack_effect].radius_sq) then
+                                                                v2:SetValue("ApplyingRepack", true, false)
+                                                                AttachRepackParticle(v2, v.pap_repack_effect)
+                                                                local ap_dam_instig = instigator
+                                                                if instigator.BOT then
+                                                                    ap_dam_instig = nil
                                                                 end
+                                                                v2:ApplyDamage(math.max(1, math.floor(PAP_Repack_Config[v.pap_repack_effect].damage_func(dist_sq) + 0.5)), bone, DamageType.Unknown, Vector(), ap_dam_instig, causer)
                                                             end
                                                         end
                                                     end
                                                 end
                                             end
                                         end
-                                        break
                                     end
+                                    break
                                 end
                             end
                         end
-                        if mult > 1 then
-                            DoubleDamage_Applied = true
-                            --print("DOUBLE APPLY", (mult-1))
-                            if (char:GetHealth() - damage - damage * (mult-1) > 0) then
-                                RandomEnemyJoker(char)
-                            end
-                            if not instigator.BOT then
-                                --print(causer)
-                                if causer then
-                                    char:ApplyDamage(damage * (mult-1) + added_damage, bone, dtype, from_direction, instigator, causer)
-                                else
-                                    char:ApplyDamage(damage * (mult-1) + added_damage, bone, dtype, from_direction, instigator)
-                                end
-                            else
-                                char:ApplyDamage(damage * (mult-1) + added_damage, bone, dtype, from_direction, nil, causer)
-                            end
-                        elseif char:GetHealth() - damage > 0 then
+                    end
+                    if mult > 1 then
+                        DoubleDamage_Applied = true
+                        --print("DOUBLE APPLY", (mult-1))
+                        if (char:GetHealth() - damage - damage * (mult-1) > 0) then
                             RandomEnemyJoker(char)
                         end
+                        if not instigator.BOT then
+                            --print(causer)
+                            if causer then
+                                char:ApplyDamage(damage * (mult-1) + added_damage, bone, dtype, from_direction, instigator, causer)
+                            else
+                                char:ApplyDamage(damage * (mult-1) + added_damage, bone, dtype, from_direction, instigator)
+                            end
+                        else
+                            char:ApplyDamage(damage * (mult-1) + added_damage, bone, dtype, from_direction, nil, causer)
+                        end
+                    elseif char:GetHealth() - damage > 0 then
+                        RandomEnemyJoker(char)
                     end
                 end
             end
         end
-        if DoubleDamage_Applied then
-            DoubleDamage_Applied = false
-            --print("DoubleDamage_Applied = false so TakeDamage called 2 times, good")
-        end
-        if (char:IsValid() and char:GetValue("ApplyingRepack")) then
-            char:SetValue("ApplyingRepack", nil, false)
-        end
+    end
+    if DoubleDamage_Applied then
+        DoubleDamage_Applied = false
+        --print("DoubleDamage_Applied = false so TakeDamage called 2 times, good")
+    end
+    if (char:IsValid() and char:GetValue("ApplyingRepack")) then
+        char:SetValue("ApplyingRepack", nil, false)
     end
 end)
 
