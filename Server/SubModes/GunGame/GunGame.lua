@@ -41,7 +41,7 @@ function GunGame_HandleZombieDeath(char, instigator)
                 if weapon_kill_count >= VZ_GetGamemodeConfigValue("Kills_To_Next_Weapon") then
                     local weapon_index = instig_char:GetValue("CurrentWeapon") + 1
                     if weapon_index > table_count(Weapons_Random_Order) then
-                        Server.BroadcastChatMessage(instigator:GetAccountName() .. " won the GunGame.")
+                        Chat.BroadcastMessage(instigator:GetAccountName() .. " won the GunGame.")
 
                         CheckRoundFinished(false, true)
                     else
