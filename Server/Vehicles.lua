@@ -86,6 +86,7 @@ if VEHICLES_PADS then
     end)
 
     --[[VZ_EVENT_SUBSCRIBE("VehicleWheeled", "TakeDamage", function(veh, damage, bone, dtype, from_direction, instigator, causer)
+        if veh:IsDead() then return end
         print(veh, damage, bone, dtype, from_direction, instigator, causer)
     end)]]--
 

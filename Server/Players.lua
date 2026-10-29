@@ -358,6 +358,7 @@ Package.Export("SetCharacterNotTargeted", SetCharacterNotTargeted)
 VZ_EVENT_SUBSCRIBE("Character", "TakeDamage", function(char, damage, bone, type, from_direction, instigator, causer)
     local ply = char:GetPlayer()
     if ply then
+        if char:IsDead() then return end
         --print("Player's char TakeDamage", char, damage, instigator, causer)
 
         if causer then

@@ -1,6 +1,13 @@
 
 function CL_VZ_SpawnGib(char, bone, goingtodie, instigator)
     if char:IsValid() then
+        local enemy_table = GetEnemyTable(char)
+
+        if bone == enemy_table.Gibs_heart_bone then
+            if char:GetValue("HeadGibSpawned") then return end
+            char:SetValue("HeadGibSpawned", true)
+        end
+
         local bone_transform = char:GetSocketTransform(bone)
 
         char:HideBone(bone)
@@ -12,13 +19,6 @@ function CL_VZ_SpawnGib(char, bone, goingtodie, instigator)
             true,
             true
         )]]--
-
-
-        local enemy_table = GetEnemyTable(char)
-
-        if bone == enemy_table.Gibs_heart_bone then
-            char:SetValue("HeadGibSpawned", true)
-        end
 
         if VZ_CL_Current_Settings["Clientside_Gibs"] then
             if not enemy_table.Gibs then return end
@@ -77,21 +77,19 @@ function CL_VZ_SpawnGib(char, bone, goingtodie, instigator)
     end
 end
 VZ_EVENT_SUBSCRIBE("Events", "VZ_SpawnGib", CL_VZ_SpawnGib)
-VZ_EVENT_SUBSCRIBE_REMOTE("VZ_SpawnGib", CL_VZ_SpawnGib)
+--VZ_EVENT_SUBSCRIBE_REMOTE("VZ_SpawnGib", CL_VZ_SpawnGib)
 
 -- Remove character head if the death hit is on the head (To fix the last TakeDamage not called if it was killed on the server)
--- I don't really understand why last_bone_damage is head when the character was killed serverside, this could become an issue if it gets fixed
+-- The death event bone is unreliable on nanos 1.166.2: https://nanos-world.com/feedback/p/death-and-takedamage-events-may-be-ordered-wrongly
 VZ_EVENT_SUBSCRIBE("Character", "Death", function(char, last_damage_taken, last_bone_damage, damage_type_reason, hit_from_direction, instigator, causer)
-    if char:GetValue("EnemyType") then
-        local enemy_table = GetEnemyTable(char)
-        if enemy_table.Gibs then
-
-            --print("Zombie Death", last_bone_damage)
-            if (last_bone_damage == enemy_table.Gibs_heart_bone and damage_type_reason == DamageType.Shot) then
-                if not char:GetValue("HeadGibSpawned") then
-                    VZ_EVENT_CALL("Events", "VZ_SpawnGib", char, last_bone_damage)
-                end
-            end
-        end
+    if not char:GetValue("EnemyType") then return end
+    local enemy_table = GetEnemyTable(char)
+    if not enemy_table then return end
+    if not enemy_table.Gibs then return end
+    --print("Zombie Death", char, last_bone_damage)
+    if (last_bone_damage == enemy_table.Gibs_heart_bone and damage_type_reason == DamageType.Shot) then
+        --if not char:GetValue("HeadGibSpawned") then
+        VZ_EVENT_CALL("Events", "VZ_SpawnGib", char, last_bone_damage)
+        --end
     end
 end)

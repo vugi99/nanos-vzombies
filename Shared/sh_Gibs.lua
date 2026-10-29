@@ -3,7 +3,12 @@
 local EnemiesBonesHealth = {}
 
 function DamageZombieBone(char, bone, damage, goingtodie, instigator)
+    if not EnemiesBonesHealth[char:GetID()] then
+        Console.Warn("Missing EnemiesBonesHealth for %s (%d)", char, char:GetID())
+        return
+    end
     if EnemiesBonesHealth[char:GetID()][bone] and EnemiesBonesHealth[char:GetID()][bone] > 0 then
+        --print("DamageZombieBone", char, bone, damage, goingtodie, instigator)
         if EnemiesBonesHealth[char:GetID()][bone] - damage > 0 then
             EnemiesBonesHealth[char:GetID()][bone] = EnemiesBonesHealth[char:GetID()][bone] - damage
         else
@@ -18,24 +23,42 @@ function DamageZombieBone(char, bone, damage, goingtodie, instigator)
     end
 end
 
+local function InitEnemiesBonesHealth(char)
+    if EnemiesBonesHealth[char:GetID()] then return end
+    local health = char:GetHealth()
+    EnemiesBonesHealth[char:GetID()] = {}
+    --print("Init EnemiesBonesHealth", char, char:GetID())
+    for k, v in pairs(GetEnemyTable(char).Gibs) do
+        EnemiesBonesHealth[char:GetID()][k] = (health * v.health_p) / 100
+        --print((health * v.health_p) / 100)
+    end
+    return true
+end
+for k, v in pairs(Character.GetPairs()) do
+    if v:GetValue("EnemyType") then
+        InitEnemiesBonesHealth(v)
+    end
+end
+
+VZ_EVENT_SUBSCRIBE("Character", "ValueChange", function(char, key, value)
+    if key == "EnemyType" then
+        InitEnemiesBonesHealth(char)
+    end
+end)
+
+VZ_EVENT_SUBSCRIBE("Character", "Destroy", function(char)
+    EnemiesBonesHealth[char:GetID()] = nil
+end)
+
 VZ_EVENT_SUBSCRIBE("Character", "TakeDamage", function(char, damage, bone, type, from_direction, instigator, causer)
     if (char:GetValue("EnemyType") and damage > 0) then
+        --if char:IsDead() then return end
 
-        --print("TakeDamage", bone, damage)
+        --print("TakeDamage", char, bone, damage)
+        --print(debug.traceback("TakeDamage"))
 
         if GetEnemyTable(char).Gibs then
-
-            -- Not called when the zombie dies so missing last hit clientside
             --print("Health", char:GetHealth())
-            if not EnemiesBonesHealth[char:GetID()] then
-                local health = char:GetHealth()
-                EnemiesBonesHealth[char:GetID()] = {}
-                for k, v in pairs(GetEnemyTable(char).Gibs) do
-                    EnemiesBonesHealth[char:GetID()][k] = (health * v.health_p) / 100
-                    --print((health * v.health_p) / 100)
-                end
-            end
-
             DamageZombieBone(char, bone, damage, char:GetHealth() - damage <= 0, instigator)
         end
     end
