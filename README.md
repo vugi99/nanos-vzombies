@@ -1,7 +1,9 @@
 # nanos-vzombies
-### Compatible with nanos >= 1.166.2
+### Compatible with nanos >= 1.167.0
 
 ![nanos-vzombies](Package.jpg)
+
+_Artwork and icons by .supa_
 
 Press **H** to open the in-game *How to play* menu.
 
