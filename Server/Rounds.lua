@@ -512,8 +512,13 @@ VZ_EVENT_SUBSCRIBE_REMOTE("TogglePauseGame", function(ply)
             else
                 for k, v in pairs(PLAYING_PLAYERS) do
                     if (v and v:IsValid() and v.BOT) then
-                        RequestBotAction(v)
-                        v:SetValue("BotAimPlayer", GetRandomPlayer():GetID(), true)
+                        local char = v:GetControlledCharacter()
+                        if IsValid(char) then
+                            if not char:GetValue("PlayerDown") then
+                                RequestBotAction(v)
+                                v:SetValue("BotAimPlayer", GetRandomPlayer():GetID(), true)
+                            end
+                        end
                     end
                 end
             end
