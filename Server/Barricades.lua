@@ -5,14 +5,26 @@ BARRICADES = {}
 
 function DestroyBarricades()
     for i, v in ipairs(BARRICADES) do
-        for k2, v2 in pairs(v.top.barricades) do
-            v2:Destroy()
+        if v.top then
+            for k2, v2 in pairs(v.top.barricades or {}) do
+                if IsValid(v2) then
+                    v2:Destroy()
+                end
+            end
         end
-        for k2, v2 in pairs(v.ground.barricades) do
-            v2:Destroy()
+        if v.ground then
+            for k2, v2 in pairs(v.ground.barricades or {}) do
+                if IsValid(v2) then
+                    v2:Destroy()
+                end
+            end
         end
-        v.top.root:Destroy()
-        v.ground.root:Destroy()
+        if v.top and IsValid(v.top.root) then
+            v.top.root:Destroy()
+        end
+        if v.ground and IsValid(v.ground.root) then
+            v.ground.root:Destroy()
+        end
     end
     BARRICADES = {}
 end
@@ -75,56 +87,63 @@ function SpawnBarricade(zspawn, zspawnid)
 end
 
 function BarricadeAction(barricade, action)
-    local top_barricades = table_count(barricade.top.barricades)
-    local ground_barricades = table_count(barricade.ground.barricades)
+    local top_count = #barricade.top.barricades
+    local ground_count = #barricade.ground.barricades
 
-    if ((action == "damage" and top_barricades > 0) or (action == "repair" and ground_barricades > 0))  then
-        local removed_name = "top"
-        local added_name = "ground"
-        local removed_barricade_count = top_barricades
-
-        local random_sounds_name = "barricade_break"
-
-        if action == "repair" then
-            removed_name = "ground"
-            added_name = "top"
-            removed_barricade_count = ground_barricades
-            random_sounds_name = "barricade_slam"
+    if action == "damage" and top_count > 0 then
+        local rem_barr = table.remove(barricade.top.barricades)
+        local action_loc = barricade.top.root:GetLocation()
+        if IsValid(rem_barr) then
+            action_loc = rem_barr:GetLocation()
+            rem_barr:Destroy()
         end
 
-        local removed_barricade_table = barricade[removed_name]
-        local added_barricade_table = barricade[added_name]
+        local new_top_count = #barricade.top.barricades
+        barricade.top.root:SetValue("BarricadeLife", new_top_count, true)
 
-        local action_loc
-        if action == "damage" then
-            action_loc = removed_barricade_table.barricades[removed_barricade_count]:GetLocation()
-        end
-        removed_barricade_table.barricades[removed_barricade_count]:Destroy()
-        removed_barricade_table.barricades[removed_barricade_count] = nil
-
-        local new_life = top_barricades - 1
-        local new_index = ground_barricades + 1
-        if action == "repair" then
-            new_life = top_barricades + 1
-            new_index = top_barricades + 1
+        if #barricade.ground.barricades < 5 then
+            local spawn_index = math.min(#barricade.ground.barricades + 1, 5)
+            local SM_Barricade = SpawnBarricadePart(barricade.ground.root, Barricades_Config.ground, spawn_index)
+            table.insert(barricade.ground.barricades, SM_Barricade)
         end
 
-        barricade.top.root:SetValue("BarricadeLife", new_life, true)
+        local sound_tbl = RANDOM_SOUNDS["barricade_break"]
+        Events.BroadcastRemoteInRadius(
+            "PlayVZSound",
+            action_loc,
+            sound_tbl.falloff_distance,
+            Reliability.Unreliable,
+            { random_sound_tbl = sound_tbl, random_sound_selected = VZ_RandomSound(sound_tbl) },
+            action_loc
+        )
 
-        local SM_Barricade = SpawnBarricadePart(added_barricade_table.root, Barricades_Config[added_name], new_index)
-
-        if action == "repair" then
-            action_loc = barricade.top.root:GetLocation()
+    elseif action == "repair" and top_count < 5 then
+        -- Clean up cosmetic debris if any exists
+        if ground_count > 0 then
+            local rem_barr = table.remove(barricade.ground.barricades)
+            if IsValid(rem_barr) then
+                rem_barr:Destroy()
+            end
         end
 
-        local random_sounds_table = RANDOM_SOUNDS[random_sounds_name]
+        -- Spawn next missing plank slot
+        local spawn_index = math.min(top_count + 1, 5)
+        local SM_Barricade = SpawnBarricadePart(barricade.top.root, Barricades_Config.top, spawn_index)
+        table.insert(barricade.top.barricades, SM_Barricade)
 
-        --local play_sound_for_players = GetPlayersInRadius(action_loc, random_sounds_table.falloff_distance)
-        --Events.CallRemotePlayers("PlayVZSound", play_sound_for_players, Reliability.Unreliable, {random_sound_tbl=random_sounds_table, random_sound_selected=VZ_RandomSound(random_sounds_table)}, action_loc)
+        local new_top_count = #barricade.top.barricades
+        barricade.top.root:SetValue("BarricadeLife", new_top_count, true)
 
-        Events.BroadcastRemoteInRadius("PlayVZSound", action_loc, random_sounds_table.falloff_distance, Reliability.Unreliable, {random_sound_tbl=random_sounds_table, random_sound_selected=VZ_RandomSound(random_sounds_table)}, action_loc)
-
-        table.insert(added_barricade_table.barricades, SM_Barricade)
+        local action_loc = barricade.top.root:GetLocation()
+        local sound_tbl = RANDOM_SOUNDS["barricade_slam"]
+        Events.BroadcastRemoteInRadius(
+            "PlayVZSound",
+            action_loc,
+            sound_tbl.falloff_distance,
+            Reliability.Unreliable,
+            { random_sound_tbl = sound_tbl, random_sound_selected = VZ_RandomSound(sound_tbl) },
+            action_loc
+        )
     end
 end
 
