@@ -212,7 +212,12 @@ end
 
 function CallENVFunc_NoError(name, ...)
     if _ENV[name] then
-        return _ENV[name](...)
+        local tbl = table.pack(xpcall(_ENV[name], debug.traceback, ...))
+        if tbl[1] then
+            return table.unpack(tbl, 2, tbl.n)
+        else
+            Console.Error(tbl[2])
+        end
     end
 end
 
