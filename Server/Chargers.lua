@@ -172,6 +172,8 @@ function SetCharacterChargingID(char, charging_id, abort_no_error)
         return
     end
 
+    if ply:IsBeingDestroyed() then return end
+
     Events.CallRemote("ClientSetChargingID", ply, Reliability.Reliable, charging_id, GAME_TIMER_SECONDS)
 end
 
