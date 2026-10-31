@@ -1163,7 +1163,7 @@ local ui_charging_canvas_data
 
 function UI_MakeChargingCanvas()
     if UI_Charging_Canvas then return UI_Charging_Canvas end
-    if not VZ_CL_Current_Settings["UI_Charging_Canvas"] then return end
+    if VZ_CL_Current_Settings["UI_Charging_Canvas"] == false then return end
 
     ui_charging_canvas_data = {}
 
