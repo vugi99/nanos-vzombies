@@ -403,7 +403,7 @@ Timer.SetInterval(function()
         else
             location = ply:GetCameraLocation()
         end
-        for k, v in pairs(StaticMesh.GetAll()) do
+        for k, v in pairs(PreparedLoops["Perks"] or {}) do
             local perk_name = v:GetValue("MapPerk")
             if perk_name then
                 local perk_location = v:GetLocation()
@@ -449,7 +449,7 @@ Timer.SetInterval(function()
         else
             location = ply:GetCameraLocation()
         end
-        for k, v in pairs(StaticMesh.GetAll()) do
+        for k, v in pairs(PreparedLoops["PAP"] or {}) do
             local is_pap = v:GetValue("IsPackAPunch")
             if is_pap then
                 local perk_location = v:GetLocation()

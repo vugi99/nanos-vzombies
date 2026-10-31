@@ -80,12 +80,18 @@ function SpectatePlayer(to_spec)
                 UpdateGrenadesNB(0)
             end
 
+            GUI:CallEvent("ResetPerks")
             CurPerks = char:GetValue("OwnedPerks")
             for k, v in pairs(CurPerks or {}) do
                 GUINewPerk(k)
             end
 
-            UpdateHealth(char, char:GetHealth()-1000)
+            local health = char:GetHealth() - 1000
+            UpdateHealth(char, health)
+
+            if (Playing_LowHealth_Sound and health > LowHealth_Trigger_Health) then
+                StopLowHealthLoop()
+            end
         else
             One_Time_Updates_Canvas:Repaint()
         end
@@ -104,7 +110,13 @@ function StopSpectate()
     CurPerks = {}
     GUI:CallEvent("ResetPerks")
 
-    UpdateHealth()
+    local char = Client.GetLocalPlayer():GetControlledCharacter()
+    if IsValid(char) then
+        UpdateHealth(char, char:GetHealth()-1000)
+    else
+        UpdateHealth()
+    end
+    StopLowHealthLoop()
 end
 
 VZ_EVENT_SUBSCRIBE("Player", "Possess", function(ply, char)

@@ -31,7 +31,7 @@ end)
 function SavePlayerLevelData(ply, async_q)
     --print("SavePlayerLevelData")
     if not ply.BOT then
-        if ply:GetValue("PlayerStoredMoney") then
+        if ply:GetValue("PlayerXP") then
             local query = "UPDATE levels SET xp=" .. tostring(ply:GetValue("PlayerXP")) .. ", level=" .. tostring(ply:GetValue("PlayerLevel")) .. "  WHERE steamid = " .. tostring(ply:GetSteamID())
             if async_q then
                 Levels_DB:ExecuteAsync(query)

@@ -1,12 +1,13 @@
-
+MAP_TELEPORTERS_ENTITIES = {}
 
 
 function DestroyMapTeleporters()
-    for k, v in pairs(StaticMesh.GetAll()) do
-        if v:GetValue("TeleporterID") then
+    for k, v in pairs(MAP_TELEPORTERS_ENTITIES) do
+        if IsValid(v) then
             v:Destroy()
         end
     end
+    MAP_TELEPORTERS_ENTITIES = {}
 end
 
 function CreateMapTeleporters()
@@ -28,6 +29,7 @@ function CreateMapTeleporters()
                 teleporter:SetValue("TeleporterID", i, false)
                 teleporter:SetValue("CanTeleport", true, false)
             end
+            table.insert(MAP_TELEPORTERS_ENTITIES, teleporter)
         end
     end
 end

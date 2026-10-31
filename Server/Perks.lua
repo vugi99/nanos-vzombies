@@ -1,11 +1,13 @@
 
+MAP_PERKS_SMs = {}
 
 function DestroyMapPerks()
-    for k, v in pairs(StaticMesh.GetAll()) do
-        if v:GetValue("MapPerk") then
+    for k, v in pairs(MAP_PERKS_SMs) do
+        if IsValid(v) then
             v:Destroy()
         end
     end
+    MAP_PERKS_SMs = {}
 end
 
 function SpawnPerk(perk_name, location, rotation)
@@ -17,6 +19,8 @@ function SpawnPerk(perk_name, location, rotation)
     SM:SetScale(PERKS_CONFIG[perk_name].scale)
     SM:SetValue("MapPerk", perk_name, true)
     --SM:SetValue("ProneMoney", true, false)
+
+    table.insert(MAP_PERKS_SMs, SM)
     return SM
 end
 Package.Export("SpawnPerk", SpawnPerk)
@@ -90,8 +94,8 @@ if Prone_Perk_Config.enabled then
                 if new_state == StanceMode.Proning then
                     local char_loc = char:GetLocation()
                     local char_rot = char:GetRotation()
-                    for k, v in pairs(StaticMesh.GetPairs()) do
-                        if v:GetValue("ProneMoney") then
+                    for k, v in pairs(MAP_PERKS_SMs) do
+                        if IsValid(v) and v:GetValue("ProneMoney") then
                             local perk_loc = v:GetLocation()
                             if char_loc:DistanceSquared(perk_loc) <= Prone_Perk_Config.Max_Distance_sq then
                                 local perk_rot = v:GetRotation()

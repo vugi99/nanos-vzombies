@@ -70,6 +70,12 @@ function ResetMapCharger(sm)
     end
     sm:SetValue("ChargingUpdateValidPlayerPosInterval", nil, false)
 
+    local charger_emissive_key = VZ_GetFeatureValue("Chargers", "charger_emissive_key")
+    if charger_emissive_key then
+        local mat_index = VZ_GetFeatureValue("Chargers", "charger_emissive_material_index") or -1
+        sm:SetMaterialScalarParameter(charger_emissive_key, 0.0, mat_index)
+    end
+
     sm:SetValue("Charged", true, true)
     sm:SetValue("Charging", nil, true)
 
@@ -171,6 +177,8 @@ function SetCharacterChargingID(char, charging_id, abort_no_error)
         end
         return
     end
+
+    if ply:IsBeingDestroyed() then return end
 
     Events.CallRemote("ClientSetChargingID", ply, Reliability.Reliable, charging_id, GAME_TIMER_SECONDS)
 end

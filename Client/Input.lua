@@ -100,7 +100,7 @@ Interact_Actions_TBL = {
         end
     end,
     MapBank = function()
-        if IsValid(InteractThing) and IsValid(InteractThing[1]) then
+        if InteractThing and IsValid(InteractThing[1]) then
             Events.CallRemote("BankAction", Reliability.Reliable, InteractThing[1], InteractThing[2])
         end
     end,

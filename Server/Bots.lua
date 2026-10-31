@@ -485,14 +485,14 @@ VZ_EVENT_SUBSCRIBE("Events", "VZ_PAPUpgradedWeapon", function()
 end)
 
 function BotResetTarget(Bot)
+    if ZDEV_IsModeEnabled("ZDEV_DEBUG_BOTS_SHOOT") then
+        print("BotResetTarget " .. tostring(Bot.ID))
+    end
     local char = Bot:GetControlledCharacter()
+    if not IsValid(char) then return end
+    char:SetValue("BOTCanShootOn", {}, true)
+    char:SetValue("BOTShootingOn", nil, false)
     if char:GetValue("BOTShootInterval") then
-        if ZDEV_IsModeEnabled("ZDEV_DEBUG_BOTS_SHOOT") then
-            print("BotResetTarget " .. tostring(Bot.ID))
-        end
-
-        char:SetValue("BOTCanShootOn", {}, true)
-        char:SetValue("BOTShootingOn", nil, false)
         Timer.ClearInterval(char:GetValue("BOTShootInterval"))
         char:SetValue("BOTShootInterval", nil, false)
     end
@@ -524,6 +524,7 @@ end
 
 function BOTShootIntervalFunc(char)
     if char:IsValid() then
+        if char:GetValue("PlayerDown") then return BotResetTarget(char:GetPlayer()) end
         local weapon = char:GetPicked()
         if weapon then
             if weapon:GetAmmoClip() > 0 then
@@ -605,12 +606,17 @@ function BotCreateShootInterval(char)
     end
 
     local weapon = char:GetPicked()
-    if not IsValid(weapon) then return end
+    if IsValid(weapon) then
+        weapon:ReleaseUse() -- stop him from shooting further
+    end
+
     if char:GetValue("BOTShootInterval") then
         if Timer.IsValid(char:GetValue("BOTShootInterval")) then
             Timer.ClearInterval(char:GetValue("BOTShootInterval"))
         end
     end
+
+    if char:GetValue("PlayerDown") then return end
 
     char:SetValue("BOTShootInterval", Timer.SetInterval(BOTShootIntervalFunc,  weapon:GetCadence() * 1000, char), false)
     BOTShootIntervalFunc(char)
@@ -626,6 +632,9 @@ VZ_EVENT_SUBSCRIBE_REMOTE("NewBotTargets", function(ply, bot_id, targets_chars)
                 if ZDEV_IsModeEnabled("ZDEV_DEBUG_BOTS_SHOOT") then
                     print("#NewBotTargets for " .. Bot.ID, table_count(targets_chars or {}))
                 end
+                local char = Bot:GetControlledCharacter()
+                if not IsValid(char) then return end
+                if char:GetValue("PlayerDown") then return BotResetTarget(Bot) end
 
                 local targets_checked = {}
                 for i, v in ipairs(targets_chars) do
@@ -633,28 +642,26 @@ VZ_EVENT_SUBSCRIBE_REMOTE("NewBotTargets", function(ply, bot_id, targets_chars)
                         table.insert(targets_checked, v:GetID())
                     end
                 end
-                local char = Bot:GetControlledCharacter()
-                if char then
-                    char:SetValue("BOTCanShootOn", targets_checked, true)
-                    if not char:GetValue("PlayerDown") then
-                        if not char:IsInRagdollMode() then
-                            local weapon = char:GetPicked()
-                            if weapon then
-                                local nearest_z = GetNearestZombieInTargets(char, targets_checked)
-                                if nearest_z then
-                                    local Shooting_On = char:GetValue("BOTShootingOn")
-                                    if nearest_z:GetID() ~= Shooting_On then
-                                        char:SetValue("BOTShootingOn", nearest_z:GetID(), false)
-                                        if Shooting_On == nil then
-                                            if ZDEV_IsModeEnabled("ZDEV_DEBUG_BOTS_SHOOT") then
-                                                print("Bot " .. tostring(Bot.ID) .. " Started shooting")
-                                            end
-                                            BotCreateShootInterval(char)
+
+                char:SetValue("BOTCanShootOn", targets_checked, true)
+                if not char:GetValue("PlayerDown") then
+                    if not char:IsInRagdollMode() then
+                        local weapon = char:GetPicked()
+                        if weapon then
+                            local nearest_z = GetNearestZombieInTargets(char, targets_checked)
+                            if nearest_z then
+                                local Shooting_On = char:GetValue("BOTShootingOn")
+                                if nearest_z:GetID() ~= Shooting_On then
+                                    char:SetValue("BOTShootingOn", nearest_z:GetID(), false)
+                                    if Shooting_On == nil then
+                                        if ZDEV_IsModeEnabled("ZDEV_DEBUG_BOTS_SHOOT") then
+                                            print("Bot " .. tostring(Bot.ID) .. " Started shooting")
                                         end
+                                        BotCreateShootInterval(char)
                                     end
-                                else
-                                    BotResetTarget(Bot)
                                 end
+                            else
+                                BotResetTarget(Bot)
                             end
                         end
                     end

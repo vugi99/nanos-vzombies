@@ -54,6 +54,7 @@ VZ_EVENT_SUBSCRIBE("Character", "Destroy", function(char)
 end)
 
 VZ_EVENT_SUBSCRIBE("Character", "TakeDamage", function(char, damage, bone, type, from_direction, instigator, causer)
+    if not IsValid(char) then return end
     if (char:GetValue("EnemyType") and damage > 0) then
         --if char:IsDead() then return end
 

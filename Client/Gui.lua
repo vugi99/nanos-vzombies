@@ -83,10 +83,12 @@ function VZ_Canvas(key, ...)
     VZ_EVENT_CALL("Events", "VZ_Canvas_Created", key, canvas)
     return canvas
 end
+Package.Export("VZ_Canvas", VZ_Canvas)
 
 function VZ_GetCanvases()
     return VZ_Canvases
 end
+Package.Export("VZ_GetCanvases", VZ_GetCanvases)
 
 -- This canvas will be completly frozen
 Frozen_Canvas = VZ_Canvas("Frozen_Canvas",
@@ -465,7 +467,7 @@ function BuyText(buy_name, buy_price)
 end
 
 function UpdateHealth(char, health)
-    --print("UpdateHealth", char, health)
+    --print("UpdateHealth", char, health, debug.traceback())
     if health then
         if not IsValid(char) then return end
 
@@ -503,6 +505,7 @@ VZ_EVENT_SUBSCRIBE_REMOTE("OverrideUIMaxHealth", function(new_max)
 end)
 
 VZ_EVENT_SUBSCRIBE("Character", "TakeDamage", function(char, damage, bone, dtype, from_direction, instigator, causer)
+    if not IsValid(char) then return end
     if (IsSelfCharacter(char) or IsSpectatingPlayerCharacter(char)) then
         if char:IsDead() then return end
         if dtype == DamageType.Punch then
@@ -542,15 +545,15 @@ VZ_EVENT_SUBSCRIBE("Character", "HealthChange", function(char, old_health, new_h
     end
 end)
 
---[[
+
 VZ_EVENT_SUBSCRIBE("Player", "Possess", function(ply, char)
-    print("Player Possess", ply, ply:GetAccountName(), char)
-    if ply == Client.GetLocalPlayer() then
+    --print("Player Possess", ply, ply:GetAccountName(), char)
+    if ply == Client.GetLocalPlayer() or IsSpectatingPlayerCharacter(char) then
         local sethealth = char:GetHealth()-1000
         UpdateHealth(char, sethealth)
     end
 end)
-]]--
+
 
 if Client.GetLocalPlayer() then
     local char = Client.GetLocalPlayer():GetControlledCharacter()
@@ -889,6 +892,7 @@ end)
 function CheckToAddText3D(char)
     --print(char, char:GetPlayer())
     if not VZ_CL_Current_Settings.Player_Names_On_Heads then return end
+    if not IsValid(char) then return end
     local local_ply = Client.GetLocalPlayer()
     if local_ply then
         local local_char = local_ply:GetControlledCharacter()
@@ -1161,7 +1165,7 @@ local ui_charging_canvas_data
 
 function UI_MakeChargingCanvas()
     if UI_Charging_Canvas then return UI_Charging_Canvas end
-    if not VZ_CL_Current_Settings["UI_Charging_Canvas"] then return end
+    if VZ_CL_Current_Settings["UI_Charging_Canvas"] == false then return end
 
     ui_charging_canvas_data = {}
 

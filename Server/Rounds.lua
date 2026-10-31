@@ -54,7 +54,7 @@ function RoundFinished(reset_all, restart_game, ply_left)
     WAVE_TIMED_OUT = nil
 
     for k, v in pairs(PLAYING_PLAYERS) do
-        if v:IsValid() then
+        if IsValid(v) then
             if not v.BOT then
                 if v:GetValue("PlayerXP") then
                     Events.CallRemote("PlayerLevelXPUpdate", v, Reliability.Reliable, v:GetValue("PlayerLevel"), v:GetValue("PlayerXP"))
@@ -69,11 +69,13 @@ function RoundFinished(reset_all, restart_game, ply_left)
         if Players_Respawn_Between_Rounds then
             for k, v in pairs(PLAYING_PLAYERS) do
                 if not v:GetControlledCharacter() then
-                    SpawnCharacterForPlayer(v, k)
-                    if v.BOT then
-                        v:SetValue("BotAimPlayer", GetRandomPlayer():GetID(), true)
-                        RequestBotAction(v)
-                    end
+                    ProtectedCall(function()
+                        SpawnCharacterForPlayer(v, k)
+                        if v.BOT then
+                            v:SetValue("BotAimPlayer", GetRandomPlayer():GetID(), true)
+                            RequestBotAction(v)
+                        end
+                    end)
                 end
             end
         end
@@ -83,17 +85,17 @@ function RoundFinished(reset_all, restart_game, ply_left)
         VZ_EVENT_CALL("Events", "VZ_GameEnding", restart_game)
 
         ROUND_NB = 0
-        ResetMapPower()
+        ProtectedCall(ResetMapPower)
         SPAWNS_UNLOCKED = {}
         SPAWNS_ENABLED = {}
         ROOMS_UNLOCKED = {}
         ROOMS_SPAWNS_DISABLED = {}
         GAME_LEFT_PLAYERS_STATS = {}
-        DestroyEnemies()
-        DestroyBosses()
-        DestroyMapDoors()
-        DestroyPowerups()
-        DestroyMapGrenades()
+        ProtectedCall(DestroyEnemies)
+        ProtectedCall(DestroyBosses)
+        ProtectedCall(DestroyMapDoors)
+        ProtectedCall(DestroyPowerups)
+        ProtectedCall(DestroyMapGrenades)
 
         for k, v in pairs(VZ_GLOBAL_FEATURES) do
             --print(k)
@@ -107,17 +109,19 @@ function RoundFinished(reset_all, restart_game, ply_left)
         local New_Playing_Players = {}
         for k, v in pairs(PLAYING_PLAYERS) do
             if v:IsValid() then
-                if not v.BOT then
-                    if v ~= ply_left then
-                        table.insert(New_Playing_Players, v)
+                ProtectedCall(function()
+                    if not v.BOT then
+                        if v ~= ply_left then
+                            table.insert(New_Playing_Players, v)
+                        end
+                    else
+                        local char = v:GetControlledCharacter()
+                        if IsValid(char) then
+                            char:Destroy()
+                        end
+                        v:Kick(true)
                     end
-                else
-                    local char = v:GetControlledCharacter()
-                    if char then
-                        char:Destroy()
-                    end
-                    v:Kick(true)
-                end
+                end)
             end
         end
 
@@ -128,7 +132,9 @@ function RoundFinished(reset_all, restart_game, ply_left)
 
         -- To avoid them buying things in the game over interval
         for k, v in pairs(PLAYING_PLAYERS) do
-            v:SetValue("ZMoney", -666, true) -- -666 to identify easily when they shouldn't do anything
+            if IsValid(v) then
+                v:SetValue("ZMoney", -666, true) -- -666 to identify easily when they shouldn't do anything
+            end
         end
 
         for k, v in pairs(Weapon.GetAll()) do
@@ -138,11 +144,11 @@ function RoundFinished(reset_all, restart_game, ply_left)
         end
 
         if DestroyVehicles then
-            DestroyVehicles()
+            ProtectedCall(DestroyVehicles)
         end
 
         if DestroyPreReachTriggers then
-            DestroyPreReachTriggers()
+            ProtectedCall(DestroyPreReachTriggers)
         end
 
         VZ_EVENT_CALL("Events", "VZ_GameEnded", restart_game)
@@ -506,8 +512,13 @@ VZ_EVENT_SUBSCRIBE_REMOTE("TogglePauseGame", function(ply)
             else
                 for k, v in pairs(PLAYING_PLAYERS) do
                     if (v and v:IsValid() and v.BOT) then
-                        RequestBotAction(v)
-                        v:SetValue("BotAimPlayer", GetRandomPlayer():GetID(), true)
+                        local char = v:GetControlledCharacter()
+                        if IsValid(char) then
+                            if not char:GetValue("PlayerDown") then
+                                RequestBotAction(v)
+                                v:SetValue("BotAimPlayer", GetRandomPlayer():GetID(), true)
+                            end
+                        end
                     end
                 end
             end
