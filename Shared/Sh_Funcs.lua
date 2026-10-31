@@ -210,14 +210,22 @@ function CalculateMiddlePonderedByDistanceSq(from_loc, ...)
     return middle / pondered_sum
 end
 
-function CallENVFunc_NoError(name, ...)
-    if _ENV[name] then
-        local tbl = table.pack(xpcall(_ENV[name], debug.traceback, ...))
+function ProtectedCall(func, ...)
+    if type(func) == "function" then
+        local tbl = table.pack(xpcall(func, debug.traceback, ...))
         if tbl[1] then
             return table.unpack(tbl, 2, tbl.n)
         else
             Console.Error(tbl[2])
         end
+    else
+        Console.Error("Attempt to call a non-function %s", func)
+    end
+end
+
+function CallENVFunc_NoError(name, ...)
+    if _ENV[name] then
+        return ProtectedCall(_ENV[name])
     end
 end
 
