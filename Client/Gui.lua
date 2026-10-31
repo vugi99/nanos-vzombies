@@ -891,6 +891,7 @@ end)
 function CheckToAddText3D(char)
     --print(char, char:GetPlayer())
     if not VZ_CL_Current_Settings.Player_Names_On_Heads then return end
+    if not IsValid(char) then return end
     local local_ply = Client.GetLocalPlayer()
     if local_ply then
         local local_char = local_ply:GetControlledCharacter()
