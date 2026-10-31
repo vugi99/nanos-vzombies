@@ -194,7 +194,7 @@ body {
     position: absolute;
     text-align: center;
     font-size: 38px;
-    width: 800px;
+    width: 1200px;
     height: 70%;
     overflow: auto;
     top: 0;
@@ -209,6 +209,8 @@ body {
 
 .tab_line {
     background-image: url("images/tab_bar.png");
+    background-repeat: no-repeat;
+    background-size: 100% 100%;
     overflow: hidden;
     display: grid;
     grid-template-columns: repeat( auto-fit, minmax(80px, 1fr) );
