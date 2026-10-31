@@ -42,7 +42,7 @@ VZ_GLOBAL_FEATURES = {
         can_interact = true,
     },
     Leaderboards = {
-        script_loaded = false,
+        script_loaded = true,
         records_saved = 10,
     },
     Banks = {
@@ -57,7 +57,7 @@ VZ_GLOBAL_FEATURES = {
         Interact_Check_Distance_Squared_Max = 40000,
     },
     Levels = {
-        script_loaded = false,
+        script_loaded = true,
         levels_xp_func = function(level)
             return math.floor(((level^2)/3 + 60) + 0.5)
         end,

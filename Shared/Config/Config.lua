@@ -22,7 +22,7 @@ Package.Require("Config/Pumpongus_Config.lua")
 Weapons_Ammo_Price_Percentage = 50
 
 
-Parse_Custom_Settings = true
+Parse_Custom_Settings = false
 
 -------------------------------------------------------------------------------------------------
 -- Pack a punch config
