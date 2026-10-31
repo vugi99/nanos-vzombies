@@ -56,7 +56,7 @@ function InteractCheck(interact_type, loop_params, Interact_Check_Interval_ms, C
                             error("Cannot Loop", interact_type)
                         end
                         for k, v in pairs(loop_content) do
-                            if (v and (not loop_params.check_is_valid or v:IsValid())) then
+                            if (v and (not loop_params.check_is_valid or IsValid(v))) then
                                 found = CheckFunc(local_player, local_char, local_char_location, v)
                                 if found then
                                     if PPG_ClientCheckSabotaged then
@@ -87,7 +87,7 @@ end
 Timer.SetInterval(function()
     -- Gibs outline disable
     for k, v in pairs(Prop.GetPairs()) do
-        if v:IsValid() then
+        if IsValid(v) then
             if v:GetValue("OutlinedInteract") then
                 v:SetValue("OutlinedInteract", nil)
                 v:SetOutlineEnabled(false, 0)
@@ -171,7 +171,7 @@ if VZ_GetFeatureValue("Barricades", "can_interact") then
 end
 
 function RepairBarricadeIFunc()
-    if (InteractThing and InteractThing:IsA(StaticMesh) and InteractThing:IsValid() and InteractThing:GetValue("BarricadeLife") and InteractThing:GetValue("BarricadeLife") < 5) then
+    if (InteractThing and IsValid(InteractThing) and InteractThing:IsA(StaticMesh) and InteractThing:GetValue("BarricadeLife") and InteractThing:GetValue("BarricadeLife") < 5) then
         local repair_sound = Sound(
             Vector(0, 0, 0),
             Barricade_Repair_Sound.asset,
@@ -534,13 +534,13 @@ VZ_EVENT_SUBSCRIBE_REMOTE("SetClientPowerON", function(is_on)
     POWER_ON = is_on
     if not is_on then
         for k, v in pairs(PerksAmbSounds) do
-            if v:IsValid() then
+            if IsValid(v) then
                 v:Destroy()
             end
         end
         PerksAmbSounds = {}
 
-        if (PapAmbSound and PapAmbSound:IsValid()) then
+        if (IsValid(PapAmbSound)) then
             PapAmbSound:Destroy()
         end
         PapAmbSound = nil
