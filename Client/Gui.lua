@@ -83,10 +83,12 @@ function VZ_Canvas(key, ...)
     VZ_EVENT_CALL("Events", "VZ_Canvas_Created", key, canvas)
     return canvas
 end
+Package.Export("VZ_Canvas", VZ_Canvas)
 
 function VZ_GetCanvases()
     return VZ_Canvases
 end
+Package.Export("VZ_GetCanvases", VZ_GetCanvases)
 
 -- This canvas will be completly frozen
 Frozen_Canvas = VZ_Canvas("Frozen_Canvas",
