@@ -104,7 +104,13 @@ function StopSpectate()
     CurPerks = {}
     GUI:CallEvent("ResetPerks")
 
-    UpdateHealth()
+    local char = Client.GetLocalPlayer():GetControlledCharacter()
+    if IsValid(char) then
+        UpdateHealth(char, char:GetHealth()-1000)
+    else
+        UpdateHealth()
+    end
+    StopLowHealthLoop()
 end
 
 VZ_EVENT_SUBSCRIBE("Player", "Possess", function(ply, char)

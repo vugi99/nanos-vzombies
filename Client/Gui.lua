@@ -467,7 +467,7 @@ function BuyText(buy_name, buy_price)
 end
 
 function UpdateHealth(char, health)
-    --print("UpdateHealth", char, health)
+    --print("UpdateHealth", char, health, debug.traceback())
     if health then
         if not IsValid(char) then return end
 
@@ -544,15 +544,15 @@ VZ_EVENT_SUBSCRIBE("Character", "HealthChange", function(char, old_health, new_h
     end
 end)
 
---[[
+
 VZ_EVENT_SUBSCRIBE("Player", "Possess", function(ply, char)
-    print("Player Possess", ply, ply:GetAccountName(), char)
-    if ply == Client.GetLocalPlayer() then
+    --print("Player Possess", ply, ply:GetAccountName(), char)
+    if ply == Client.GetLocalPlayer() or IsSpectatingPlayerCharacter(char) then
         local sethealth = char:GetHealth()-1000
         UpdateHealth(char, sethealth)
     end
 end)
-]]--
+
 
 if Client.GetLocalPlayer() then
     local char = Client.GetLocalPlayer():GetControlledCharacter()

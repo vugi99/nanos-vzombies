@@ -93,10 +93,11 @@ function SpawnCharacterForPlayer(ply, spawn_id)
         new_char:SetCameraMode(ply:GetValue("MM_CamMode") or CAMERA_MODE)
     end
     new_char:SetFallDamageTaken(0)
-    ply:Possess(new_char)
     local health = 1000 + PlayerHealth
     new_char:SetHealth(health)
     new_char:SetMaxHealth(health)
+    ply:Possess(new_char)
+
     new_char:SetTeam(1)
     new_char:SetSpeedMultiplier(PlayerSpeedMultiplier)
     new_char:SetAccelerationSettings(1152, 512, 768, 128, 256, 256, 1024)
@@ -111,7 +112,6 @@ function SpawnCharacterForPlayer(ply, spawn_id)
     new_char:SetValue("WeirdPunchCount", 0, false)
     new_char:SetValue("CanPickupGibs", true, true)
     new_char:SetValue("CanThrowGrenades", true, true)
-
 
     if ply.BOT then
         new_char:SetGaitMode(GaitMode.Sprinting)
