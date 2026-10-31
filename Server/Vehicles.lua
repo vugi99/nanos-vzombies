@@ -1,5 +1,5 @@
 
-
+VEHICLE_PADS_SMs = {}
 
 function SpawnVehicle(veh_name, location, rotation)
     local veh = VZVehicles[veh_name](location, rotation)
@@ -41,23 +41,25 @@ if VEHICLES_PADS then
         veh_pad_terminal:SetValue("GroundPad", veh_pad, false)
 
         --local debug_trigger = Trigger(v.location + Vector(0, 0, 100), v.rotation, Vector(500, 250, 300), TriggerType.Box, true, Color.RED)
+
+        VEHICLE_PADS_SMs[i] = {veh_pad, veh_pad_terminal}
     end
 
     VZ_EVENT_SUBSCRIBE_REMOTE("BuyVehicle", function(ply, InteractThing, veh_name)
         if (ply and ply:IsValid()) then
+            --print("BuyVehicle", ply:GetAccountName(), InteractThing, veh_name)
             if type(InteractThing) == "number" then
-                for k, v in pairs(StaticMesh.GetPairs()) do
-                    if v:GetValue("VehiclePad") == InteractThing then
-                        InteractThing = v
-                        break
-                    end
+                --print(VEHICLE_PADS_SMs, NanosTable.Dump(VEHICLE_PADS_SMs[InteractThing]))
+                local pad = VEHICLE_PADS_SMs[InteractThing]
+                if pad then
+                    InteractThing = pad[2]
                 end
                 if not POWER_ON then
                     Events.CallRemote("AddNotification", ply, Reliability.Reliable, "No Power")
                     return
                 end
             end
-            if (InteractThing and InteractThing:IsValid() and InteractThing:GetValue("VehiclePad")) then
+            if (InteractThing and IsValid(InteractThing) and InteractThing:GetValue("VehiclePad")) then
                 if InteractThing:GetValue("PPG_Sabotaged") then
                     return
                 end

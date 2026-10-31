@@ -1,5 +1,4 @@
 
-
 DOORS_STATIC_MESHES = {}
 
 SPAWNS_UNLOCKED = {}
@@ -10,34 +9,30 @@ ROOMS_SPAWNS_DISABLED = {}
 MAP_POWER_SM = nil
 MAP_POWER_SM_HANDLE = nil
 
-
-function DestroyMapDoors()
-    for k, v in pairs(StaticMesh.GetAll()) do
-        if v:GetValue("DoorID") then
-            v:Destroy()
-        end
-    end
-end
-
 function SpawnMapDoors()
     for i, v in ipairs(MAP_DOORS) do
-        local SM = StaticMesh(
-            v.location,
-            v.rotation,
-            v.model
-        )
+        local SM = StaticMesh(v.location, v.rotation, v.model)
         SM:SetScale(v.scale)
         SM:SetValue("DoorID", i, true)
-        table.insert(DOORS_STATIC_MESHES, SM)
+        DOORS_STATIC_MESHES[i] = SM
     end
 end
 
 function GetMapDoorFromID(door_id)
-    for k, v in pairs(StaticMesh.GetPairs()) do
-        if v:GetValue("DoorID") == door_id then
-            return v
+    local door = DOORS_STATIC_MESHES[door_id]
+    if IsValid(door) then
+        return door
+    end
+end
+
+
+function DestroyMapDoors()
+    for k, v in pairs(DOORS_STATIC_MESHES) do
+        if IsValid(v) then
+            v:Destroy()
         end
     end
+    DOORS_STATIC_MESHES = {}
 end
 
 if MAP_POWER then
