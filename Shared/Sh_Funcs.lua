@@ -225,7 +225,7 @@ end
 
 function CallENVFunc_NoError(name, ...)
     if _ENV[name] then
-        return ProtectedCall(_ENV[name])
+        return ProtectedCall(_ENV[name], ...)
     end
 end
 
