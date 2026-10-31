@@ -1054,6 +1054,8 @@ end
 local DoubleDamage_Applied = false
 
 VZ_EVENT_SUBSCRIBE("Character", "TakeDamage", function(char, damage, bone, dtype, from_direction, instigator, causer)
+    -- Error fired on Oct 27 2026 (1.166.0?), probably due to duplicated TakeDamage calls?
+    if not IsValid(char) then DoubleDamage_Applied = false; return end
     if not (char:GetValue("Enemy") == true and damage > 0) then DoubleDamage_Applied = false; return end
     if char:IsDead() then DoubleDamage_Applied = false; return end
     --print("TakeDamage", char:GetValue("EnemyType"), damage, bone, dtype, from_direction, instigator, causer)

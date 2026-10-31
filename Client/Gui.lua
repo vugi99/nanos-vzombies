@@ -505,6 +505,7 @@ VZ_EVENT_SUBSCRIBE_REMOTE("OverrideUIMaxHealth", function(new_max)
 end)
 
 VZ_EVENT_SUBSCRIBE("Character", "TakeDamage", function(char, damage, bone, dtype, from_direction, instigator, causer)
+    if not IsValid(char) then return end
     if (IsSelfCharacter(char) or IsSpectatingPlayerCharacter(char)) then
         if char:IsDead() then return end
         if dtype == DamageType.Punch then
