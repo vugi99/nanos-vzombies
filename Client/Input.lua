@@ -11,9 +11,11 @@ function VZ_Register_Input(name, default_key)
 end
 
 VZ_Register_Input("Scoreboard", "Tab")
-VZ_Register_Input("SpectatePrev", "Left")
-VZ_Register_Input("SpectateNext", "Right")
 VZ_Register_Input("VZ Switch Weapon", "X")
+
+-- Replaced with MoveLeft/MoveRight
+--VZ_Register_Input("SpectatePrev", "Left")
+--VZ_Register_Input("SpectateNext", "Right")
 
 --print(NanosTable.Dump(Input.GetGameKeyBindings()))
 local set_grenade_key = "A"
@@ -223,22 +225,26 @@ VZ_BIND("Interact", InputEvent.Released, function()
     end
 end)
 
-
-VZ_BIND("SpectatePrev", InputEvent.Pressed, function()
+function SpectatePrev()
+    --print("SpectatePrev")
     if Spectating_Player then
         local new_spec = GetNewPlayerToSpec(Spectating_Player:GetID(), true)
         Free_Cam = nil
         SpectatePlayer(new_spec)
     end
-end)
+end
 
-VZ_BIND("SpectateNext", InputEvent.Pressed, function()
+function SpectateNext()
+    --print("SpectateNext")
     if Spectating_Player then
         local new_spec = GetNewPlayerToSpec(Spectating_Player:GetID())
         Free_Cam = nil
         SpectatePlayer(new_spec)
     end
-end)
+end
+
+VZ_BIND("MoveLeft", InputEvent.Pressed, SpectatePrev)
+VZ_BIND("MoveRight", InputEvent.Pressed, SpectateNext)
 
 
 VZ_BIND("Free Cam", InputEvent.Pressed, function()
