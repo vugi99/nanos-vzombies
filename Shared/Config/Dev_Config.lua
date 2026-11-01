@@ -18,5 +18,6 @@ ZDEV_CONFIG = {
         ZDEV_DEBUG_WEBUIS_DEVTOOLS = false,
         ZDEV_DEBUG_NOISE = false,
         ZDEV_DEBUG_CUSTOM_CALLED_EVENTS = false,
+        ZDEV_DEBUG_PREPARED_LOOPS = false,
     }
 }
