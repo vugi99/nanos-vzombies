@@ -73,10 +73,10 @@ body {
 }
 
 #weapon_name {
-    font-size: 37px;
+    font-size: 30px;
     position: absolute;
     right: 430px;
-    bottom: 110px;
+    bottom: 113px;
 }
 
 #players_money {
