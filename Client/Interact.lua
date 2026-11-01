@@ -8,6 +8,22 @@ RepairBarricadeInterval = nil
 
 RevivingPlayerData = nil
 
+function VZ_SetInteractingThingOnly(IThing, text)
+    InteractThing = IThing
+    InteractText(text)
+
+    if INTERACT_HELD and (InteractThing ~= nil) then
+        VZ_InteractPress(true)
+    end
+end
+Package.Export("VZ_SetInteractingThingOnly", VZ_SetInteractingThingOnly)
+
+function VZ_SetInteractingThing(IType, IThing, text)
+    InteractType = IType
+    VZ_SetInteractingThingOnly(IThing, text)
+end
+Package.Export("VZ_SetInteractingThing", VZ_SetInteractingThing)
+
 function ResetInteractState()
     InteractType = nil
     InteractThing = nil
@@ -23,10 +39,9 @@ if VZ_GetFeatureValue("Map_Weapons", "can_interact") then
                 local m_weap_id = ent:GetValue("MapWeaponID")
                 if m_weap_id then
                     if Highlight then
+                        VZ_SetInteractingThing("MapWeapon", ent)
                         BuyText(MAP_WEAPONS[m_weap_id].weapon_name .. " / Ammo", tostring(MAP_WEAPONS[m_weap_id].price) .. "$ / " .. tostring(math.floor(MAP_WEAPONS[m_weap_id].price * Weapons_Ammo_Price_Percentage / 100)) .. " $ / " .. tostring(Pack_a_punch_price))
-                        InteractType = "MapWeapon"
-                        InteractThing = m_weap_id
-                    elseif (InteractType == "MapWeapon" and InteractThing == m_weap_id) then
+                    elseif (InteractType == "MapWeapon" and InteractThing == ent) then
                         ResetInteractState()
                     end
                 end
@@ -133,14 +148,13 @@ InteractCheck("MapDoor", nil, Doors_Interact_Check_Interval_ms, function(local_p
                     end
                 end
                 if not power_needed then
+                    VZ_SetInteractingThingOnly(v)
                     BuyText("Door", tostring(MAP_DOORS[door_id].price))
-                    InteractThing = v
                     if PPG_ClientCheckSabotaged then
                         PPG_ClientCheckSabotaged(v)
                     end
                 else
-                    InteractText("Missing Power")
-                    InteractThing = "NoPower"
+                    VZ_SetInteractingThingOnly("NoPower", "Missing Power")
                 end
             end
         end
@@ -160,9 +174,7 @@ if VZ_GetFeatureValue("Barricades", "can_interact") then
                         Timer.ClearInterval(RepairBarricadeInterval)
                         RepairBarricadeInterval = nil
                     end
-                    InteractText("Hold to Repair Barricade")
-                    InteractType = "MapBarricade"
-                    InteractThing = v
+                    VZ_SetInteractingThing("MapBarricade", v, "Hold to Repair Barricade")
                 end
                 return true
             end
@@ -195,9 +207,7 @@ if VZ_GetFeatureValue("Revive", "can_interact") then
                 local distance_sq = local_char_location:DistanceSquared(v:GetLocation())
                 if distance_sq <= DownPlayer_Interact_Check_Distance_Squared_Max then
                     if not RevivingPlayerData then
-                        InteractText("Hold to Revive Player")
-                        InteractType = "RevivePlayer"
-                        InteractThing = v
+                        VZ_SetInteractingThing("RevivePlayer", v, "Hold to Revive Player")
                     end
                     return true
                 end
@@ -213,9 +223,8 @@ if VZ_GetFeatureValue("MysteryBox", "can_interact") then
         if can_buy_mbox then
             local distance_sq = local_char_location:DistanceSquared(v:GetLocation())
             if distance_sq <= MBOX_Interact_Check_Distance_Squared_Max then
-                InteractType = "MapMBOX"
+                VZ_SetInteractingThing("MapMBOX", v)
                 BuyText("Mystery Box", tostring(Mystery_box_price))
-                InteractThing = v
                 return true
             end
         end
@@ -227,9 +236,7 @@ InteractCheck("MapPower", {LoopFunc = PreparedLoops["Power"], check_is_valid = t
     if not POWER_ON then
         local distance_sq = local_char_location:DistanceSquared(v:GetLocation())
         if distance_sq <= POWER_Interact_Check_Distance_Squared_Max then
-            InteractType = "MapPower"
-            InteractText("Turn Power ON")
-            InteractThing = v
+            VZ_SetInteractingThing("MapPower", v, "Turn Power ON")
             return true
         end
     end
@@ -244,11 +251,10 @@ if VZ_GetFeatureValue("Perks", "can_interact") then
             if distance_sq <= Perk_Interact_Check_Distance_Squared_Max then
                 InteractType = "MapPerk"
                 if POWER_ON then
-                    InteractThing = v
+                    VZ_SetInteractingThingOnly(v)
                     BuyText(PERKS_CONFIG[perk].Name .. " Perk", tostring(PERKS_CONFIG[perk].price))
                 else
-                    InteractThing = "NoPower"
-                    InteractText("Missing Power")
+                    VZ_SetInteractingThingOnly("NoPower", "Missing Power")
                 end
                 return true
             end
@@ -265,11 +271,9 @@ if VZ_GetFeatureValue("Pack_a_punch", "can_interact") then
             if distance_sq <= PAP_Interact_Check_Distance_Squared_Max then
                 InteractType = "MapPAP"
                 if POWER_ON then
-                    InteractThing = v
-                    InteractText("Weapon Upgrade " .. tostring(Pack_a_punch_price) .. "$ or " .. tostring(Pack_a_punch_repack_price) .. "$ to repack")
+                    VZ_SetInteractingThingOnly(v, "Weapon Upgrade " .. tostring(Pack_a_punch_price) .. "$ or " .. tostring(Pack_a_punch_repack_price) .. "$ to repack")
                 else
-                    InteractThing = "NoPower"
-                    InteractText("Missing Power")
+                    VZ_SetInteractingThingOnly("NoPower", "Missing Power")
                 end
                 return true
             end
@@ -288,11 +292,10 @@ if VZ_GetFeatureValue("Wunderfizz", "can_interact") then
                     InteractType = "MapWunder"
 
                     if POWER_ON then
+                        VZ_SetInteractingThingOnly(v)
                         BuyText("Wunderfizz", tostring(Wonderfizz_Price))
-                        InteractThing = v
                     else
-                        InteractText("Missing Power")
-                        InteractThing = "NoPower"
+                        VZ_SetInteractingThingOnly("NoPower", "Missing Power")
                     end
 
                     return true
@@ -311,10 +314,7 @@ InteractCheck("WunderBottle", {LoopFunc = PreparedLoops["Wunder_Bottles"], check
                 if (not CurPerks or not CurPerks[wunder_bottle[2]]) then
                     local distance_sq = local_char_location:DistanceSquared(v:GetLocation())
                     if distance_sq <= Wunderfizz_Bottle_Interact_Check_Distance_Squared_Max then
-                        InteractType = "WunderBottle"
-
-                        InteractText("Take " .. PERKS_CONFIG[wunder_bottle[2]].Name .. " Perk")
-                        InteractThing = v
+                        VZ_SetInteractingThing("WunderBottle", v, "Take " .. PERKS_CONFIG[wunder_bottle[2]].Name .. " Perk")
 
                         return true
                     end
@@ -331,9 +331,7 @@ if MAP_INTERACT_TRIGGERS then
         for k, v in pairs(MAP_INTERACT_TRIGGERS) do
             local distance_sq = local_char_location:DistanceSquared(v.location)
             if distance_sq <= v.distance_sq then
-                InteractType = "MapCustom"
-                InteractThing = v
-                InteractText(v.interact_text)
+                VZ_SetInteractingThing("MapCustom", v, v.interact_text)
                 found = true
             end
         end
@@ -357,15 +355,12 @@ if MAP_TELEPORTERS then
                         InteractType = "MapTeleporter"
                         if POWER_ON then
                             if can_teleport == false then
-                                InteractThing = "NoPower"
-                                InteractText("Teleporter in cooldown")
+                                VZ_SetInteractingThingOnly("NoPower", "Teleporter in cooldown")
                             else
-                                InteractThing = v
-                                InteractText("Teleport (" .. tostring(MAP_TELEPORTERS[teleporter_ID].price) .. "$)")
+                                VZ_SetInteractingThingOnly(v, "Teleport (" .. tostring(MAP_TELEPORTERS[teleporter_ID].price) .. "$)")
                             end
                         else
-                            InteractThing = "NoPower"
-                            InteractText("Missing Power")
+                            VZ_SetInteractingThingOnly("NoPower", "Missing Power")
                         end
                         found = true
                     end
@@ -389,11 +384,9 @@ if BANKS then
 
                     local rel = RelRot1(local_char:GetRotation().Yaw, VectorGetLookAt(v:GetLocation(), local_char_location).Yaw)
                     if rel < 0 then
-                        InteractText("Deposit " .. tostring(VZ_GetFeatureValue("Banks", "Money_WD_Amount")) .. "$ (" .. tostring(VZ_GetFeatureValue("Banks", "Money_WD_Amount") + VZ_GetFeatureValue("Banks", "D_Fees")) .. "$) (Stored : " .. tostring(stored_money) .. "$)")
-                        InteractThing = {v, "Deposit"}
+                        VZ_SetInteractingThingOnly({v, "Deposit"}, "Deposit " .. tostring(VZ_GetFeatureValue("Banks", "Money_WD_Amount")) .. "$ (" .. tostring(VZ_GetFeatureValue("Banks", "Money_WD_Amount") + VZ_GetFeatureValue("Banks", "D_Fees")) .. "$) (Stored : " .. tostring(stored_money) .. "$)")
                     else
-                        InteractText("Withdraw " .. tostring(VZ_GetFeatureValue("Banks", "Money_WD_Amount")) .. "$ (Stored : " .. tostring(stored_money) .. "$)")
-                        InteractThing = {v, "Withdraw"}
+                        VZ_SetInteractingThingOnly({v, "Withdraw"}, "Withdraw " .. tostring(VZ_GetFeatureValue("Banks", "Money_WD_Amount")) .. "$ (Stored : " .. tostring(stored_money) .. "$)")
                     end
 
                     return true
@@ -412,11 +405,9 @@ if VEHICLES_PADS then
                 if distance_sq <= VPAD_Interact_Check_Distance_Squared_Max then
                     InteractType = "MapVPad"
                     if POWER_ON then
-                        InteractText("Open Vehicle Spawn Menu")
-                        InteractThing = v
+                        VZ_SetInteractingThingOnly(v, "Open Vehicle Spawn Menu")
                     else
-                        InteractText("Missing Power")
-                        InteractThing = "NoPower"
+                        VZ_SetInteractingThingOnly("NoPower", "Missing Power")
                     end
                     return true
                 end
@@ -435,10 +426,9 @@ if Enemies_Gibs_Can_Pickup then
             local distance_sq = local_char_location:DistanceSquared(v:GetLocation())
             if distance_sq <= Gibs_Interact_Check_Distance_Squared_Max then
                 if Get3DLocationOnScreen(v:GetLocation()) then
-                    InteractType = "Gib"
-                    InteractThing = v
-                    InteractText("")
+                    VZ_SetInteractingThing("Gib", v, "")
 
+                    if not IsValid(InteractThing) then return Console.Warn("SetInteractThing did not set InteractThing to use in Gibs interact") end
                     InteractThing:SetOutlineEnabled(true, 0)
                     InteractThing:SetValue("OutlinedInteract", true)
 
@@ -472,17 +462,13 @@ if (VZ_GetFeatureValue("Chargers", "script_loaded") and VZ_GetFeatureValue("Char
             end
 
             if v:GetValue("Charged") then
-                InteractText("Module already charged")
-                InteractThing = ""
+                VZ_SetInteractingThingOnly("", "Module already charged")
             elseif v:GetValue("Charging") then
-                InteractText("Module is charging")
-                InteractThing = ""
+                VZ_SetInteractingThingOnly("", "Module is charging")
             elseif v:GetValue("InCooldown") then
-                InteractText("Module is in cooldown")
-                InteractThing = ""
+                VZ_SetInteractingThingOnly("", "Module is in cooldown")
             else
-                InteractText("Charge Module" .. charge_time_text .. charge_price)
-                InteractThing = v
+                VZ_SetInteractingThingOnly(v, "Charge Module" .. charge_time_text .. charge_price)
             end
 
             return true
@@ -546,10 +532,3 @@ VZ_EVENT_SUBSCRIBE_REMOTE("SetClientPowerON", function(is_on)
         PapAmbSound = nil
     end
 end)
-
-function VZ_SetInteractingThing(IType, IThing, text)
-    InteractType = IType
-    InteractThing = IThing
-    InteractText(text)
-end
-Package.Export("VZ_SetInteractingThing", VZ_SetInteractingThing)

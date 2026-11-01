@@ -49,7 +49,8 @@ function InteractMapWeapon(weapon, char)
     if ZDEV_IsModeEnabled("ZDEV_DEBUG_INTERACT") then
         print("InteractMapWeapon", weapon, char)
     end
-    if weapon:IsValid() then
+    if not IsValid(char) then return end
+    if IsValid(weapon) then
         local m_weap_id = weapon:GetValue("MapWeaponID")
         if m_weap_id then
             if VZ_GetFeatureValue("Map_Weapons", "can_interact") then
@@ -93,6 +94,11 @@ function InteractMapWeapon(weapon, char)
     end
 end
 VZ_EVENT_SUBSCRIBE("Weapon", "Interact", InteractMapWeapon)
+VZ_EVENT_SUBSCRIBE_REMOTE("VZ_InteractWithWeapon", function(ply, weap)
+    if not IsValid(ply) then return end
+    if not IsValid(weap) then return end
+    InteractMapWeapon(weap, ply:GetControlledCharacter())
+end)
 
 
 function BuyDoor(ply, map_door)

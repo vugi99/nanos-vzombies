@@ -3,6 +3,8 @@
 
 Binded_Keys = {}
 
+INTERACT_HELD = false
+
 function VZ_Register_Input(name, default_key)
     Input.Register(name, default_key)
     table.insert(Binded_Keys, name)
@@ -82,6 +84,11 @@ Interact_Actions_TBL = {
         VZ_EVENT_CALL("Events", InteractThing.event_name, InteractThing)
         Events.CallRemote("CustomMapInteract", Reliability.Reliable, InteractThing)
     end,
+    MapWeapon = function()
+        if not INTERACT_HELD then return end
+        if not IsValid(InteractThing) then return end
+        Events.CallRemote("VZ_InteractWithWeapon", Reliability.Reliable, InteractThing)
+    end,
     MapTeleporter = function()
         if InteractThing ~= "NoPower" then
             if IsValid(InteractThing) then
@@ -114,8 +121,10 @@ Interact_Actions_TBL = {
     end,
 }
 
-VZ_BIND("Interact", InputEvent.Pressed, function()
-    --print("Interact Called")
+function VZ_InteractPress(simulated)
+    if ZDEV_IsModeEnabled("ZDEV_DEBUG_INTERACT") then
+        print("VZ_InteractPress", simulated)
+    end
 
     if not Input.IsKeyDown("LeftAlt") then
         local ply = Client.GetLocalPlayer()
@@ -123,7 +132,7 @@ VZ_BIND("Interact", InputEvent.Pressed, function()
         if char then
             if not char:GetValue("PlayerDown") then
                 if ZDEV_IsModeEnabled("ZDEV_DEBUG_INTERACT") then
-                    print("Interact", InteractType)
+                    print("Interact", InteractType, InteractThing)
                 end
 
                 local tbl_value = switch(InteractType, Interact_Actions_TBL)
@@ -133,6 +142,10 @@ VZ_BIND("Interact", InputEvent.Pressed, function()
                     else
                         InteractAction(table.unpack(tbl_value))
                     end
+                    INTERACT_HELD = false
+                elseif (not simulated) then
+                    -- If no Interact found, hold the Interact so when something is found we can directly interact with it
+                    INTERACT_HELD = true
                 end
             end
         end
@@ -177,6 +190,16 @@ VZ_BIND("Interact", InputEvent.Pressed, function()
             end
         end
     end
+
+    if simulated then
+        INTERACT_HELD = false
+    end
+end
+Package.Export("VZ_InteractPress", VZ_InteractPress)
+
+
+VZ_BIND("Interact", InputEvent.Pressed, function()
+    VZ_InteractPress()
 end)
 
 function RegisterInteractAction(Interact_t, ...)
@@ -186,6 +209,7 @@ end
 Package.Export("RegisterInteractAction", RegisterInteractAction)
 
 VZ_BIND("Interact", InputEvent.Released, function()
+    INTERACT_HELD = false
     if InteractType == "MapBarricade" then
         if RepairBarricadeInterval then
             Timer.ClearInterval(RepairBarricadeInterval)
