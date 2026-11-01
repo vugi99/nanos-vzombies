@@ -93,6 +93,14 @@ if VEHICLES_PADS then
         print(veh, damage, bone, dtype, from_direction, instigator, causer)
     end)]]--
 
+    VZ_EVENT_SUBSCRIBE("VehicleWheeled", "Death", function(veh, last_damage_taken, last_bone_damaged, damage_type_reason, hit_from_direction, instigator, causer)
+        if not IsValid(veh) then return end
+        Timer.SetTimeout(function()
+            if not IsValid(veh) then return end
+            veh:Destroy()
+        end, VZ_GetFeatureValue("Vehicles", "Destroy_Timeout_ms"))
+    end)
+
     local loaded = Server.LoadPackage("webui3d2d")
     if not loaded then
         Console.Warn("Missing webui3d2d package, running in compatibility mode")

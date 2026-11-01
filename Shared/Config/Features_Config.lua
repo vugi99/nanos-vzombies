@@ -66,6 +66,7 @@ VZ_GLOBAL_FEATURES = {
     Vehicles = {
         script_loaded = true,
         can_interact = true,
+        Destroy_Timeout_ms = 45000,
     },
     Chargers = {
         script_loaded = true,
