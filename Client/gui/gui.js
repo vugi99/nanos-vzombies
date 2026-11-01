@@ -304,6 +304,43 @@ Events.Subscribe("HideGUIHealth", function() {
     CurrentHealth = null;
 })
 
+const hBar_vehicle = document.getElementById("health-bar-container-vehicle"),
+    bar_vehicle = document.getElementById("health-bar-vehicle"),
+    hit_vehicle = document.getElementById("hit-health-vehicle");
+
+var CurrentHealth_vehicle = null;
+
+Events.Subscribe("UpdateUIHealthVehicle", function(max_health, new_health) {
+    if (CurrentHealth_vehicle == null) {
+        CurrentHealth_vehicle = max_health;
+    }
+    hBar_vehicle.classList.remove("hidden");
+
+    if (new_health < 0) {
+        new_health = 0;
+    }
+
+    var barWidth = (new_health / max_health) * 100 + "%";
+
+    if (CurrentHealth_vehicle > 0 && CurrentHealth_vehicle - new_health > 0) {
+        let hitWidth = ((CurrentHealth_vehicle - new_health) / max_health) * 100 + "%";
+    
+        hit_vehicle.style.width = hitWidth;
+    }
+
+    setTimeout(function(){
+        hit_vehicle.style.width = "0";
+        bar_vehicle.style.width = barWidth;
+    }, 300);
+
+    CurrentHealth_vehicle = new_health;
+})
+
+Events.Subscribe("HideUIHealthVehicle", function() {
+    hBar_vehicle.classList.add("hidden");
+    CurrentHealth_vehicle = null;
+})
+
 let Bot_Order_Wheel = null;
 const Bot_Order_Wheel_Container = document.getElementById("orders-wheel-container");
 

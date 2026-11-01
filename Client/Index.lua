@@ -20,6 +20,7 @@ end
 
 function GetLocalCharacter()
     local local_player = Client.GetLocalPlayer()
+    if not IsValid(local_player) then return end
     return local_player:GetControlledCharacter()
 end
 

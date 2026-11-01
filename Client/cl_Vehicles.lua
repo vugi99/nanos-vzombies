@@ -72,3 +72,35 @@ VZ_EVENT_SUBSCRIBE("Character", "EnterVehicle", function(char, veh, seat)
         end
     end
 end)
+
+function UpdateUIVehicleHealth(new_health, max_health)
+    GUI:CallEvent("UpdateUIHealthVehicle", max_health, new_health)
+end
+
+function HideUIVehicleHealth()
+    GUI:CallEvent("HideUIHealthVehicle")
+end
+
+VZ_EVENT_SUBSCRIBE("VehicleWheeled", "HealthChange", function(veh, old_health, new_health)
+    local local_char = GetLocalCharacter()
+    if not IsValid(local_char) then
+        if IsValid(Spectating_Player) then
+            local_char = Spectating_Player:GetControlledCharacter()
+            if not IsValid(local_char) then return end
+        end
+    end
+
+    if local_char:GetVehicle() == veh then
+        UpdateUIVehicleHealth(new_health, veh:GetMaxHealth())
+    end
+end)
+
+VZ_EVENT_SUBSCRIBE("Character", "EnterVehicle", function(char, veh, seat_index)
+    if not (IsSelfCharacter(char) or IsSpectatingPlayerCharacter(char)) then return end
+    UpdateUIVehicleHealth(veh:GetHealth(), veh:GetMaxHealth())
+end)
+
+VZ_EVENT_SUBSCRIBE("Character", "LeaveVehicle", function(char, veh, seat_index)
+    if not (IsSelfCharacter(char) or IsSpectatingPlayerCharacter(char)) then return end
+    HideUIVehicleHealth()
+end)
