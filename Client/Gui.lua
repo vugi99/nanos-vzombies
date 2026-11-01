@@ -746,6 +746,8 @@ VZ_EVENT_SUBSCRIBE_REMOTE("SetGlobalPlayerWaitingValue", function(value)
     HandlePlayerWaitingValue(value)
 end)
 
+Client.SetHighlightColor(Highlight_PlayerDown_Color, 1, HighlightMode.Always)
+
 VZ_EVENT_SUBSCRIBE("Character", "ValueChange", function(char, key, value)
     if key == "PlayerDown" then
         if not IsSelfCharacter(char) then
@@ -763,6 +765,8 @@ VZ_EVENT_SUBSCRIBE("Character", "ValueChange", function(char, key, value)
 
                 billboard:AttachTo(char, AttachmentRule.SnapToTarget, "", 0)
                 billboard:SetRelativeLocation(To_Revive_Billboard_Relative_Location)
+
+                char:SetHighlightEnabled(true, 1)
             else
                 for k, v in pairs(char:GetAttachedEntities()) do
                     if v:GetValue("ToReviveBillboard") then
@@ -770,6 +774,8 @@ VZ_EVENT_SUBSCRIBE("Character", "ValueChange", function(char, key, value)
                         break
                     end
                 end
+
+                char:SetHighlightEnabled(false, 1)
             end
         end
     end

@@ -81,4 +81,6 @@ Outline_Players_Enabled = false
 Outline_Players_Check_Interval_ms = 1500
 Outline_Players_Color = Color.AZURE
 
+Highlight_PlayerDown_Color = Color.ORANGE
+
 Character_RadialDamageToRagdoll = -1
