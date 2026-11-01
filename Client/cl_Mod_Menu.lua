@@ -18,6 +18,7 @@ AddTabButton("Mod_Menu", "Player", "Noclip", function()
 end, "Toggle Noclip")
 
 VZ_EVENT_SUBSCRIBE_REMOTE("Send_Weapons_Names", function(wn)
+    table.sort(wn)
     AddTabSelect("Mod_Menu", "Player", "Give Weapon", function(selected)
         Events.CallRemote("VZMM_GiveWeap", Reliability.Reliable, selected)
     end, wn)
