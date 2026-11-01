@@ -48,7 +48,7 @@ Chalks_Size = Vector(5, 41.1, 73)
 -- CLIENT SETTINGS CONFIG
 
 VZ_CL_Default_Settings = {
-    Zombies_Remaining_Showed = true,
+    Zombies_Remaining_Showed = false,
     Selected_Gamemode_Showed = true,
     Spectating_Player_Showed = true,
     Game_Time_Showed = true,
