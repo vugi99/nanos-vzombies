@@ -41,17 +41,14 @@ if VEHICLES_PADS then
         for i, v in ipairs(VEHICLES_PADS) do
             local veh_pad_screen_webui = WebUI3d2d(
                 "file://"..Package.GetName().."/Client/gui/veh_pad.html",
-                true,
-                800,
-                580,
-                Vector(0.8, 0.58, 1),
-                false
+                Vector2D(800, 580),
+                true
             )
             local sm = veh_pad_screen_webui:GetStaticMesh()
             sm:SetLocation(v.screen_location)
             sm:SetRotation(v.screen_rotation)
             veh_pad_screen_webui:AddMouseAliasKey(Input.GetMappedKeys("Interact")[1], "LeftMouseButton")
-            veh_pad_screen_webui:SetKeyboardEventsEnabled(true)
+            veh_pad_screen_webui:SetBlockedGameInput(WebUI3d2dInput.Mouse)
             CreateVZFrame(veh_pad_screen_webui, "Vehicle_Spawn_" .. tostring(i), "100%", "100%", "Vehicle Spawn", nil, false)
             BuildVehiclePadUI("Vehicle_Spawn_" .. tostring(i), i)
             ShowVZFrame("Vehicle_Spawn_" .. tostring(i), true)
