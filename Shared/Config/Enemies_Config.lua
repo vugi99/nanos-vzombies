@@ -47,6 +47,20 @@ Enemies_Stuck_DistanceSq = 4
 Enemies_Stuck_Check_Each_ms = 2500
 Enemies_Stuck_Respawn_After_x_Stuck = 8 -- Respawns after x times his location was flagged as same, resets when he reaches his target
 
+-- At which fail count treshold we ask the player to send a point around him for a partial path to him
+Enemies_Fail_To_Reach_PlyChar_threshold = Max_enemies_spawned
+-- For the navigation query, radius in 2D space
+Enemies_Fail_To_Reach_Ask_Point_Around_Radius = 80
+-- Radius is also checked in 3D, somehow we want higher values for this one, but not too far
+Enemies_Fail_To_Reach_Ask_Point_Around_Radius_3D = 175
+
+Enemies_Fail_To_Reach_Point_Around_Max_Retries = 10
+
+-- probability to use the target proxy if found on a player
+Enemies_Use_Proxy_Chance = 0.66
+-- At which point the proxy need to be invalidated (too many attack misses)
+Enemies_Misses_Proxy_Invalidate = Max_enemies_spawned*2
+
 Enemies_Weird_Punch_Respawn_After_x_Weird = 25
 
 Enemies_Ground_Dirt_Scale = Vector(5, 5, 5)

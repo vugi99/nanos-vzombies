@@ -168,3 +168,25 @@ if ZDEV_IsModeEnabled("ZDEV_DEBUG_ENEMIES_PREDICTION") then
         end
     end)
 end
+
+VZ_EVENT_SUBSCRIBE_REMOTE("FailToReach_PointAround", function()
+    local ply = Client.GetLocalPlayer()
+    if not IsValid(ply) then return end
+    local char = ply:GetControlledCharacter()
+    if not IsValid(char) then return end
+    if char:GetValue("PlayerDown") then return end
+
+    local loc = char:GetLocation()
+
+    for i=1, Enemies_Fail_To_Reach_Point_Around_Max_Retries do
+        local point_around = Navigation.GetRandomPointInNavigableRadius(char:GetLocation(), Enemies_Fail_To_Reach_Ask_Point_Around_Radius)
+        if (point_around and point_around ~= Vector(0, 0, 0)) then
+            local dist_sq = point_around:DistanceSquared(loc)
+            --print("FailToReach Point Around query", point_around, math.sqrt(dist_sq))
+            if dist_sq <= Enemies_Fail_To_Reach_Ask_Point_Around_Radius_3D^2 then
+                Events.CallRemote("FailToReach_Navigable_Response", Reliability.Reliable, point_around)
+                return
+            end
+        end
+    end
+end)

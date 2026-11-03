@@ -417,7 +417,17 @@ function EnemyStartFollow(enemy, target_char)
     if enemy:GetLocation():DistanceSquared(target_char:GetLocation()) < enemy_table.Damage_At_Distance_sq then
         EnemyAttack(enemy)
     else
-        enemy:Follow(target_char, enemy_table.Acceptance_Radius*acceptance_r_mult, true, true, Enemy_Route_Update_ms / 1000)
+        local ar = enemy_table.Acceptance_Radius*acceptance_r_mult
+        local r_update = Enemy_Route_Update_ms / 1000
+        local target_proxy = target_char:GetValue("ProxyTargetPoint")
+        -- Try to not use TargetProxy next time
+        if target_proxy and (not enemy:GetValue("UsingTargetProxy")) and (math.random() <= Enemies_Use_Proxy_Chance) then
+            enemy:MoveTo(target_proxy, ar)
+            enemy:SetValue("UsingTargetProxy", true, false)
+        else
+            enemy:Follow(target_char, ar, true, true, r_update)
+            enemy:SetValue("UsingTargetProxy", nil, false)
+        end
         UpdateEnemyLookAt(enemy)
     end
 end
@@ -721,9 +731,11 @@ function EnemyAttack(enemy)
         if not plychar:GetPlayer():GetValue("MM_GodMode") then
             local enemy_table = GetEnemyTable(enemy)
             if enemy_table.Damage_Amount then
+                local used_target_proxy = enemy:GetValue("UsingTargetProxy")
                 Timer.SetTimeout(function()
                     if enemy:IsValid() then
                         if enemy:GetHealth() > 0 then
+                            local hits = 0
                             for k, v in pairs(PLAYING_PLAYERS) do
                                 if v:IsValid() then
                                     local char = v:GetControlledCharacter()
@@ -740,6 +752,8 @@ function EnemyAttack(enemy)
                                             local z_loc = enemy:GetLocation()
                                             --print(char:GetPlayer():GetAccountName(), plychar_loc:DistanceSquared(z_loc), enemy_table.Damage_At_Distance_sq*dist_check_mult)
                                             if (plychar_loc:DistanceSquared(z_loc) <= enemy_table.Damage_At_Distance_sq*dist_check_mult) then
+                                                hits = hits + 1
+
                                                 local rel = RelRot1(enemy:GetRotation().Yaw, VectorGetLookAt(enemy:GetLocation(), char:GetLocation()).Yaw)
                                                 if (rel > -Enemies_Damage_Angle_LookAt and rel < Enemies_Damage_Angle_LookAt) then
                                                     if enemy_table.Damage_Amount then
@@ -809,6 +823,25 @@ function EnemyAttack(enemy)
                                     end
                                 end
                             end
+
+                            if hits <= 0 then
+                                if used_target_proxy then
+                                    if IsValid(plychar) then
+                                        plychar:SetValue("ProxyTargetAttackFails", plychar:GetValue("ProxyTargetAttackFails") + 1, false)
+
+                                        --print(plychar:GetPlayer():GetAccountName(), "ProxyTargetAttackFails", plychar:GetValue("ProxyTargetAttackFails"))
+
+                                        if plychar:GetValue("ProxyTargetAttackFails") >= Enemies_Misses_Proxy_Invalidate then
+                                            plychar:SetValue("ProxyTargetAttackFails", 0, false)
+                                            plychar:SetValue("ProxyTargetPoint", nil, false)
+                                            plychar:SetValue("FailedToReach", 0, false)
+                                            Events.CallRemote("FailToReach_PointAround", plychar:GetPlayer(), Reliability.Reliable)
+                                        end
+                                    end
+                                end
+                            elseif used_target_proxy then
+                                plychar:SetValue("ProxyTargetAttackFails", 0, false)
+                            end
                         end
                     end
                 end, random_z_attack_anim[2])
@@ -834,7 +867,8 @@ end
 
 function ZMoveCompleted(enemy, succeeded)
     if enemy:IsValid() then
-        --print("Enemy MoveCompleted", succeeded)
+        --print("Enemy MoveCompleted", succeeded, enemy:GetValue("Target_type"), enemy:GetValue("Target"), enemy:GetValue("UsingTargetProxy"))
+
         local target_type = enemy:GetValue("Target_type")
         if target_type == "barricade" then
             if succeeded then
@@ -876,6 +910,29 @@ function ZMoveCompleted(enemy, succeeded)
             end
         elseif target_type == "player" or target_type == "noise_player" then
             --print("MoveCompleted", "player", succeeded, zombie:GetValue("CanDamageTimeout"))
+
+            local plychar = enemy:GetValue("Target")
+            -- FailToReach Point around ask Only supports non-bots
+            local ply = plychar:GetPlayer()
+            if IsValid(plychar) and IsValid(ply) and (not ply.BOT) then
+                if succeeded then
+                    -- A zombie managed to reach him, via direct follow or the target proxy, this means the route is valid and shouldn't be requested
+                    plychar:SetValue("FailedToReach", 0, false)
+                    -- A zombie managed to reach him without using the target proxy
+                    if not enemy:GetValue("UsingTargetProxy") then
+                        plychar:SetValue("ProxyTargetPoint", nil, false)
+                    end
+                else
+                    plychar:SetValue("FailedToReach", plychar:GetValue("FailedToReach") + 1, false)
+                    --print(ply:GetAccountName(), "FailedToReach", plychar:GetValue("FailedToReach"))
+
+                    if plychar:GetValue("FailedToReach") >= Enemies_Fail_To_Reach_PlyChar_threshold then
+                        plychar:SetValue("FailedToReach", 0, false)
+                        Events.CallRemote("FailToReach_PointAround", ply, Reliability.Reliable)
+                    end
+                end
+            end
+
             if (succeeded and not enemy:GetValue("CanDamageTimeout")) then
                 EnemyAttack(enemy)
             else
@@ -889,6 +946,15 @@ function ZMoveCompleted(enemy, succeeded)
     end
 end
 VZ_EVENT_SUBSCRIBE("Character", "MoveComplete", ZMoveCompleted)
+
+VZ_EVENT_SUBSCRIBE_REMOTE("FailToReach_Navigable_Response", function(ply, point_around)
+    if not IsValid(ply) then return end
+    local char = ply:GetControlledCharacter()
+    if not IsValid(char) then return end
+    if char:GetValue("PlayerDown") then return end
+    char:SetValue("FailedToReach", 0, false)
+    char:SetValue("ProxyTargetPoint", point_around, false)
+end)
 
 VZ_EVENT_SUBSCRIBE("Character", "Death", function(char, last_damage_taken, last_bone_damage, damage_type_reason, hit_from_direction, instigator, causer, ...)
     if char:GetValue("Enemy") == true then

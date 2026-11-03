@@ -113,6 +113,8 @@ function SpawnCharacterForPlayer(ply, spawn_id)
     new_char:SetValue("WeirdPunchCount", 0, false)
     new_char:SetValue("CanPickupGibs", true, true)
     new_char:SetValue("CanThrowGrenades", true, true)
+    new_char:SetValue("FailedToReach", 0, false)
+    new_char:SetValue("ProxyTargetAttackFails", 0, false)
 
     if ply.BOT then
         new_char:SetGaitMode(GaitMode.Sprinting)
@@ -799,6 +801,9 @@ function RevivePlayerFinished_RevivedPart(revived_char)
         revived_ply:SetValue("BotAimPlayer", GetRandomPlayer():GetID(), true)
         revived_char:SetValue("BOTReloading", nil, false) -- fix bot not shooting after death while reloading
     end
+    revived_char:SetValue("FailedToReach", 0, false)
+    revived_char:SetValue("ProxyTargetPoint", nil, false)
+    revived_char:SetValue("ProxyTargetAttackFails", 0, false)
 end
 
 
