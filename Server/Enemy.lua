@@ -1535,10 +1535,10 @@ if ZDEV_IsModeEnabled("ZDEV_COMMANDS") then
                                 end
                             end
                             SpawnEnemy(split_txt[2], boss_type)
+                            return
                         end
+                        Chat.SendMessage(ply, "/spawnenemy <EnemyName> (<EnemyType>)")
                     end
-                else
-                    Chat.SendMessage(ply, "/spawnenemy <EnemyName> (<EnemyType>)")
                 end
             end
         end
