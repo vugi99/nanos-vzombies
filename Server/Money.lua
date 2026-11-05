@@ -14,7 +14,7 @@ function Buy(ply, price)
         ply:SetValue("ZMoney", pmoney - price, true)
         return true
     else
-        Events.CallRemote("AddNotification", ply, Reliability.Reliable, "Not Enough Money", 3000)
+        Events.CallRemote("NotEnoughMoney", ply, Reliability.Reliable)
     end
 end
 Package.Export("Buy", Buy)

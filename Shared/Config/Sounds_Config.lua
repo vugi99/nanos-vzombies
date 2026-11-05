@@ -416,3 +416,8 @@ Player_Pain_Sounds_Female = {
     "nanos-world::A_Female_07_Pain",
     "nanos-world::A_Female_08_Pain",
 }
+
+NotEnoughMoney_Sound = {
+    asset = "nanos-world::A_Invalid_Action",
+    volume = 1,
+}

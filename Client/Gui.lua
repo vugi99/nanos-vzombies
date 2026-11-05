@@ -1368,3 +1368,8 @@ if ZDEV_IsModeEnabled("ZDEV_COMMANDS") then
         end
     end)
 end
+
+VZ_EVENT_SUBSCRIBE_REMOTE("NotEnoughMoney", function()
+    AddNotification("Not Enough Money", 3000)
+    PlayVZSound({basic_sound_tbl=NotEnoughMoney_Sound})
+end)
