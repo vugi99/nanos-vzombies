@@ -740,6 +740,7 @@ VZ_EVENT_SUBSCRIBE("Character", "RagdollModeChange", function(char, old_state, n
                             if char:GetHealth() > 0 then
                                 if not char:GetValue("PlayerDown") then
                                     char:SetRagdollMode(false)
+                                    --print("Bot char:SetRagdollMode(false)")
                                     RequestBotAction(ply)
                                 end
                             end
