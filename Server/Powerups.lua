@@ -265,6 +265,10 @@ end
 
 function ZombieDie_SpawnRandomPowerup(zombie)
     if not In_Hellhound_Round then
+        if Max_Powerups_Per_Round >= 0 then
+            if Powerups_This_Round >= Max_Powerups_Per_Round then return end
+        end
+
         local random_perc = math.random(100)
         if random_perc <= Powerup_Spawn_Percentage then
             local loc = zombie:GetLocation()
@@ -274,6 +278,9 @@ function ZombieDie_SpawnRandomPowerup(zombie)
 
             local random_powerup_name = Powerups_Names[math.random(table_count(Powerups_Names))]
             SpawnPowerup(loc, random_powerup_name)
+
+            Powerups_This_Round = Powerups_This_Round + 1
+            --print("ZombieDie Spawned Powerup", Powerups_This_Round)
         end
     end
 end

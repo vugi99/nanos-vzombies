@@ -9,6 +9,8 @@ Powerups_particle_path = "vzombies-assets::PS_Powerup"
 
 Powerup_Spawn_Percentage = 2 -- x powerups for 100 zombies killed
 
+Max_Powerups_Per_Round = 4
+
 Powerups_Names = {
     "carpenter",
     "max_ammo",

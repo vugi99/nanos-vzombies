@@ -402,6 +402,8 @@ function StartRound()
         end
     end
 
+    Powerups_This_Round = 0
+
     SPAWN_ENEMY_INTERVAL_TIME = math.ceil(Enemies_Spawn_Cooldown/REMAINING_ENEMIES_TO_SPAWN)
     if SPAWN_ENEMY_INTERVAL_TIME < Enemies_Spawn_Interval_min_time_ms then
         SPAWN_ENEMY_INTERVAL_TIME = Enemies_Spawn_Interval_min_time_ms
