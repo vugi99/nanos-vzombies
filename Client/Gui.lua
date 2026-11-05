@@ -246,9 +246,9 @@ end
 
 function NeedToUpdateAmmoText(char, weapon)
     if (IsSelfCharacter(char) or IsSpectatingPlayerCharacter(char)) then
-        if (not weapon:IsA(Grenade) and not weapon:IsA(Melee)) then
+        if (not weapon:IsA(Melee)) then
             --print("NeedToUpdateAmmoText", weapon:GetAmmoClip(), weapon:GetAmmoBag())
-            GUI:CallEvent("SetAmmoText", tostring(weapon:GetAmmoClip()), tostring(weapon:GetAmmoBag()))
+            GUI:CallEvent("SetAmmoText", tostring((weapon.GetAmmoClip and weapon:GetAmmoClip()) or 0), tostring((weapon.GetAmmoBag and weapon:GetAmmoBag()) or 0))
         end
     end
 end
@@ -264,7 +264,7 @@ VZ_EVENT_SUBSCRIBE("Character", "PickUp", function(char, weapon)
     if (IsValid(char) and IsValid(weapon)) then
         NeedToUpdateAmmoText(char, weapon)
         if (IsSelfCharacter(char) or IsSpectatingPlayerCharacter(char)) then
-            SetWeaponNameText(weapon:GetValue("WeaponName"))
+            SetWeaponNameText(weapon:GetValue("WeaponName") or weapon:GetValue("GrenadeName"))
         end
     end
 end)

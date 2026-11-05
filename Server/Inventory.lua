@@ -454,6 +454,7 @@ VZ_EVENT_SUBSCRIBE_REMOTE("PickupGrenade", function(ply)
                             grenade:SetDamage(table.unpack(Grenade_Damage_Config))
                             grenade:SetTimeToExplode(Grenade_TimeToExplode)
                             grenade:SetValue("GrenadeOwner", char:GetID(), false)
+                            grenade:SetValue("GrenadeName", "G67", true)
 
                             local charInvID = GetCharacterInventory(char)
                             if charInvID then
@@ -741,6 +742,7 @@ function PickupGib(char, gib_data)
                                 gib_grenade:SetValue("GibData", gib_data, false)
                                 gib_grenade:SetValue("GrenadeOwner", char:GetID(), false)
                                 gib_grenade:SetDamage(0, 0, 0, 0, 0)
+                                gib_grenade:SetValue("GrenadeName", "Gib", true)
                                 gib_grenade:SetTimeToExplode(Enemies_Gibs_Destroy_Timeout_ms / 1000)
 
                                 if gib_data[3] then
