@@ -61,7 +61,11 @@ VZ_GLOBAL_FEATURES = {
         levels_xp_func = function(level)
             return math.floor(((level^2)/3 + 60) + 0.5)
         end,
-        score_mult_into_xp = 0.1
+        score_mult_into_xp = 0.1,
+        LevelUp_Sound = {
+            asset = "nanos-world::A_Kill_Feedback",
+            volume = 1,
+        }
     },
     Vehicles = {
         script_loaded = true,

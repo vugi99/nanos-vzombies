@@ -1104,6 +1104,10 @@ function AddLocalXP(added)
                 LocalXP = LocalXP - XP_target
                 LocalLevel = LocalLevel + 1
                 AddNotification("Level Up")
+                local lu_sound_data = VZ_GetFeatureValue("Levels", "LevelUp_Sound")
+                if lu_sound_data then
+                    PlayVZSound({basic_sound_tbl=lu_sound_data})
+                end
                 SetGUILevel(LocalLevel)
             end
             SetGUIXP(LocalXP, XP_target)
