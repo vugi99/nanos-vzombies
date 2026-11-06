@@ -69,6 +69,7 @@ VZ_EVENT_SUBSCRIBE_REMOTE("BankAction", function(ply, bank, action)
                             end
                             if Buy(ply, d_fees + amount) then
                                 ply:SetValue("PlayerStoredMoney", ply:GetValue("PlayerStoredMoney") + amount, true)
+                                Events.CallRemote("AddNotification", ply, Reliability.Reliable, "Deposited " .. tostring(amount) .. "$")
                             end
                         else
                             Events.CallRemote("AddNotification", ply, Reliability.Reliable, "Bank Full")
@@ -81,6 +82,7 @@ VZ_EVENT_SUBSCRIBE_REMOTE("BankAction", function(ply, bank, action)
                             ply:SetValue("PlayerStoredMoney", ply:GetValue("PlayerStoredMoney") - amount, true)
                             --ply:SetValue("ZMoney", ply:GetValue("ZMoney") + amount, true)
                             AddMoney(ply, amount, true)
+                            Events.CallRemote("AddNotification", ply, Reliability.Reliable, "Withdrawn " .. tostring(amount) .. "$")
                         end
                     end
                 end
