@@ -119,7 +119,7 @@ function LoadServerFiles()
     Package.Require("Bots.lua")
     Package.Require("Noise.lua")
 
-    if ZDEV_IsModeEnabled("ZDEV_MOD_MENU") then
+    if VZ_ShouldModMenuLoad() then
         Package.Require("Mod_Menu.lua")
     end
 

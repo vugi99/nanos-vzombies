@@ -1,10 +1,17 @@
 
+-- Protected callbacks to check that ply has access to mod menu
+local function MakeModMenuCallback(func)
+    return function(ply, ...)
+        if not VZ_HasAccessToModMenu(ply) then return end
+        return func(ply, ...)
+    end
+end
 
-VZ_EVENT_SUBSCRIBE_REMOTE("VZMM_GodMode", function(ply, enable)
+VZ_EVENT_SUBSCRIBE_REMOTE("VZMM_GodMode", MakeModMenuCallback(function(ply, enable)
     ply:SetValue("MM_GodMode", enable, false)
-end)
+end))
 
-VZ_EVENT_SUBSCRIBE_REMOTE("VZMM_Noclip", function(ply)
+VZ_EVENT_SUBSCRIBE_REMOTE("VZMM_Noclip", MakeModMenuCallback(function(ply)
     local char = ply:GetControlledCharacter()
     if char then
         local noclip = char:GetValue("NoClip")
@@ -17,9 +24,9 @@ VZ_EVENT_SUBSCRIBE_REMOTE("VZMM_Noclip", function(ply)
         end
         char:SetValue("NoClip", not noclip, false)
     end
-end)
+end))
 
-VZ_EVENT_SUBSCRIBE("Events", "VZ_PlayerJoined", function(ply)
+VZ_EVENT_SUBSCRIBE("Events", "VZ_PlayerJoined", MakeModMenuCallback(function(ply)
     local _Weapons_Names = {}
 
     for k, v in pairs(NanosWorldWeapons) do
@@ -29,40 +36,40 @@ VZ_EVENT_SUBSCRIBE("Events", "VZ_PlayerJoined", function(ply)
     Events.CallRemote("Send_Weapons_Names", ply, Reliability.Reliable, _Weapons_Names)
     ply:SetValue("MM_GodMode", true, false)
     ply:SetValue("MM_InfMoney", true, false)
-end)
+end))
 
-VZ_EVENT_SUBSCRIBE_REMOTE("VZMM_GiveWeap", function(ply, selected)
+VZ_EVENT_SUBSCRIBE_REMOTE("VZMM_GiveWeap", MakeModMenuCallback(function(ply, selected)
     local char = ply:GetControlledCharacter()
     if char then
         if not char:GetValue("PlayerDown") then
             AddCharacterWeapon(char, selected, GetWeaponNameMaxAmmo(selected), true)
         end
     end
-end)
+end))
 
-VZ_EVENT_SUBSCRIBE_REMOTE("VZMM_GivePowerup", function(ply, selected)
+VZ_EVENT_SUBSCRIBE_REMOTE("VZMM_GivePowerup", MakeModMenuCallback(function(ply, selected)
     local char = ply:GetControlledCharacter()
     if char then
         PowerupGrabbed(selected, char)
     end
-end)
+end))
 
-VZ_EVENT_SUBSCRIBE_REMOTE("VZMM_GivePerk", function(ply, selected)
+VZ_EVENT_SUBSCRIBE_REMOTE("VZMM_GivePerk", MakeModMenuCallback(function(ply, selected)
     local char = ply:GetControlledCharacter()
     if char then
         GiveCharacterPerk(char, selected)
     end
-end)
+end))
 
-VZ_EVENT_SUBSCRIBE_REMOTE("VZMM_InfGrenades", function(ply, checked)
+VZ_EVENT_SUBSCRIBE_REMOTE("VZMM_InfGrenades", MakeModMenuCallback(function(ply, checked)
     ply:SetValue("MM_InfGrenades", true, false)
     local char = ply:GetControlledCharacter()
     if (char and checked) then
         char:SetValue("ZGrenadesNB", Max_Grenades_NB, true)
     end
-end)
+end))
 
-VZ_EVENT_SUBSCRIBE_REMOTE("VZMM_PAP", function(ply, repack_effect)
+VZ_EVENT_SUBSCRIBE_REMOTE("VZMM_PAP", MakeModMenuCallback(function(ply, repack_effect)
     local char = ply:GetControlledCharacter()
     if char then
         if not char:GetValue("PlayerDown") then
@@ -97,9 +104,9 @@ VZ_EVENT_SUBSCRIBE_REMOTE("VZMM_PAP", function(ply, repack_effect)
             end
         end
     end
-end)
+end))
 
-VZ_EVENT_SUBSCRIBE_REMOTE("VZMM_SetRound", function(ply, r_nb)
+VZ_EVENT_SUBSCRIBE_REMOTE("VZMM_SetRound", MakeModMenuCallback(function(ply, r_nb)
     if ply then
         ROUND_NB = r_nb - 1
         --print("ROUND_NB set to", ROUND_NB + 1)
@@ -117,9 +124,9 @@ VZ_EVENT_SUBSCRIBE_REMOTE("VZMM_SetRound", function(ply, r_nb)
             CheckRoundFinished()
         end
     end
-end)
+end))
 
-VZ_EVENT_SUBSCRIBE_REMOTE("VZMM_SetPM", function(ply, selected)
+VZ_EVENT_SUBSCRIBE_REMOTE("VZMM_SetPM", MakeModMenuCallback(function(ply, selected)
     if ply then
         local PM_Data = ply:GetValue("PM_Data")
         if PM_Data then
@@ -132,17 +139,17 @@ VZ_EVENT_SUBSCRIBE_REMOTE("VZMM_SetPM", function(ply, selected)
     if char then
         char:SetMesh(selected)
     end
-end)
+end))
 
-VZ_EVENT_SUBSCRIBE_REMOTE("VZMM_SetCamMode", function(ply, selected)
+VZ_EVENT_SUBSCRIBE_REMOTE("VZMM_SetCamMode", MakeModMenuCallback(function(ply, selected)
     ply:SetValue("MM_CamMode", CameraMode[selected], false)
     local char = ply:GetControlledCharacter()
     if char then
         char:SetCameraMode(CameraMode[selected])
     end
-end)
+end))
 
-VZ_EVENT_SUBSCRIBE_REMOTE("VZMM_OpenAllDoors", function(ply)
+VZ_EVENT_SUBSCRIBE_REMOTE("VZMM_OpenAllDoors", MakeModMenuCallback(function(ply)
     if ply:IsValid() then
         local _opened_door = true
         while _opened_door do
@@ -162,26 +169,26 @@ VZ_EVENT_SUBSCRIBE_REMOTE("VZMM_OpenAllDoors", function(ply)
             end
         end
     end
-end)
+end))
 
-VZ_EVENT_SUBSCRIBE_REMOTE("VZMM_SetMoney", function(ply, money)
+VZ_EVENT_SUBSCRIBE_REMOTE("VZMM_SetMoney", MakeModMenuCallback(function(ply, money)
     --ply:SetValue("ZMoney", money, true)
     if ply:GetValue("ZMoney") then
         AddMoney(ply, money - ply:GetValue("ZMoney"), true)
     end
-end)
+end))
 
-VZ_EVENT_SUBSCRIBE_REMOTE("VZMM_InfiniteMoney", function(ply, enable)
+VZ_EVENT_SUBSCRIBE_REMOTE("VZMM_InfiniteMoney", MakeModMenuCallback(function(ply, enable)
     ply:SetValue("MM_InfMoney", enable, false)
-end)
+end))
 
-VZ_EVENT_SUBSCRIBE_REMOTE("VZMM_Power", function(ply)
+VZ_EVENT_SUBSCRIBE_REMOTE("VZMM_Power", MakeModMenuCallback(function(ply)
     if not POWER_ON then
         PlayerTurnPowerON(ply, MAP_POWER_SM)
     end
-end)
+end))
 
-VZ_EVENT_SUBSCRIBE_REMOTE("VZMM_SpawnVehicle", function(ply, selected)
+VZ_EVENT_SUBSCRIBE_REMOTE("VZMM_SpawnVehicle", MakeModMenuCallback(function(ply, selected)
     if (ply and ply:IsValid()) then
         local char = ply:GetControlledCharacter()
         if char then
@@ -195,21 +202,20 @@ VZ_EVENT_SUBSCRIBE_REMOTE("VZMM_SpawnVehicle", function(ply, selected)
             end
         end
     end
-end)
+end))
 
-VZ_EVENT_SUBSCRIBE_REMOTE("VZMM_DontTarget", function(ply, enable)
+VZ_EVENT_SUBSCRIBE_REMOTE("VZMM_DontTarget", MakeModMenuCallback(function(ply, enable)
     ply:SetValue("MM_EnemiesDontTarget", enable, false)
     local char = ply:GetControlledCharacter()
     if IsValid(char) then
         SetCharacterNotTargeted(char, enable)
     end
-end)
+end))
 
 VZ_EVENT_SUBSCRIBE("Events", "VZ_PlayerCharacterSpawned", function(char)
     local ply = char:GetPlayer()
-    if IsValid(ply) then
-        if ply:GetValue("MM_EnemiesDontTarget") then
-            SetCharacterNotTargeted(char, true)
-        end
+    if not VZ_HasAccessToModMenu(ply) then return end
+    if ply:GetValue("MM_EnemiesDontTarget") then
+        SetCharacterNotTargeted(char, true)
     end
 end)
