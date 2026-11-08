@@ -1,6 +1,7 @@
 
 
-
+-- Bots shoot their clip-1 bullet, they don't fall at 0 bullets and will reload before shooting the last one if they can
+-- Bots shotgun reload infinite bug not yet reproduced
 
 
 function VZBot.prototype:Possess(char)
@@ -554,6 +555,9 @@ function BOTShootIntervalFunc(char)
                                     inaccurate_loc.Z = inaccurate_loc.Z + Bots_Shoot_Inaccuracy_Each_Distance_Unit * dist * rand_z
                                     char:LookAt(inaccurate_loc)
                                     weapon:PullUse(0)
+                                    if ZDEV_IsModeEnabled("ZDEV_DEBUG_BOTS_SHOOT") then
+                                        print("Bot " .. tostring(char:GetPlayer().ID) .. " Shoot", weapon:GetAmmoClip(), weapon:GetAmmoBag())
+                                    end
                                     --print(weapon:GetAmmoClip(), weapon:GetAmmoBag())
                                     -- 8, 8, 7, 6, ..., 1 ?
                                     if (weapon:GetAmmoClip() <= 1) then
@@ -765,7 +769,7 @@ if Bots_Enabled then
                             if not v:GetValue("BOTShootInterval") then
                                 local weapon = v:GetPicked()
                                 if weapon then
-                                    if weapon:GetAmmoClip() < weapon:GetAmmoToReload() then
+                                    if (weapon:GetAmmoClip() < weapon:GetClipCapacity()) and weapon:GetAmmoBag() > 0 then
                                         local nearest_z, nearest_dist_sq = GetNearestEnemy(v:GetLocation())
                                         if (not nearest_z or nearest_dist_sq > Bots_Target_MaxDistance3D_Sq + 500*500) then
                                             weapon:Reload()
