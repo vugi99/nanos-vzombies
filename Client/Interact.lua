@@ -92,7 +92,7 @@ function InteractCheck(interact_type, loop_params, Interact_Check_Interval_ms, C
                 end
             else
                 if ZDEV_IsModeEnabled("ZDEV_DEBUG_INTERACT") then
-                    print("Interact Found", interact_type, found)
+                    print("Interact Found", interact_type, InteractThing)
                 end
             end
         end

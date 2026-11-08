@@ -24,6 +24,11 @@ function CreateMapTeleporters()
                 teleporter:SetCollision(CollisionType.NoCollision)
                 teleporter:SetValue("TeleporterID", i, true)
                 teleporter:SetValue("CanTeleport", true, true)
+
+                if ZDEV_IsModeEnabled("ZDEV_DEBUG_TRIGGERS") then
+                    local vizualize = Trigger(v.location, Rotator(0, 0, 0), Vector(math.sqrt(v.distance_sq), 0, 0), TriggerType.Sphere, ZDEV_IsModeEnabled("ZDEV_DEBUG_TRIGGERS"), Color.YELLOW, {"Character"})
+                    table.insert(MAP_TELEPORTERS_ENTITIES, vizualize)
+                end
             else
                 teleporter = Trigger(v.location, Rotator(0, 0, 0), Vector(math.sqrt(v.distance_sq), 0, 0), TriggerType.Sphere, ZDEV_IsModeEnabled("ZDEV_DEBUG_TRIGGERS"), Color.YELLOW, {"Character"})
                 teleporter:SetValue("TeleporterID", i, false)
