@@ -57,7 +57,9 @@ function RandomEnemyAttackAnim(enemy, enemy_type)
     if (enemy_table.Types[enemy_type].New_Attack_Anims) then
         on_tbl = enemy_table.Types[enemy_type].New_Attack_Anims
     end
-    return on_tbl[math.random(table_count(on_tbl))]
+    local selected = on_tbl[math.random(table_count(on_tbl))]
+    --print("RandomEnemyAttackAnim", enemy:GetValue("EnemyName"), enemy_type, NanosTable.Dump(selected))
+    return selected
 end
 
 function Calculate_Enemy_Health(enemy_table)
