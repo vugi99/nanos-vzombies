@@ -81,7 +81,7 @@ VZ_EVENT_SUBSCRIBE("Events", "VZ_SpawnGib", CL_VZ_SpawnGib)
 
 -- Remove character head if the death hit is on the head (To fix the last TakeDamage not called if it was killed on the server)
 -- The death event bone is unreliable on nanos 1.166.2: https://nanos-world.com/feedback/p/death-and-takedamage-events-may-be-ordered-wrongly
-VZ_EVENT_SUBSCRIBE("Character", "Death", function(char, last_damage_taken, last_bone_damage, damage_type_reason, hit_from_direction, instigator, causer)
+VZ_EVENT_SUBSCRIBE("CharacterSimple", "Death", function(char, last_damage_taken, last_bone_damage, damage_type_reason, hit_from_direction, instigator, causer)
     if not char:GetValue("EnemyType") then return end
     local enemy_table = GetEnemyTable(char)
     if not enemy_table then return end

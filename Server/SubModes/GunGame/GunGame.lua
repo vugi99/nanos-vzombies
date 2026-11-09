@@ -74,7 +74,7 @@ function GunGame_HandleZombieDeath(char, instigator)
 end
 
 
-VZ_EVENT_SUBSCRIBE("Character", "Death", function(char, last_damage_taken, last_bone_damage, damage_type_reason, hit_from_direction, instigator, causer)
+VZ_EVENT_SUBSCRIBE("CharacterSimple", "Death", function(char, last_damage_taken, last_bone_damage, damage_type_reason, hit_from_direction, instigator, causer)
     GunGame_HandleZombieDeath(char, instigator)
 end)
 

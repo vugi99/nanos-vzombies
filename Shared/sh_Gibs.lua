@@ -37,23 +37,23 @@ local function InitEnemiesBonesHealth(char)
     end
     return true
 end
-for k, v in pairs(Character.GetPairs()) do
+for k, v in pairs(CharacterSimple.GetPairs()) do
     if v:GetValue("EnemyType") then
         InitEnemiesBonesHealth(v)
     end
 end
 
-VZ_EVENT_SUBSCRIBE("Character", "ValueChange", function(char, key, value)
+VZ_EVENT_SUBSCRIBE("CharacterSimple", "ValueChange", function(char, key, value)
     if key == "EnemyType" then
         InitEnemiesBonesHealth(char)
     end
 end)
 
-VZ_EVENT_SUBSCRIBE("Character", "Destroy", function(char)
+VZ_EVENT_SUBSCRIBE("CharacterSimple", "Destroy", function(char)
     EnemiesBonesHealth[char:GetID()] = nil
 end)
 
-VZ_EVENT_SUBSCRIBE("Character", "TakeDamage", function(char, damage, bone, type, from_direction, instigator, causer)
+VZ_EVENT_SUBSCRIBE("CharacterSimple", "TakeDamage", function(char, damage, bone, type, from_direction, instigator, causer)
     if not IsValid(char) then return end
     if (char:GetValue("EnemyType") and damage > 0) then
         --if char:IsDead() then return end

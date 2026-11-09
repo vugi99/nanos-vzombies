@@ -487,7 +487,7 @@ function GetBotMoveLocation(Bot, char)
     local loc = char:GetLocation()
 
     local zombies_locations = {}
-    for k, v in pairs(Character.GetPairs()) do
+    for k, v in pairs(CharacterSimple.GetPairs()) do
         if IsZombieGood(v) then
             local zloc = v:GetLocation()
             if loc:DistanceSquared(zloc) <= Bots_Zombies_Dangerous_Point_Distance_sq then

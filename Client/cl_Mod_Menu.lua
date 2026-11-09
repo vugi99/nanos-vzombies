@@ -51,7 +51,7 @@ end
 
 AddTabCheckbox("Mod_Menu", "Enemies", "Highlight Enemies", function(checked)
     if checked then
-        Character.Subscribe("ValueChange", _MM_hle_vc)
+        CharacterSimple.Subscribe("ValueChange", _MM_hle_vc)
     else
         Character.Unsubscribe("ValueChange", _MM_hle_vc)
     end

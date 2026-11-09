@@ -92,7 +92,7 @@ function PowerupGrabbed(powerup_name, by_char)
                 end
             end
         elseif powerup_name == "nuke" then
-            for k, v in pairs(Character.GetAll()) do
+            for k, v in pairs(CharacterSimple.GetAll()) do
                 if v:IsValid() then -- Ragdolls being removed can destroy some zombies in the list
                     if v:GetValue("Enemy") then
                         local enemy_table = Enemies_Config[v:GetValue("EnemyName")]

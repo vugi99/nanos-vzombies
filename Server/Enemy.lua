@@ -160,16 +160,19 @@ function SpawnEnemy(EnemyName, EnemyType)
                     end
                 end
             end
-            local enemy = Character(
+            -- TODO: Death_Sounds
+            local enemy = CharacterSimple(
                 spawn_location,
                 selected_spawn.rotation,
                 random_enemy_model_asset,
+                enemy_table.Anim_BP,
                 CollisionType.Normal,
                 true,
-                Calculate_Enemy_Health(enemy_table),
-                VZ_RandomSound(enemy_table.Death_Sounds),
-                ""
+                SpawnMode.Immediate
             )
+            local calc_health = Calculate_Enemy_Health(enemy_table)
+            enemy:SetMaxHealth(calc_health)
+            enemy:SetHealth(calc_health)
 
             --print("Spawn", random_enemy_model_asset)
 
@@ -188,8 +191,9 @@ function SpawnEnemy(EnemyName, EnemyType)
                 print("Enemy (" .. enemy:GetID() .. ", " .. tostring(EnemyName) .. ", " .. tostring(EnemyType) .. ") spawn, in spawn " .. tostring(selected_spawn.zspawnid))
             end
 
-            enemy:SetSpeedMultiplier(enemy_table.Types[EnemyType].Speed_Multiplier)
-            enemy:SetGaitMode(enemy_table.Types[EnemyType].GaitMode)
+            --enemy:SetSpeedMultiplier(enemy_table.Types[EnemyType].Speed_Multiplier)
+            enemy:SetSpeedSettings(enemy_table.Types[EnemyType].Speed_Walk)
+            --enemy:SetGaitMode(enemy_table.Types[EnemyType].GaitMode)
 
             enemy:SetCapsuleSize(enemy_table.Collision_Radius, enemy_table.Collision_Height or 96)
 
@@ -222,7 +226,7 @@ function SpawnEnemy(EnemyName, EnemyType)
                 if (not is_ground_anim_disabled) then
                     enemy:SetFlyingMode(true)
                     enemy:SetValue("GroundAnim", true, false)
-                    enemy:PlayAnimation(Enemy_Under_Ground_Animation.asset, AnimationSlotType.FullBody, false, 0, 0)
+                    enemy:PlayAnimation(Enemy_Under_Ground_Animation.asset, "FullBody", false, 0, 0)
 
                     --local players_sound = GetPlayersInRadius(selected_spawn.location, RANDOM_SOUNDS.spawn_dirt_sound.falloff_distance)
                     --for k, v in pairs(players_sound) do
@@ -284,14 +288,14 @@ function EnemyOutGround(enemy, selected_spawn, selected_spawn_target, after_grou
         enemy:SetValue("Target", i, false)
 
         enemy:MoveTo(selected_spawn_target.z_move_to_b_target_location, GetEnemyTable(enemy).Acceptance_Radius)
-        enemy:LookAt(selected_spawn_target.barricade_location)
+        --enemy:LookAt(selected_spawn_target.barricade_location)
     elseif selected_spawn_target.type == "vault" then
         enemy:SetValue("Target_type", "vault", false)
         enemy:SetValue("Target", selected_spawn_target.zspawnid, false)
 
         local target_loc = selected_spawn_target[enemy_table.Types[enemy:GetValue("EnemyType")].Vault_Anim.target_location_key]
         enemy:MoveTo(target_loc, GetEnemyTable(enemy).Acceptance_Radius)
-        enemy:LookAt(target_loc + Vector(0, 0, 180))
+        --enemy:LookAt(target_loc + Vector(0, 0, 180))
     end
 end
 
@@ -430,7 +434,7 @@ function EnemyStartFollow(enemy, target_char)
             enemy:Follow(target_char, ar, true, true, r_update)
             enemy:SetValue("UsingTargetProxy", nil, false)
         end
-        UpdateEnemyLookAt(enemy)
+        --UpdateEnemyLookAt(enemy)
     end
 end
 
@@ -643,7 +647,7 @@ function AttackBarricade(enemy, barricade, start)
             enemy:SetRotation(spawn.z_leave_b_tp_rotation)
         else
             local random_z_attack_anim = RandomEnemyAttackAnim(enemy, enemy:GetValue("EnemyType"))
-            enemy:PlayAnimation(random_z_attack_anim[1], AnimationSlotType.FullBody, false)
+            enemy:PlayAnimation(random_z_attack_anim[1], "FullBody", false)
             EnemyAttackSound(enemy)
             Timer.SetTimeout(function()
                 if enemy:IsValid() then
@@ -691,7 +695,7 @@ function EnemyAttack(enemy)
         --print("EnemyAttack", enemy, plychar, plychar:GetValue("BotGotInRagdoll"))
 
         local random_z_attack_anim = RandomEnemyAttackAnim(enemy, enemy:GetValue("EnemyType"))
-        enemy:PlayAnimation(random_z_attack_anim[1], AnimationSlotType.FullBody, false)
+        enemy:PlayAnimation(random_z_attack_anim[1], "FullBody", false)
         enemy:SetValue("Target", nil, false)
         enemy:SetValue("StuckNB", nil, false)
 
@@ -772,12 +776,12 @@ function EnemyAttack(enemy)
                                                                 local ply = char:GetPlayer()
                                                                 if ply then
                                                                     if not plychar_veh then
-                                                                        enemy:PlayAnimation("vzombies-assets::AS_NAAT_Zombie_Grab_To_Wrestle", AnimationSlotType.FullBody, true, 0.1, 0.1)
+                                                                        enemy:PlayAnimation("vzombies-assets::AS_NAAT_Zombie_Grab_To_Wrestle", "FullBody", true, 0.1, 0.1)
                                                                         if not ply.BOT then
                                                                             char:SetInputEnabled(false)
                                                                             char:SetCanAim(false)
                                                                         end
-                                                                        char:PlayAnimation("vzombies-assets::AS_NAAT_Human_Grab_To_Wrestle", AnimationSlotType.FullBody, true)
+                                                                        char:PlayAnimation("vzombies-assets::AS_NAAT_Human_Grab_To_Wrestle", "FullBody", true)
 
                                                                         char:SetValue("PlayerGrabbedBy", enemy, true)
 
@@ -890,7 +894,7 @@ function ZMoveCompleted(enemy, succeeded)
                 enemy:SetLocation(target_loc + Vector(0, 0, 97))
                 enemy:SetRotation(target_rot)
 
-                enemy:PlayAnimation(anim.path, AnimationSlotType.FullBody, false, 0.25, 0)
+                enemy:PlayAnimation(anim.path, "FullBody", false, 0.25, 0)
 
                 Timer.SetTimeout(function()
                     if enemy:IsValid() then
@@ -947,7 +951,7 @@ function ZMoveCompleted(enemy, succeeded)
         end
     end
 end
-VZ_EVENT_SUBSCRIBE("Character", "MoveComplete", ZMoveCompleted)
+VZ_EVENT_SUBSCRIBE("CharacterSimple", "MoveComplete", ZMoveCompleted)
 
 VZ_EVENT_SUBSCRIBE_REMOTE("FailToReach_Navigable_Response", function(ply, point_around)
     if not IsValid(ply) then return end
@@ -958,7 +962,7 @@ VZ_EVENT_SUBSCRIBE_REMOTE("FailToReach_Navigable_Response", function(ply, point_
     char:SetValue("ProxyTargetPoint", point_around, false)
 end)
 
-VZ_EVENT_SUBSCRIBE("Character", "Death", function(char, last_damage_taken, last_bone_damage, damage_type_reason, hit_from_direction, instigator, causer, ...)
+VZ_EVENT_SUBSCRIBE("CharacterSimple", "Death", function(char, last_damage_taken, last_bone_damage, damage_type_reason, hit_from_direction, instigator, causer, ...)
     if char:GetValue("Enemy") == true then
         if causer then
             if causer:IsValid() then
@@ -1121,7 +1125,7 @@ end
 
 local DoubleDamage_Applied = false
 
-VZ_EVENT_SUBSCRIBE("Character", "TakeDamage", function(char, damage, bone, dtype, from_direction, instigator, causer)
+VZ_EVENT_SUBSCRIBE("CharacterSimple", "TakeDamage", function(char, damage, bone, dtype, from_direction, instigator, causer)
     -- Error fired on Oct 27 2026 (1.166.0?), probably due to duplicated TakeDamage calls?
     if not IsValid(char) then DoubleDamage_Applied = false; return end
     if not (char:GetValue("Enemy") == true and damage > 0) then DoubleDamage_Applied = false; return end
@@ -1197,7 +1201,7 @@ VZ_EVENT_SUBSCRIBE("Character", "TakeDamage", function(char, damage, bone, dtype
                                                     end, PAP_Repack_Config[v.pap_repack_effect].cooldown_ms)
                                                     AttachRepackParticle(char, v.pap_repack_effect)
 
-                                                    for k2, v2 in pairs(Character.GetAll()) do
+                                                    for k2, v2 in pairs(CharacterSimple.GetAll()) do
                                                         if (v2:IsValid() and v2:GetHealth() > 0 and v2 ~= char and v2:GetValue("Enemy")) then
                                                             local dist_sq = v2:GetLocation():DistanceSquared(char:GetLocation())
                                                             if (dist_sq > 0 and dist_sq < PAP_Repack_Config[v.pap_repack_effect].radius_sq) then
@@ -1254,7 +1258,7 @@ end)
 
 Timer.SetInterval(function()
     if ROUND_NB > 0 then
-        for k, v in pairs(Character.GetAll()) do
+        for k, v in pairs(CharacterSimple.GetAll()) do
             if v:IsValid() then
                 local loc = v:GetLocation()
                 if (loc.Z > MAP_Z_LIMITS.max or loc.Z < MAP_Z_LIMITS.min) then
@@ -1310,7 +1314,7 @@ Timer.SetInterval(function()
     end
 end, Enemies_Stuck_Check_Each_ms)
 
-function UpdateEnemyLookAt(v)
+--[[function UpdateEnemyLookAt(v)
     if v:IsValid() then
         if v:GetValue("Enemy") then
             if v:GetHealth() > 0 then
@@ -1332,9 +1336,9 @@ Timer.SetInterval(function()
             UpdateEnemyLookAt(v)
         end
     end
-end, Enemy_Look_At_Update_ms)
+end, Enemy_Look_At_Update_ms)]]--
 
-VZ_EVENT_SUBSCRIBE("Character", "RagdollModeChange", function(enemy, old_state, new_state)
+VZ_EVENT_SUBSCRIBE("CharacterSimple", "RagdollModeChange", function(enemy, old_state, new_state)
     if enemy:GetValue("Enemy") then
         --print("Enemy RagdollModeChange", old_state, new_state)
 
@@ -1443,8 +1447,9 @@ function ChangeEnemyType(char, new_type)
 
     if type(enemy_table.Types[new_type]) ~= "table" then return Console.Error("ChangeEnemyType '" .. tostring(char:GetValue("EnemyName")) .. "' cannot change type to '" .. tostring(new_type) .. "' because it doesn't exist in Enemy Config Types") end
 
-    char:SetSpeedMultiplier(enemy_table.Types[new_type].Speed_Multiplier)
-    char:SetGaitMode(enemy_table.Types[new_type].GaitMode)
+    --char:SetSpeedMultiplier(enemy_table.Types[new_type].Speed_Multiplier)
+    char:SetSpeedSettings(enemy_table.Types[new_type].Speed_Walk)
+    --char:SetGaitMode(enemy_table.Types[new_type].GaitMode)
 
     char:SetValue("EnemyType", new_type, true)
 end

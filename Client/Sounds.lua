@@ -363,7 +363,7 @@ CreateZAmbInterval()
 
 
 -- Destroy sounds attached to zombies when they die
-VZ_EVENT_SUBSCRIBE("Character", "Death", function(char, last_damage_taken, last_bone_damage, damage_type_reason, hit_from_direction, instigator)
+VZ_EVENT_SUBSCRIBE("CharacterSimple", "Death", function(char, last_damage_taken, last_bone_damage, damage_type_reason, hit_from_direction, instigator)
     if not char:GetPlayer() then
         local attached_actors = char:GetAttachedEntities()
         for k, v in pairs(attached_actors) do

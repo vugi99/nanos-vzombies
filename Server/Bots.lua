@@ -261,7 +261,7 @@ function GetNearestZombieInTargets(char, targets)
     local nearest_z
     local nearest_dist_sq
     for k, v in pairs(targets) do
-        local zombie = GetCharacterFromId(v)
+        local zombie = GetCharacterSimpleFromId(v)
         if zombie then
             if (zombie:IsValid() and zombie:GetHealth() > 0 and not zombie:IsInRagdollMode()) then
                 local dist_sq = loc:DistanceSquared(zombie:GetLocation())
@@ -531,7 +531,7 @@ function BOTShootIntervalFunc(char)
                 local Shooting_On = char:GetValue("BOTShootingOn")
                 if Shooting_On then
                     if not char:GetValue("BOTReloading") then
-                        local shooting_on_char = GetCharacterFromId(Shooting_On)
+                        local shooting_on_char = GetCharacterSimpleFromId(Shooting_On)
                         if shooting_on_char then
                             if shooting_on_char:IsValid() then
                                 if shooting_on_char:GetHealth() > 0 then

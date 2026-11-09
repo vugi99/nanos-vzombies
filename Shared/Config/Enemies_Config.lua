@@ -65,7 +65,8 @@ Enemies_Weird_Punch_Respawn_After_x_Weird = 25
 
 Enemies_Ground_Dirt_Scale = Vector(5, 5, 5)
 
-Enemies_Damage_Angle_LookAt = 80
+-- CharacterSimple doesn't support LookAt
+--Enemies_Damage_Angle_LookAt = 80
 
 Zombies_Gibs_Bones = {
     foot_l = {
@@ -239,20 +240,17 @@ Enemies_Config = {
         -- Base walk = 190, base run = 380
         Types = {
             walk = {
-                GaitMode = GaitMode.Walking,
-                Speed_Multiplier = 1.4,
+                Speed_Walk = 266,
                 Vault_Anim = Vault_Animations.VaultOverBox,
                 Ambient_Sounds = RANDOM_SOUNDS.zombie_soft,
             },
             run = {
-                GaitMode = GaitMode.Sprinting,
-                Speed_Multiplier = 1.2,
+                Speed_Walk = 456,
                 Vault_Anim = Vault_Animations.JumpingRunning,
                 Ambient_Sounds = RANDOM_SOUNDS.zombie_sprint,
             },
             crawl = {
-                GaitMode = GaitMode.Walking,
-                Speed_Multiplier = 0.6,
+                Speed_Walk = 114,
                 Vault_Anim = Vault_Animations.VaultOverBox,
                 Ambient_Sounds = RANDOM_SOUNDS.zombie_crawl,
                 Bot_Aim_Offset = Vector(0, 0, -92),
@@ -338,17 +336,20 @@ Enemies_Config = {
             },
         },
 
+        Anim_BP = "vzombies-assets::Zombie_AnimBP_Root",
+
         Custom_Anims_Transform = {
-            to_crawl = function(Custom_Anims_BP, char)
-                Custom_Anims_BP:CallBlueprintEvent("SetZombieCrawl", char:GetID())
+            to_crawl = function(char)
+                char:CallAnimationBlueprintEvent("SetCrawl", true)
             end
         },
 
-        Custom_Anims_Func = function(Custom_Anims_BP, char)
-            char:AddActorTag("vzanimoverwrite")
-            Custom_Anims_BP:CallBlueprintEvent("SetAnimBP", char:GetID(), char:GetValue("EnemyType") == "walk")
-            if char:GetValue("EnemyType") == "crawl" then
-                Custom_Anims_BP:CallBlueprintEvent("SetZombieCrawl", char:GetID())
+        Custom_Anims_Func = function(char)
+            local enemy_type = char:GetValue("EnemyType")
+            if enemy_type == "walk" then
+                char:CallAnimationBlueprintEvent("SetWalk", true)
+            elseif enemy_type == "crawl" then
+                char:CallAnimationBlueprintEvent("SetCrawl", true)
             end
         end,
     },
@@ -356,8 +357,7 @@ Enemies_Config = {
     Hellhound = {
         Types = {
             hellhound = {
-                GaitMode = GaitMode.Sprinting,
-                Speed_Multiplier = 1.6,
+                Speed_Walk = 608,
                 Bot_Aim_Offset = Vector(0, 0, -25),
                 --[[Physical_Anim_Settings = {
                     {"root", true, false, 100000, 100000, 100000, 100000, 100000, 100000},
@@ -398,10 +398,7 @@ Enemies_Config = {
             Number_To_Spawn_mult = 0.3, -- From basic number to spawn (zombies)
         },
 
-        Custom_Anims_Func = function(Custom_Anims_BP, char)
-            char:AddActorTag("vzanimoverwrite")
-            Custom_Anims_BP:CallBlueprintEvent("SetHellhound")
-        end,
+        Anim_BP = "vzombies-assets::Hellhound_Anim_BP",
 
         Custom_Skeleton = true, -- Whether to disable hit reaction to avoid ragdoll issues
     },
@@ -409,8 +406,7 @@ Enemies_Config = {
     Brutus = {
         Types = {
             brutus = {
-                GaitMode = GaitMode.Sprinting,
-                Speed_Multiplier = 1,
+                Speed_Walk = 380,
             },
         },
 
@@ -456,10 +452,7 @@ Enemies_Config = {
             spawn_chance_per_zombie = 1, -- out of 1000
         },
 
-        Custom_Anims_Func = function(Custom_Anims_BP, char)
-            char:AddActorTag("vzanimoverwrite")
-            Custom_Anims_BP:CallBlueprintEvent("SetBrutus")
-        end,
+        Anim_BP = "vzombies-assets::Brutus_AnimBP",
 
         Custom_Skeleton = true,
     },
@@ -467,8 +460,7 @@ Enemies_Config = {
     Napalm = {
         Types = {
             napalm = {
-                GaitMode = GaitMode.Walking,
-                Speed_Multiplier = 1.1,
+                Speed_Walk = 209,
             },
         },
 
@@ -512,10 +504,7 @@ Enemies_Config = {
             spawn_chance_per_zombie = 1, -- out of 1000
         },
 
-        Custom_Anims_Func = function(Custom_Anims_BP, char)
-            char:AddActorTag("vzanimoverwrite")
-            Custom_Anims_BP:CallBlueprintEvent("SetNapalm")
-        end,
+        Anim_BP = "vzombies-assets::Napalm_AnimBP",
 
         Custom_Skeleton = true,
     },
@@ -524,8 +513,7 @@ Enemies_Config = {
 
         Types = {
             walk = {
-                GaitMode = GaitMode.Walking,
-                Speed_Multiplier = 1.4,
+                Speed_Walk = 266,
                 Vault_Anim = Vault_Animations.VaultOverBox,
                 Ambient_Sounds = RANDOM_SOUNDS.zombie_soft,
             },
@@ -599,11 +587,14 @@ Enemies_Config = {
             spawn_chance_per_zombie = 2, -- out of 1000
         },
 
-        Custom_Anims_Func = function(Custom_Anims_BP, char)
-            char:AddActorTag("vzanimoverwrite")
-            Custom_Anims_BP:CallBlueprintEvent("SetAnimBP", char:GetID(), char:GetValue("EnemyType") == "walk")
-            if char:GetValue("EnemyType") == "crawl" then
-                Custom_Anims_BP:CallBlueprintEvent("SetZombieCrawl", char:GetID())
+        Anim_BP = "vzombies-assets::Zombie_AnimBP_Root",
+
+        Custom_Anims_Func = function(char)
+            local enemy_type = char:GetValue("EnemyType")
+            if enemy_type == "walk" then
+                char:CallAnimationBlueprintEvent("SetWalk", true)
+            elseif enemy_type == "crawl" then
+                char:CallAnimationBlueprintEvent("SetCrawl", true)
             end
         end,
 
@@ -613,14 +604,12 @@ Enemies_Config = {
     Skeleton = {
         Types = {
             walk = {
-                GaitMode = GaitMode.Walking,
-                Speed_Multiplier = 1,
+                Speed_Walk = 190,
                 default = true,
                 Ambient_Sounds = RANDOM_SOUNDS.zombie_soft,
             },
             run = {
-                GaitMode = GaitMode.Sprinting,
-                Speed_Multiplier = PlayerSpeedMultiplier,
+                Speed_Walk = PlayerSpeedMultiplier*380,
                 Ambient_Sounds = RANDOM_SOUNDS.zombie_sprint,
             },
         },

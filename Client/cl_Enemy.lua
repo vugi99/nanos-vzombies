@@ -1,11 +1,6 @@
 
-Custom_Anims_BP = Blueprint(
-    Vector(0, 0, 0),
-    Rotator(0, 0, 0),
-    "vzombies-assets::VZ_CustomAnims"
-)
 
-RegisterPreparedLoop("Enemies", Character, "EnemyName")
+RegisterPreparedLoop("Enemies", CharacterSimple, "EnemyName")
 
 function HandleEnemyType(char, value)
     local enemy_table = GetEnemyTable(char)
@@ -14,12 +9,12 @@ function HandleEnemyType(char, value)
     if old_value ~= nil then
         if enemy_table.Custom_Anims_Transform then
             if enemy_table.Custom_Anims_Transform["to_" .. value] then
-                enemy_table.Custom_Anims_Transform["to_" .. value](Custom_Anims_BP, char)
+                enemy_table.Custom_Anims_Transform["to_" .. value](char)
             end
         end
     else
         if enemy_table.Custom_Anims_Func then
-            enemy_table.Custom_Anims_Func(Custom_Anims_BP, char)
+            enemy_table.Custom_Anims_Func(char)
         end
 
         char:SetValue("OldEnemyType", value)
@@ -63,7 +58,7 @@ function HandleEnemyType(char, value)
     end
 end
 
-for k, v in pairs(Character.GetPairs()) do
+for k, v in pairs(CharacterSimple.GetPairs()) do
     if v:IsValid() then
         if v:GetValue("EnemyType") then
             HandleEnemyType(v, v:GetValue("EnemyType"))
@@ -72,7 +67,7 @@ for k, v in pairs(Character.GetPairs()) do
 end
 
 
-VZ_EVENT_SUBSCRIBE("Character", "ValueChange", function(char, key, value)
+VZ_EVENT_SUBSCRIBE("CharacterSimple", "ValueChange", function(char, key, value)
     if key == "EnemyType" then
         if value then
             HandleEnemyType(char, value)
