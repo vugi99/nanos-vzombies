@@ -603,3 +603,13 @@ VZ_EVENT_SUBSCRIBE("StaticMesh", "ValueChange", function(sm, key, value)
         end
     end
 end)
+
+VZ_EVENT_SUBSCRIBE("CharacterSimple", "Death", function(char, last_damage_taken, last_bone_damaged, damage_type_reason, hit_from_direction, instigator, causer)
+    if not IsValid(char) then return end
+    if not char:GetValue("EnemyName") then return end
+    local enemy_table = GetEnemyTable(char)
+    if not enemy_table.Death_Sounds then return end
+    local capsule_size = char:GetCapsuleSize()
+    if not capsule_size then return Console.Warn("%s (%s) is missing CapsuleSize?", char, char:GetValue("EnemyName")) end
+    PlayVZSound({random_sound_tbl=enemy_table.Death_Sounds}, char:GetLocation() + Vector(0, 0, capsule_size.HalfHeight*1.9))
+end)
