@@ -608,6 +608,7 @@ VZ_EVENT_SUBSCRIBE("CharacterSimple", "Death", function(char, last_damage_taken,
     if not IsValid(char) then return end
     if not char:GetValue("EnemyName") then return end
     local enemy_table = GetEnemyTable(char)
+    if not enemy_table then return end
     if not enemy_table.Death_Sounds then return end
     local capsule_size = char:GetCapsuleSize()
     if not capsule_size then return Console.Warn("%s (%s) is missing CapsuleSize?", char, char:GetValue("EnemyName")) end
