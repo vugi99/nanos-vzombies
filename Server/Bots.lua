@@ -161,7 +161,10 @@ function VZBotJoin()
         end
     end, Bots_Start_Moving_ms)
 
-    Bot:SetValue("BotAimPlayer", GetRandomPlayer():GetID(), true)
+    local r_player = GetRandomPlayer()
+    if IsValid(r_player) then
+        Bot:SetValue("BotAimPlayer", r_player:GetID(), true)
+    end
 
     return ALL_BOTS[l_count + 1]
 end
