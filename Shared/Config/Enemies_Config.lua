@@ -276,7 +276,7 @@ Enemies_Config = {
 
         Collision_Radius = 17.0,
 
-        Joker_Chance = 5, -- x amount TakeDamage will lead to joker for 10000 shots
+        Joker_Chance = 5, -- x amount TakeDamage will lead to joker for 10000 shots, set to -1 to disable it
 
         Emissive_Key = "Emissive_value", -- The key used on scalar parameter of character to disable it on death with SetMaterialScalarParameter
         Emissive_Spawn_Value = 10,

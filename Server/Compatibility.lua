@@ -30,3 +30,10 @@ if not NanosWorldWeapons[Powerups_Config.death_machine.minigun_weapon_name] then
         end
     end
 end
+
+if not CharacterSimple.SetRagdollMode then
+    function CharacterSimple:SetRagdollMode(enabled)
+        -- stub
+    end
+    Console.Warn("Stub CharacterSimple:SetRagdollMode created, nanos doesn't provide it yet")
+end
