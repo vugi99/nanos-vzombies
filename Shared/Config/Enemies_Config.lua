@@ -231,7 +231,7 @@ Vault_Animations = {
 }
 
 Enemy_Under_Ground_Animation = {
-    asset = "vzombies-assets::FreehangClimb",
+    asset = "vzombies-assets::FreehangClimb_Montage",
     duration_ms = 6100,
 }
 

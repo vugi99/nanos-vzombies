@@ -226,7 +226,8 @@ function SpawnEnemy(EnemyName, EnemyType)
                 if (not is_ground_anim_disabled) then
                     enemy:SetFlyingMode(true)
                     enemy:SetValue("GroundAnim", true, false)
-                    enemy:PlayAnimation(Enemy_Under_Ground_Animation.asset, "FullBody", false, 0, 0)
+                    enemy:PlayAnimation(Enemy_Under_Ground_Animation.asset, "DefaultSlot", false, 0, 0)
+                    --print(enemy, "ground spawn", Enemy_Under_Ground_Animation.asset)
 
                     --local players_sound = GetPlayersInRadius(selected_spawn.location, RANDOM_SOUNDS.spawn_dirt_sound.falloff_distance)
                     --for k, v in pairs(players_sound) do
