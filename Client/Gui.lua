@@ -752,6 +752,8 @@ VZ_EVENT_SUBSCRIBE("Character", "ValueChange", function(char, key, value)
     if key == "PlayerDown" then
         if not IsSelfCharacter(char) then
             if value then
+                local ply = char:GetPlayer()
+                if not IsValid(ply) then return end -- Probably a bot has not initialized yet
                 AddNotification(char:GetPlayer():GetAccountName() .. " is down", 10000)
                 local billboard = Billboard(
                     Vector(0, 0, 0),
