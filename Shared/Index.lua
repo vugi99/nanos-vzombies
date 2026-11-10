@@ -18,3 +18,11 @@ function TableDeepCopy(tbl, parents)
     end
     return newtbl
 end
+
+if not CharacterSimple.IsInRagdollMode then
+    function CharacterSimple:IsInRagdollMode()
+        return false
+    end
+
+    Console.Warn("Stub CharacterSimple:IsInRagdollMode function created for missing nanos functionality")
+end

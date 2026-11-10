@@ -33,7 +33,9 @@ Max_enemies_spawned = 25
 Max_Enemies_Dead_Ragdolls = 15
 
 Enemy_Route_Update_ms = 100
-Enemy_Look_At_Update_ms = 300
+
+-- CharacterSimple doesn't support LookAt
+--Enemy_Look_At_Update_ms = 300
 
 Enemies_Target_Refresh_ms = 2500
 
@@ -65,8 +67,7 @@ Enemies_Weird_Punch_Respawn_After_x_Weird = 25
 
 Enemies_Ground_Dirt_Scale = Vector(5, 5, 5)
 
--- CharacterSimple doesn't support LookAt
---Enemies_Damage_Angle_LookAt = 80
+Enemies_Damage_Angle_LookAt = 80
 
 Zombies_Gibs_Bones = {
     foot_l = {
