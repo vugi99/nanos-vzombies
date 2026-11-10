@@ -209,7 +209,7 @@ function PlayerLeftCheckSyncPlayers(ply)
                 end
                 if v:GetValue("BotAimPlayer") == ply:GetID() then
                     local random_ply = GetRandomPlayerWOOne(ply)
-                    if random_ply then
+                    if IsValid(random_ply) then
                         v:SetValue("BotAimPlayer", random_ply:GetID(), true)
                     end
                 end
@@ -247,11 +247,13 @@ function RequestBotAction(bot, wo_ply, prereach)
                 char:GetValue("PrereachTrigger"):Destroy()
             end
         end
-        local ply = GetRandomPlayer()
+        local ply
         if wo_ply then
             ply = GetRandomPlayerWOOne(wo_ply)
+        else
+            ply = GetRandomPlayer()
         end
-        if ply then
+        if IsValid(ply) then
             bot:SetValue("RequestedActionFromPlayer", ply:GetID(), false)
             Events.CallRemote("RequestBotAction", ply, Reliability.Reliable, bot.ID, bot.Stored, GetPlayerInventoryTable(bot), ROOMS_UNLOCKED, prereach)
         end

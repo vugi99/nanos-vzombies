@@ -810,7 +810,10 @@ function EnemyAttack(enemy)
                                                                                     char:SetCanAim(true)
                                                                                 else
                                                                                     RequestBotAction(ply)
-                                                                                    ply:SetValue("BotAimPlayer", GetRandomPlayer():GetID(), true)
+                                                                                    local r_player = GetRandomPlayer()
+                                                                                    if IsValid(r_player) then
+                                                                                        ply:SetValue("BotAimPlayer", r_player:GetID(), true)
+                                                                                    end
                                                                                 end
                                                                                 char:SetValue("PlayerGrabbedBy", nil, true)
                                                                             end

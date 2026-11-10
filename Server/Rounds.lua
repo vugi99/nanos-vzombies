@@ -72,7 +72,10 @@ function RoundFinished(reset_all, restart_game, ply_left)
                     ProtectedCall(function()
                         SpawnCharacterForPlayer(v, k)
                         if v.BOT then
-                            v:SetValue("BotAimPlayer", GetRandomPlayer():GetID(), true)
+                            local r_player = GetRandomPlayer()
+                            if IsValid(r_player) then
+                                v:SetValue("BotAimPlayer", r_player:GetID(), true)
+                            end
                             RequestBotAction(v)
                         end
                     end)
@@ -518,7 +521,10 @@ VZ_EVENT_SUBSCRIBE_REMOTE("TogglePauseGame", function(ply)
                         if IsValid(char) then
                             if not char:GetValue("PlayerDown") then
                                 RequestBotAction(v)
-                                v:SetValue("BotAimPlayer", GetRandomPlayer():GetID(), true)
+                                local r_player = GetRandomPlayer()
+                                if IsValid(r_player) then
+                                    v:SetValue("BotAimPlayer", r_player:GetID(), true)
+                                end
                             end
                         end
                     end

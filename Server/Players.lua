@@ -163,13 +163,24 @@ function GetPlayersInRadius(loc, radius)
     return in_radius_players
 end
 
-function GetRandomPlayer()
+function GetPlayersWithoutBeingDestroyed()
     local players = Player.GetAll()
+    local tbl = {}
+    for i, v in ipairs(players) do
+        if IsValid(v) and (not v:IsBeingDestroyed()) then
+            tbl[#tbl+1] = v
+        end
+    end
+    return tbl
+end
+
+function GetRandomPlayer()
+    local players = GetPlayersWithoutBeingDestroyed()
     return players[math.random(table_count(players))]
 end
 
 function GetRandomPlayerWOOne(ply)
-    local players = Player.GetAll()
+    local players = GetPlayersWithoutBeingDestroyed()
     local new_tbl = {}
     for k, v in pairs(players) do
         if v ~= ply then
@@ -331,7 +342,10 @@ function ApplyGriefFreeze(ply, char)
                             char:SetCanAim(true)
                         else
                             RequestBotAction(ply)
-                            ply:SetValue("BotAimPlayer", GetRandomPlayer():GetID(), true)
+                            local r_player = GetRandomPlayer()
+                            if IsValid(r_player) then
+                                ply:SetValue("BotAimPlayer", r_player:GetID(), true)
+                            end
                         end
                     end
                 end
@@ -798,7 +812,10 @@ function RevivePlayerFinished_RevivedPart(revived_char)
     Events.CallRemote("UpdateGUIHealth", revived_ply, Reliability.Reliable)
     if revived_ply.BOT then
         RequestBotAction(revived_ply)
-        revived_ply:SetValue("BotAimPlayer", GetRandomPlayer():GetID(), true)
+        local r_player = GetRandomPlayer()
+        if IsValid(r_player) then
+            revived_ply:SetValue("BotAimPlayer", r_player:GetID(), true)
+        end
         revived_char:SetValue("BOTReloading", nil, false) -- fix bot not shooting after death while reloading
     end
     revived_char:SetValue("FailedToReach", 0, false)
