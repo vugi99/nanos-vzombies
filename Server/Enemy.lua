@@ -133,7 +133,7 @@ function SpawnEnemy(EnemyName, EnemyType)
 
             local spawn_location = selected_spawn.location + Vector(0, 0, 100)
             if (not is_ground_anim_disabled) then
-                spawn_location = selected_spawn.location - Vector(0, 0, 140)
+                spawn_location = selected_spawn.location - Vector(0, 0, 110)
             end
             --print("I guess it's from there", VZ_RandomSound(enemy_table.Death_Sounds))
 
@@ -224,6 +224,7 @@ function SpawnEnemy(EnemyName, EnemyType)
             if (enemy_table.Spawning_Config.type == "zombie_spawns" or enemy_table.Spawning_Config.type == "direct_zombie_spawns") then
                 if (not is_ground_anim_disabled) then
                     enemy:SetFlyingMode(true)
+                    enemy:SetCollision(CollisionType.NoCollision)
                     enemy:SetValue("GroundAnim", true, false)
                     enemy:PlayAnimation(Enemy_Under_Ground_Animation.asset, "DefaultSlot", false, 0, 0)
                     --print(enemy, "ground spawn", Enemy_Under_Ground_Animation.asset)
@@ -274,9 +275,11 @@ function EnemyOutGround(enemy, selected_spawn, selected_spawn_target, after_grou
 
     if after_ground_anim then
         enemy:SetValue("GroundAnim", nil, false)
-        enemy:StopAnimation(Enemy_Under_Ground_Animation.asset)
-        enemy:SetLocation(selected_spawn.location + Vector(0, 0, 97))
-        --zombie:SetGravityEnabled(true)
+        enemy:SetCollision(CollisionType.Normal)
+        --enemy:StopAnimation(Enemy_Under_Ground_Animation.asset)
+        local fw = selected_spawn.rotation:GetForwardVector()
+        enemy:SetLocation(selected_spawn.location + Vector(0, 0, 97) + fw*64) -- Make sure the zombie don't fall
+        --enemy:SetGravityEnabled(true)
         enemy:SetFlyingMode(false)
     end
 
