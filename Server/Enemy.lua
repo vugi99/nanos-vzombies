@@ -226,7 +226,7 @@ function SpawnEnemy(EnemyName, EnemyType)
                     enemy:SetFlyingMode(true)
                     enemy:SetCollision(CollisionType.NoCollision)
                     enemy:SetValue("GroundAnim", true, false)
-                    enemy:PlayAnimation(Enemy_Under_Ground_Animation.asset, "DefaultSlot", false, 0, 0)
+                    enemy:PlayAnimation(Enemy_Under_Ground_Animation.asset, "DefaultSlot", false, 0, Enemy_Under_Ground_Animation.blend_out_time)
                     --print(enemy, "ground spawn", Enemy_Under_Ground_Animation.asset)
 
                     --local players_sound = GetPlayersInRadius(selected_spawn.location, RANDOM_SOUNDS.spawn_dirt_sound.falloff_distance)
@@ -278,7 +278,7 @@ function EnemyOutGround(enemy, selected_spawn, selected_spawn_target, after_grou
         enemy:SetCollision(CollisionType.Normal)
         --enemy:StopAnimation(Enemy_Under_Ground_Animation.asset)
         local fw = selected_spawn.rotation:GetForwardVector()
-        enemy:SetLocation(selected_spawn.location + Vector(0, 0, 97) + fw*64) -- Make sure the zombie don't fall
+        enemy:SetLocation(selected_spawn.location + Vector(0, 0, 97) + fw*Enemy_Under_Ground_Animation.forward_offset) -- Make sure the zombie don't fall
         --enemy:SetGravityEnabled(true)
         enemy:SetFlyingMode(false)
     end

@@ -232,8 +232,11 @@ Vault_Animations = {
 
 Enemy_Under_Ground_Animation = {
     asset = "vzombies-assets::FreehangClimb_Montage",
-    duration_ms = 6100,
+    -- 6202.633 is the real time
+    forward_offset = 55, -- 64 for the full anim
+    blend_out_time = 0.66,
 }
+Enemy_Under_Ground_Animation.duration_ms = 6150 - (Enemy_Under_Ground_Animation.blend_out_time*1000)/2.125
 
 Enemies_Config = {
     Zombie = {
