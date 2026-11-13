@@ -555,18 +555,54 @@ function PlayStartRepairBarricade()
     PlayVZSound({basic_sound_tbl=Barricade_Start_Repair})
 end
 
-VZ_EVENT_SUBSCRIBE_REMOTE("ZombieGroundDirt", function(sound_path, loc)
+-- With Sound + Particle (x100) it takes about 0.5 of the frametime, so in normal gameplay (x1) about 5% of a frame performance.
+-- With 100 S+P I get about 5-10 FPS drop on the average framerate it seems okay, mainly due to the start stutter.
+
+-- With only sound (x100) it takes about 0.2 of frametime, so normal gameplay 2%
+function ZombieGroundDirt(sound_path, loc)
     PlayVZSound({random_sound_tbl=RANDOM_SOUNDS.spawn_dirt_sound, random_sound_selected=sound_path}, loc)
 
-    local zombie_g_dirt_particle = Particle(
-        loc,
-        Rotator(0, math.random(-180, 180), 0),
-        "vzombies-assets::PSN_Dirt_Surface",
-        true,
-        true
-    )
-    zombie_g_dirt_particle:SetScale(Enemies_Ground_Dirt_Scale)
-end)
+    if VZ_CL_Current_Settings["Zombie_Ground_Dirt_Particle"] then
+        local zombie_g_dirt_particle = Particle(
+            loc,
+            Rotator(0, math.random(-180, 180), 0),
+            "vzombies-assets::PSN_Dirt_Surface",
+            true,
+            true
+        )
+        zombie_g_dirt_particle:SetScale(Enemies_Ground_Dirt_Scale)
+    end
+end
+VZ_EVENT_SUBSCRIBE_REMOTE("ZombieGroundDirt", ZombieGroundDirt)
+
+if ZDEV_IsModeEnabled("ZDEV_COMMANDS") then
+    VZ_EVENT_SUBSCRIBE("Chat", "PlayerSubmit", function(text, ply)
+        --print("PlayerSubmit", text, ply)
+        if not IsValid(ply) then return end
+        if text ~= "/zgd_bench" then return end
+
+        local sound_path = VZ_RandomSound(RANDOM_SOUNDS.spawn_dirt_sound)
+
+        local start_loc = Vector(0, 0, 200)
+        local count = 100
+        local spacing = 150
+
+        local colsize = math.ceil(math.sqrt(count))
+
+        local start = os.clock()
+
+        for i=0, count-1 do
+            local tloc = start_loc + Vector((i%colsize)*spacing, (i/colsize)*spacing, 0)
+            ZombieGroundDirt(sound_path, tloc)
+        end
+
+        local endt = os.clock()
+
+        local bench_time = (endt-start)
+        local ft = Client.GetFrameTime()
+        print("ZombieGroundDirt (x" .. count .. ") took " .. bench_time .. "s", (bench_time/ft) .. " of the frame time")
+    end)
+end
 
 VZ_EVENT_SUBSCRIBE_REMOTE("JokerZombieSound", function(char)
     if char:IsValid() then

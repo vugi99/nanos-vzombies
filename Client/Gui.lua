@@ -1336,9 +1336,8 @@ TextRender: 57FPS, clear winner
 
 if ZDEV_IsModeEnabled("ZDEV_COMMANDS") then
     VZ_EVENT_SUBSCRIBE("Chat", "PlayerSubmit", function(text, ply)
-        -- Nanos 1.169.0 bug: ply is different from localplayer and is invalid
         --print("PlayerSubmit", text, ply)
-        --if not IsValid(ply) then return end
+        if not IsValid(ply) then return end
         local start_loc = Vector(0, 0, 200)
         local spacing = 150
         local spawned_ents = 100
