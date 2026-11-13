@@ -9,13 +9,13 @@ Press **H** to open the in-game *How to play* menu.
 
 ## Dependencies
 * [vzombies-assets](https://nanos-world.com/store/assets/vzombies-assets)
-* [default-weapons](https://github.com/nanos-world/default-weapons)
+* [default-weapons 1.5.1](https://github.com/nanos-world/default-weapons)
 
 ## Integrations
-* [default-vehicles](https://github.com/nanos-world/default-vehicles)
-* [modern-weapons](https://github.com/vugi99/nanos-modern-weapons)
-* [webui3d2d](https://github.com/Timmy-the-nobody/WebUI3d2d)
-* [mapvote](https://github.com/vugi99/nanos-mapvote)
+* [default-vehicles 1.6.3](https://github.com/nanos-world/default-vehicles)
+* [modern-weapons 0.2.4](https://github.com/vugi99/nanos-modern-weapons)
+* [webui3d2d 3.0.0](https://github.com/Timmy-the-nobody/WebUI3d2d)
+* [mapvote 0.1.7](https://github.com/vugi99/nanos-mapvote)
 * [vzombies-survivors-assets](https://nanos-world.com/store/assets/vzombies-survivors-assets)
 
 ## Global Features
