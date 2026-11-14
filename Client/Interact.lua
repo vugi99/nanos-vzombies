@@ -43,24 +43,6 @@ function ResetInteractState()
 end
 Package.Export("ResetInteractState", ResetInteractState)
 
-if VZ_GetFeatureValue("Map_Weapons", "can_interact") then
-    VZ_EVENT_SUBSCRIBE("Character", "Highlight", function(char, Highlight, ent)
-        if IsSelfCharacter(char) then
-            if ent then -- error when highlight ground weapons :thinking:
-                local m_weap_id = ent:GetValue("MapWeaponID")
-                if m_weap_id then
-                    if Highlight then
-                        VZ_SetInteractingThing("MapWeapon", ent)
-                        BuyText(MAP_WEAPONS[m_weap_id].weapon_name .. " / Ammo", tostring(MAP_WEAPONS[m_weap_id].price) .. "$ / " .. tostring(math.floor(MAP_WEAPONS[m_weap_id].price * Weapons_Ammo_Price_Percentage / 100)) .. " $ / " .. tostring(Pack_a_punch_price))
-                    elseif (InteractType == "MapWeapon" and InteractThing == ent) then
-                        ResetInteractState()
-                    end
-                end
-            end
-        end
-    end)
-end
-
 function VZ_GetInteractTypePriority(interact_type)
     return InteractTypes_Priority[interact_type] or MAX_IT_PRIO
 end
@@ -69,6 +51,13 @@ Package.Export("VZ_GetInteractTypePriority", VZ_GetInteractTypePriority)
 function GetPriorityInteractType(priority)
     return Priority_InteractType[priority]
 end
+
+function VZ_InteractTypeCheck(interact_type)
+    local cI_prio = VZ_GetInteractTypePriority(InteractType)
+    local my_Iprio = VZ_GetInteractTypePriority(interact_type)
+    return (InteractType == nil or (cI_prio >= my_Iprio and my_Iprio < MAX_IT_PRIO) or InteractType == interact_type)
+end
+Package.Export("VZ_InteractTypeCheck", VZ_InteractTypeCheck)
 
 -- Lower is better
 function VZ_SetInteractTypePriority(interact_type, priority)
@@ -103,12 +92,30 @@ function VZ_GetITFirstPrioAvailable()
 end
 Package.Export("VZ_GetITFirstPrioAvailable", VZ_GetITFirstPrioAvailable)
 
+if VZ_GetFeatureValue("Map_Weapons", "can_interact") then
+    VZ_SetInteractTypePriority("MapWeapon", 13)
+    VZ_EVENT_SUBSCRIBE("Character", "Highlight", function(char, Highlight, ent)
+        if IsSelfCharacter(char) then
+            if ent then -- error when highlight ground weapons :thinking:
+                if not VZ_InteractTypeCheck("MapWeapon") then return end
+                local m_weap_id = ent:GetValue("MapWeaponID")
+                if m_weap_id then
+                    if Highlight then
+                        VZ_SetInteractingThing("MapWeapon", ent)
+                        BuyText(MAP_WEAPONS[m_weap_id].weapon_name .. " / Ammo", tostring(MAP_WEAPONS[m_weap_id].price) .. "$ / " .. tostring(math.floor(MAP_WEAPONS[m_weap_id].price * Weapons_Ammo_Price_Percentage / 100)) .. " $ / " .. tostring(Pack_a_punch_price))
+                    elseif (InteractType == "MapWeapon" and InteractThing == ent) then
+                        ResetInteractState()
+                    end
+                end
+            end
+        end
+    end)
+end
+
 function InteractCheck(interact_type, loop_params, Interact_Check_Interval_ms, CheckFunc)
 
     Timer.SetInterval(function()
-        local cI_prio = VZ_GetInteractTypePriority(InteractType)
-        local my_Iprio = VZ_GetInteractTypePriority(interact_type)
-        if (InteractType == nil or (cI_prio >= my_Iprio and my_Iprio < MAX_IT_PRIO) or InteractType == interact_type) then
+        if (VZ_InteractTypeCheck(interact_type)) then
             local local_player = Client.GetLocalPlayer()
             local local_char = local_player:GetControlledCharacter()
 
