@@ -34,6 +34,7 @@ VZ_EVENT_SUBSCRIBE("Events", "VZ_PlayerJoined", MakeModMenuCallback(function(ply
     end
 
     Events.CallRemote("Send_Weapons_Names", ply, Reliability.Reliable, _Weapons_Names)
+    if not ZDEV_IsModeEnabled("ZDEV_MOD_MENU") then return end -- Do not enable it by default in non-dev mode
     ply:SetValue("MM_GodMode", true, false)
     ply:SetValue("MM_InfMoney", true, false)
 end))
