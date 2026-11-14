@@ -10,7 +10,7 @@ Mapvote_tbl = {
         zm_kino_der_toten = {
             path = "zm-kino-der-toten",
             UI_name = "Kino Der Toten",
-            image = "https://cdn.nanos-world.com/asset-packs/zm-kino-der-toten/images/1761416211_f5710264-0ff5-43c3-99a6-450be9d3fb23.jpg",
+            image = "https://cdn.nanos-world.com/asset-packs/zm-kino-der-toten/images/1793970352_90adbbec-fee9-4c89-a451-1e3294a204e3.webp",
             --image = "../../../../../../../Server/Assets/zm-kino-der-toten/zm_kino_der_toten/zm_kino_der_toten/Map.jpg",
         },
         --[[zm_nacht_der_untoten = {
@@ -36,7 +36,7 @@ Mapvote_tbl = {
         zm_town_bo3 = {
             path = "zm-town",
             UI_name = "Town",
-            image = "https://cdn.nanos-world.com/asset-packs/zm-town/images/1761416162_fd9b1160-a6e9-4259-aec3-5a12b638a6b8.jpg",
+            image = "https://cdn.nanos-world.com/asset-packs/zm-town/images/1793970333_d30c569e-9f71-499a-87a6-0451a37821c0.webp",
             --image = "../../../../../../../Server/Assets/zm-town/zm_town_bo3/Map.jpg",
         },
         --[[bigoffice = {
@@ -57,7 +57,7 @@ Mapvote_tbl = {
         Supermarket = {
             path = "zm-supermarket",
             UI_name = "Supermarket",
-            image = "https://cdn.nanos-world.com/asset-packs/zm-supermarket/images/1761416193_84fa3d4b-dd14-4f9c-be0d-86c20f104788.jpg",
+            image = "https://cdn.nanos-world.com/asset-packs/zm-supermarket/images/1793970225_27ec27b5-6f06-4944-b08f-ad927d0ed0af.webp",
             --image = "../../../../../../../Server/Assets/zm-supermarket/Maps/Supermarket_Map/Map.jpg",
         },
     }
