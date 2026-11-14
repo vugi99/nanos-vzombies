@@ -272,9 +272,6 @@ function ZombieDie_SpawnRandomPowerup(zombie)
         local random_perc = math.random(100)
         if random_perc <= Powerup_Spawn_Percentage then
             local loc = zombie:GetLocation()
-            if zombie:GetValue("GroundAnim") then
-                loc = loc + Vector(0, 0, 237)
-            end
 
             local random_powerup_name = Powerups_Names[math.random(table_count(Powerups_Names))]
             SpawnPowerup(loc, random_powerup_name)
