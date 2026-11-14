@@ -8,6 +8,17 @@ RepairBarricadeInterval = nil
 
 RevivingPlayerData = nil
 
+--[[
+Not registered
+MapCustom
+MapTeleporter
+Gibs
+]]
+local MAX_IT_PRIO = 16384
+local MIN_IT_PRIO = 1
+local InteractTypes_Priority = {}
+local Priority_InteractType = {}
+
 function VZ_SetInteractingThingOnly(IThing, text)
     InteractThing = IThing
     InteractText(text)
@@ -50,10 +61,54 @@ if VZ_GetFeatureValue("Map_Weapons", "can_interact") then
     end)
 end
 
+function VZ_GetInteractTypePriority(interact_type)
+    return InteractTypes_Priority[interact_type] or MAX_IT_PRIO
+end
+Package.Export("VZ_GetInteractTypePriority", VZ_GetInteractTypePriority)
+
+function GetPriorityInteractType(priority)
+    return Priority_InteractType[priority]
+end
+
+-- Lower is better
+function VZ_SetInteractTypePriority(interact_type, priority)
+    if priority == nil then
+        local cur_prio = VZ_GetInteractTypePriority(interact_type)
+        if (not cur_prio) or cur_prio == MAX_IT_PRIO then return end
+        InteractTypes_Priority[interact_type] = nil
+        Priority_InteractType[cur_prio] = nil
+        return
+    end
+
+    if type(priority) ~= "number" then return error("Expected an integer for priority") end
+    if math.type(priority) ~= "integer" then return error("Expected an integer for priority") end
+    if priority >= MAX_IT_PRIO then return error("priority is higher or equal than MAX_IT_PRIO") end
+    if priority < MIN_IT_PRIO then return error("priority is smaller than MIN_IT_PRIO") end
+    if GetPriorityInteractType(priority) then return error(string.format("%s priority is already associated to an interact_type")) end
+
+    InteractTypes_Priority[interact_type] = priority
+    Priority_InteractType[priority] = interact_type
+
+    return true
+end
+Package.Export("VZ_SetInteractTypePriority", VZ_SetInteractTypePriority)
+
+-- Not consistent but can be used to get a valid prio slot for external packages (so they don't get thrown into the unregistered worse priority)
+function VZ_GetITFirstPrioAvailable()
+    local priority = 0
+    for i, v in ipairs(Priority_InteractType) do
+        priority = i
+    end
+    return priority + 1
+end
+Package.Export("VZ_GetITFirstPrioAvailable", VZ_GetITFirstPrioAvailable)
+
 function InteractCheck(interact_type, loop_params, Interact_Check_Interval_ms, CheckFunc)
 
     Timer.SetInterval(function()
-        if (InteractType == nil or InteractType == interact_type) then
+        local cI_prio = VZ_GetInteractTypePriority(InteractType)
+        local my_Iprio = VZ_GetInteractTypePriority(interact_type)
+        if (InteractType == nil or (cI_prio >= my_Iprio and my_Iprio < MAX_IT_PRIO) or InteractType == interact_type) then
             local local_player = Client.GetLocalPlayer()
             local local_char = local_player:GetControlledCharacter()
 
@@ -119,6 +174,7 @@ function InteractAction(CheckNoPower, event_name, check_valid)
     end
 end
 
+VZ_SetInteractTypePriority("MapDoor", 11)
 InteractCheck("MapDoor", nil, Doors_Interact_Check_Interval_ms, function(local_player, local_char, local_char_location)
     local found
 
@@ -165,6 +221,7 @@ end)
 
 if VZ_GetFeatureValue("Barricades", "can_interact") then
     RegisterPreparedLoop("Barricades", StaticMesh, "BarricadeSpawnID")
+    VZ_SetInteractTypePriority("MapBarricade", 12)
     InteractCheck("MapBarricade", {LoopFunc = PreparedLoops["Barricades"], check_is_valid = true}, Barricades_Interact_Check_Interval_ms, function(local_player, local_char, local_char_location, v)
         if v:GetValue("BarricadeLife") < 5 then
             local distance_sq = local_char_location:DistanceSquared(v:GetLocation())
@@ -200,6 +257,7 @@ function RepairBarricadeIFunc()
 end
 
 if VZ_GetFeatureValue("Revive", "can_interact") then
+    VZ_SetInteractTypePriority("RevivePlayer", 1)
     InteractCheck("RevivePlayer", {LoopFunc = Character.GetPairs, check_is_valid = true}, DownPlayer_Interact_Check_Interval_ms, function(local_player, local_char, local_char_location, v)
         if not IsSelfCharacter(v) then
             local RevivingPlayer = v:GetValue("RevivingPlayer")
@@ -217,6 +275,7 @@ if VZ_GetFeatureValue("Revive", "can_interact") then
 end
 
 if VZ_GetFeatureValue("MysteryBox", "can_interact") then
+    VZ_SetInteractTypePriority("MapMBOX", 3)
     RegisterPreparedLoop("MysteryBoxes", StaticMesh, "CanBuyMysteryBox")
     InteractCheck("MapMBOX", {LoopFunc = PreparedLoops["MysteryBoxes"], check_is_valid = true}, MBOX_Interact_Check_Interval_ms, function(local_player, local_char, local_char_location, v)
         local can_buy_mbox = v:GetValue("CanBuyMysteryBox")
@@ -232,6 +291,7 @@ if VZ_GetFeatureValue("MysteryBox", "can_interact") then
 end
 
 RegisterPreparedLoop("Power", StaticMesh, "MapPower")
+VZ_SetInteractTypePriority("MapPower", 2)
 InteractCheck("MapPower", {LoopFunc = PreparedLoops["Power"], check_is_valid = true}, POWER_Interact_Check_Interval_ms, function(local_player, local_char, local_char_location, v)
     if not POWER_ON then
         local distance_sq = local_char_location:DistanceSquared(v:GetLocation())
@@ -244,6 +304,7 @@ end)
 
 RegisterPreparedLoop("Perks", StaticMesh, "MapPerk")
 if VZ_GetFeatureValue("Perks", "can_interact") then
+    VZ_SetInteractTypePriority("MapPerk", 4)
     InteractCheck("MapPerk", {LoopFunc = PreparedLoops["Perks"], check_is_valid = true}, Perk_Interact_Check_Interval_ms, function(local_player, local_char, local_char_location, v)
         local perk = v:GetValue("MapPerk")
         if (perk and (not CurPerks[perk])) then
@@ -264,6 +325,7 @@ end
 
 RegisterPreparedLoop("PAP", StaticMesh, "CanBuyPackAPunch")
 if VZ_GetFeatureValue("Pack_a_punch", "can_interact") then
+    VZ_SetInteractTypePriority("MapPAP", 5)
     InteractCheck("MapPAP", {LoopFunc = PreparedLoops["PAP"], check_is_valid = true}, PAP_Interact_Check_Interval_ms, function(local_player, local_char, local_char_location, v)
         local can_buy_pap = v:GetValue("CanBuyPackAPunch")
         if can_buy_pap then
@@ -283,6 +345,7 @@ end
 
 if VZ_GetFeatureValue("Wunderfizz", "can_interact") then
     RegisterPreparedLoop("Wunders", StaticMesh, "CanBuyWunder")
+    VZ_SetInteractTypePriority("MapWunder", 7)
     InteractCheck("MapWunder", {LoopFunc = PreparedLoops["Wunders"], check_is_valid = true}, Wunderfizz_Interact_Check_Interval_ms, function(local_player, local_char, local_char_location, v)
         if table_count(CurPerks) < table_count(PERKS_CONFIG) then
             local can_buy_wunder = v:GetValue("CanBuyWunder")
@@ -306,6 +369,7 @@ if VZ_GetFeatureValue("Wunderfizz", "can_interact") then
 end
 
 RegisterPreparedLoop("Wunder_Bottles", Prop, "RealBottleData")
+VZ_SetInteractTypePriority("WunderBottle", 6)
 InteractCheck("WunderBottle", {LoopFunc = PreparedLoops["Wunder_Bottles"], check_is_valid = true}, Wunderfizz_Bottle_Interact_Check_Interval_ms, function(local_player, local_char, local_char_location, v)
     if table_count(CurPerks) < table_count(PERKS_CONFIG) then
         local wunder_bottle = v:GetValue("RealBottleData")
@@ -375,6 +439,7 @@ end
 if BANKS then
     if (VZ_GetFeatureValue("Banks", "script_loaded") and VZ_GetFeatureValue("Banks", "can_interact")) then
         RegisterPreparedLoop("Banks", StaticMesh, "MapBank")
+        VZ_SetInteractTypePriority("MapBank", 8)
         InteractCheck("MapBank", {LoopFunc = PreparedLoops["Banks"], check_is_valid = true}, VZ_GetFeatureValue("Banks", "Interact_Check_Interval_ms"), function(local_player, local_char, local_char_location, v)
             local stored_money = local_player:GetValue("PlayerStoredMoney")
             if stored_money then
@@ -400,6 +465,7 @@ if VEHICLES_PADS then
     RegisterPreparedLoop("Vehicles_Pads", StaticMesh, "VehiclePad")
     if not WebUI3d2d then
         if (VZ_GetFeatureValue("Vehicles", "script_loaded") and VZ_GetFeatureValue("Vehicles", "can_interact")) then
+            VZ_SetInteractTypePriority("MapVPad", 9)
             InteractCheck("MapVPad", {LoopFunc = PreparedLoops["Vehicles_Pads"], check_is_valid = true}, VPAD_Interact_Check_Interval_ms, function(local_player, local_char, local_char_location, v)
                 local distance_sq = local_char_location:DistanceSquared(v:GetLocation() + Vector(0, 0, 96))
                 if distance_sq <= VPAD_Interact_Check_Distance_Squared_Max then
@@ -443,6 +509,7 @@ end
 
 if (VZ_GetFeatureValue("Chargers", "script_loaded") and VZ_GetFeatureValue("Chargers", "can_interact")) then
     RegisterPreparedLoop("Chargers", StaticMesh, "MapChargerID")
+    VZ_SetInteractTypePriority("MapCharger", 10)
     InteractCheck("MapCharger", {LoopFunc = PreparedLoops["Chargers"], check_is_valid = true}, VZ_GetFeatureValue("Chargers", "Interact_Check_Interval_ms"), function(local_player, local_char, local_char_location, v)
         local distance_sq = local_char_location:DistanceSquared(v:GetLocation())
         --print(distance_sq)
