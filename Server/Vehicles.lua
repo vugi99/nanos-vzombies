@@ -122,12 +122,13 @@ end)
 
 VZ_EVENT_SUBSCRIBE("Character", "EnterVehicle", function(char, veh, seat)
     if veh:GetCollision() == CollisionType.IgnoreOnlyPawn then
+        --print(veh, "SetCollision EnterVehicle", CollisionType.Normal)
         veh:SetCollision(CollisionType.Normal)
     end
 end)
 
 VZ_EVENT_SUBSCRIBE("Character", "LeaveVehicle", function(char, veh)
-    --print("Set")
+    --print(veh, "SetCollision LeaveVehicle", CollisionType.IgnoreOnlyPawn)
     veh:SetCollision(CollisionType.IgnoreOnlyPawn)
 end)
 
