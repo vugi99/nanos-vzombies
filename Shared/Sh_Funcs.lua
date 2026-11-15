@@ -32,14 +32,6 @@ function GetCharacterFromId(id)
     end
 end
 
-function GetCharacterSimpleFromId(id)
-    for k, v in pairs(CharacterSimple.GetPairs()) do
-        if v:GetID() == id then
-            return v
-        end
-    end
-end
-
 function clamp(val, minval, maxval)
     if val > maxval then
         return maxval

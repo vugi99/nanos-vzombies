@@ -1,7 +1,7 @@
 
 
 ZDEV_CONFIG = {
-    ENABLED = true,
+    ENABLED = false,
     DEV_MODES = {
         ZDEV_MOD_MENU = true,
         ZDEV_COMMANDS = true,

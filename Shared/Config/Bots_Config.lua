@@ -1,6 +1,6 @@
 
 
-Bots_Enabled = false
+Bots_Enabled = true
 No_Players = false -- Won't spawn players, bots will play alone
 Bots_Start_Moving_ms = 7500
 Max_Bots = 1
