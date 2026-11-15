@@ -160,6 +160,7 @@ function SpawnEnemy(EnemyName, EnemyType)
                     end
                 end
             end
+            -- TODO: Death_Sounds
             local enemy = CharacterSimple(
                 spawn_location,
                 selected_spawn.rotation,
