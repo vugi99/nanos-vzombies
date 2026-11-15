@@ -343,7 +343,7 @@ Enemies_Config = {
 
         Custom_Anims_Transform = {
             to_crawl = function(Custom_Anims_BP, char)
-                Custom_Anims_BP:CallBlueprintEvent("SetZombieCrawl", char:GetID())
+                Custom_Anims_BP:CallBlueprintEvent("SetZombieCrawl", char)
             end
         },
 
