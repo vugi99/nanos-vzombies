@@ -348,10 +348,9 @@ Enemies_Config = {
         },
 
         Custom_Anims_Func = function(Custom_Anims_BP, char)
-            char:AddActorTag("vzanimoverwrite")
-            Custom_Anims_BP:CallBlueprintEvent("SetAnimBP", char:GetID(), char:GetValue("EnemyType") == "walk")
+            Custom_Anims_BP:CallBlueprintEvent("SetAnimBP", char, char:GetValue("EnemyType") == "walk")
             if char:GetValue("EnemyType") == "crawl" then
-                Custom_Anims_BP:CallBlueprintEvent("SetZombieCrawl", char:GetID())
+                Custom_Anims_BP:CallBlueprintEvent("SetZombieCrawl", char)
             end
         end,
     },
@@ -402,8 +401,7 @@ Enemies_Config = {
         },
 
         Custom_Anims_Func = function(Custom_Anims_BP, char)
-            char:AddActorTag("vzanimoverwrite")
-            Custom_Anims_BP:CallBlueprintEvent("SetHellhound")
+            Custom_Anims_BP:CallBlueprintEvent("SetHellhound", char)
         end,
 
         Custom_Skeleton = true, -- Whether to disable hit reaction to avoid ragdoll issues
@@ -460,8 +458,7 @@ Enemies_Config = {
         },
 
         Custom_Anims_Func = function(Custom_Anims_BP, char)
-            char:AddActorTag("vzanimoverwrite")
-            Custom_Anims_BP:CallBlueprintEvent("SetBrutus")
+            Custom_Anims_BP:CallBlueprintEvent("SetBrutus", char)
         end,
 
         Custom_Skeleton = true,
@@ -516,8 +513,7 @@ Enemies_Config = {
         },
 
         Custom_Anims_Func = function(Custom_Anims_BP, char)
-            char:AddActorTag("vzanimoverwrite")
-            Custom_Anims_BP:CallBlueprintEvent("SetNapalm")
+            Custom_Anims_BP:CallBlueprintEvent("SetNapalm", char)
         end,
 
         Custom_Skeleton = true,
@@ -603,10 +599,9 @@ Enemies_Config = {
         },
 
         Custom_Anims_Func = function(Custom_Anims_BP, char)
-            char:AddActorTag("vzanimoverwrite")
-            Custom_Anims_BP:CallBlueprintEvent("SetAnimBP", char:GetID(), char:GetValue("EnemyType") == "walk")
+            Custom_Anims_BP:CallBlueprintEvent("SetAnimBP", char, char:GetValue("EnemyType") == "walk")
             if char:GetValue("EnemyType") == "crawl" then
-                Custom_Anims_BP:CallBlueprintEvent("SetZombieCrawl", char:GetID())
+                Custom_Anims_BP:CallBlueprintEvent("SetZombieCrawl", char)
             end
         end,
 
