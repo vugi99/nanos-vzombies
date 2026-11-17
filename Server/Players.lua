@@ -426,7 +426,6 @@ function PlayerCharToDown(char)
         char:SetInputEnabled(false)
         char:SetCanAim(false)
     end
-    char:PlayAnimation(Player_Down_Animation, AnimationSlotType.FullBody, true)
 
     CheckToStopBotReviveTimer(char, false)
     if ply.BOT then
@@ -460,6 +459,8 @@ function PlayerCharToDown(char)
             EquipSlot(char, 1)
         end
     end
+
+    char:PlayAnimation(Player_Down_Animation, AnimationSlotType.FullBody, true)
 
     -- Remove Speed Reload on equipped weapon (if the player had speed cola)
     local weap = char:GetPicked()

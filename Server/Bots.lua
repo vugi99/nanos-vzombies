@@ -497,6 +497,12 @@ function BotResetTarget(Bot)
     if not IsValid(char) then return end
     char:SetValue("BOTCanShootOn", {}, true)
     char:SetValue("BOTShootingOn", nil, false)
+
+    local weapon = char:GetPicked()
+    if IsValid(weapon) then
+        weapon:ReleaseUse() -- stop him from shooting further
+    end
+
     if char:GetValue("BOTShootInterval") then
         Timer.ClearInterval(char:GetValue("BOTShootInterval"))
         char:SetValue("BOTShootInterval", nil, false)
