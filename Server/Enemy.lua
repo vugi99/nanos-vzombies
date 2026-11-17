@@ -922,22 +922,24 @@ function ZMoveCompleted(enemy, succeeded)
 
             local plychar = enemy:GetValue("Target")
             -- FailToReach Point around ask Only supports non-bots
-            local ply = plychar:GetPlayer()
-            if IsValid(plychar) and IsValid(ply) and (not ply.BOT) then
-                if succeeded then
-                    -- A zombie managed to reach him, via direct follow or the target proxy, this means the route is valid and shouldn't be requested
-                    plychar:SetValue("FailedToReach", 0, false)
-                    -- A zombie managed to reach him without using the target proxy
-                    if not enemy:GetValue("UsingTargetProxy") then
-                        plychar:SetValue("ProxyTargetPoint", nil, false)
-                    end
-                else
-                    plychar:SetValue("FailedToReach", plychar:GetValue("FailedToReach") + 1, false)
-                    --print(ply:GetAccountName(), "FailedToReach", plychar:GetValue("FailedToReach"))
-
-                    if plychar:GetValue("FailedToReach") >= Enemies_Fail_To_Reach_PlyChar_threshold then
+            if IsValid(plychar) then
+                local ply = plychar:GetPlayer()
+                if IsValid(ply) and (not ply.BOT) then
+                    if succeeded then
+                        -- A zombie managed to reach him, via direct follow or the target proxy, this means the route is valid and shouldn't be requested
                         plychar:SetValue("FailedToReach", 0, false)
-                        Events.CallRemote("FailToReach_PointAround", ply, Reliability.Reliable)
+                        -- A zombie managed to reach him without using the target proxy
+                        if not enemy:GetValue("UsingTargetProxy") then
+                            plychar:SetValue("ProxyTargetPoint", nil, false)
+                        end
+                    else
+                        plychar:SetValue("FailedToReach", plychar:GetValue("FailedToReach") + 1, false)
+                        --print(ply:GetAccountName(), "FailedToReach", plychar:GetValue("FailedToReach"))
+
+                        if plychar:GetValue("FailedToReach") >= Enemies_Fail_To_Reach_PlyChar_threshold then
+                            plychar:SetValue("FailedToReach", 0, false)
+                            Events.CallRemote("FailToReach_PointAround", ply, Reliability.Reliable)
+                        end
                     end
                 end
             end
