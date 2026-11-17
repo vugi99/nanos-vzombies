@@ -3,8 +3,6 @@ local Powerups_Loops_Sounds = {}
 
 PerksAmbSounds = {}
 
-WunderSounds = {}
-
 
 local down_sound = Sound(
     Vector(0, 0, 0),
@@ -505,10 +503,25 @@ function WunderStopSound(loc)
     PlayVZSound({basic_sound_tbl=Wunderfizz_stop_Sound}, loc)
 end
 
+local function StopWunderSounds(sm)
+    if not IsValid(sm) then return end
+    local WunderSounds = sm:GetValue("WunderSounds")
+    if WunderSounds then
+        for i, v in ipairs(WunderSounds) do
+            if v:IsValid() then
+                v:Destroy()
+            end
+        end
+    end
+    sm:SetValue("WunderSounds", nil)
+end
+
 VZ_EVENT_SUBSCRIBE("StaticMesh", "ValueChange", function(sm, key, value)
     if key == "CanBuyWunder" then
         if value == false then
-            -- TODO: What happens when 2 wunderfizz fire at same time? Sound bug?
+            StopWunderSounds(sm)
+
+            local WunderSounds = {}
             WunderSounds[1] = Sound(
                 sm:GetLocation() + Wonderfizz_Bottles_Offset,
                 Wunderfizz_loop_Sound.asset,
@@ -540,16 +553,16 @@ VZ_EVENT_SUBSCRIBE("StaticMesh", "ValueChange", function(sm, key, value)
                 SoundLoopMode.Forever
             )
             VZ_SetSoundOcclusion(WunderSounds[2])
+
+            sm:SetValue("WunderSounds", WunderSounds)
         elseif value == nil then
-            if table_count(WunderSounds) > 0 then
-                WunderStopSound(sm:GetLocation() + Wonderfizz_Bottles_Offset)
-            end
-            for i, v in ipairs(WunderSounds) do
-                if v:IsValid() then
-                    v:Destroy()
+            local WunderSounds = sm:GetValue("WunderSounds")
+            if WunderSounds then
+                if table_count(WunderSounds) > 0 then
+                    WunderStopSound(sm:GetLocation() + Wonderfizz_Bottles_Offset)
                 end
             end
-            WunderSounds = {}
+            StopWunderSounds(sm)
         end
     end
 end)
@@ -558,12 +571,8 @@ VZ_EVENT_SUBSCRIBE("Prop", "ValueChange", function(prop, key, value)
     if key == "RealBottleData" then
         --print("Prop RealBottleData ValueChange")
         if value then
-            for i, v in ipairs(WunderSounds) do
-                if v:IsValid() then
-                    v:Destroy()
-                end
-            end
-            WunderSounds = {}
+            local sm = value[3]
+            StopWunderSounds(sm)
 
             WunderStopSound(prop:GetLocation())
 
