@@ -421,3 +421,9 @@ NotEnoughMoney_Sound = {
     asset = "nanos-world::A_Invalid_Action",
     volume = 1,
 }
+
+Global_3D_Occlusion_Settings = {
+    enabled = true,
+    low_pass_frequency = 800,
+    volume_multiplier = 0.9,
+}

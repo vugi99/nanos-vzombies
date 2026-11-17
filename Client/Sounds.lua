@@ -40,6 +40,17 @@ lowhealth_sound:Stop()
 
 Playing_LowHealth_Sound = false
 
+function VZ_SetSoundOcclusion(sound, settings)
+    --print("VZ_SetSoundOcclusion", sound, IsValid(sound))
+    if not IsValid(sound) then return end
+    if sound:Is2D() then return end
+
+    settings = settings or Global_3D_Occlusion_Settings
+    sound:SetOcclusion(settings.enabled, settings.low_pass_frequency, settings.volume_multiplier)
+    --print(sound, "SetOcclusion", settings.enabled, settings.low_pass_frequency, settings.volume_multiplier)
+end
+Package.Export("VZ_SetSoundOcclusion", VZ_SetSoundOcclusion)
+
 function PlayVZSound(data_tbl, loc)
     if data_tbl then
         local _3D_Sound
@@ -109,6 +120,8 @@ function PlayVZSound(data_tbl, loc)
         if IsValid(_3D_Sound) and IsValid(data_tbl.attachto) then
             _3D_Sound:AttachTo(data_tbl.attachto, AttachmentRule.SnapToTarget, "", 0)
         end
+
+        VZ_SetSoundOcclusion(_3D_Sound)
 
         return _3D_Sound
     end
@@ -185,6 +198,7 @@ VZ_EVENT_SUBSCRIBE("StaticMesh", "ValueChange", function(SM, key, value)
             true,
             SoundLoopMode.Forever
         )
+        VZ_SetSoundOcclusion(Powerups_Loops_Sounds[value])
     end
 end)
 
@@ -262,6 +276,7 @@ function CreateZBehindInterval()
                         enemy_table.Behind_Sounds.radius,
                         enemy_table.Behind_Sounds.falloff_distance
                     )
+                    VZ_SetSoundOcclusion(z_behind_sound)
                     z_behind_sound:AttachTo(nearest_zombie_for_sound)
 
                     Timer.ClearInterval(Z_Behind_Interval)
@@ -340,6 +355,7 @@ function CreateZAmbInterval()
                                 Random_Sounds_tbl.falloff_distance,
                                 AttenuationFunction.NaturalSound
                             )
+                            VZ_SetSoundOcclusion(z_amb_sound)
                             z_amb_sound:AttachTo(v)
 
                             v:SetValue("PlayingAmbSound", z_amb_sound, false)
@@ -424,6 +440,7 @@ Timer.SetInterval(function()
                             false,
                             SoundLoopMode.Forever
                         )
+                        VZ_SetSoundOcclusion(PerksAmbSounds[perk_name])
                     end
                 elseif PerksAmbSounds[perk_name] then
                     if PerksAmbSounds[perk_name]:IsValid() then
@@ -470,6 +487,7 @@ Timer.SetInterval(function()
                             false,
                             SoundLoopMode.Forever
                         )
+                        VZ_SetSoundOcclusion(PapAmbSound)
                     end
                 elseif PapAmbSound then
                     if PapAmbSound:IsValid() then
@@ -490,6 +508,7 @@ end
 VZ_EVENT_SUBSCRIBE("StaticMesh", "ValueChange", function(sm, key, value)
     if key == "CanBuyWunder" then
         if value == false then
+            -- TODO: What happens when 2 wunderfizz fire at same time? Sound bug?
             WunderSounds[1] = Sound(
                 sm:GetLocation() + Wonderfizz_Bottles_Offset,
                 Wunderfizz_loop_Sound.asset,
@@ -504,6 +523,7 @@ VZ_EVENT_SUBSCRIBE("StaticMesh", "ValueChange", function(sm, key, value)
                 false,
                 SoundLoopMode.Forever
             )
+            VZ_SetSoundOcclusion(WunderSounds[1])
 
             WunderSounds[2] = Sound(
                 sm:GetLocation() + Wonderfizz_Bottles_Offset,
@@ -519,6 +539,7 @@ VZ_EVENT_SUBSCRIBE("StaticMesh", "ValueChange", function(sm, key, value)
                 false,
                 SoundLoopMode.Forever
             )
+            VZ_SetSoundOcclusion(WunderSounds[2])
         elseif value == nil then
             if table_count(WunderSounds) > 0 then
                 WunderStopSound(sm:GetLocation() + Wonderfizz_Bottles_Offset)

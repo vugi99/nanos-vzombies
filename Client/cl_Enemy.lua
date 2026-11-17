@@ -60,6 +60,7 @@ function HandleEnemyType(char, value)
             SoundLoopMode.Forever
         )
         napalm_fire_sound:AttachTo(char, AttachmentRule.SnapToTarget, "", 0)
+        VZ_SetSoundOcclusion(napalm_fire_sound)
     end
 end
 
@@ -97,6 +98,7 @@ VZ_EVENT_SUBSCRIBE("Character", "ValueChange", function(char, key, value)
                     400,
                     3500
                 )
+                VZ_SetSoundOcclusion(spawn_sound_part1)
 
                 local spawn_sound_part2 = Sound(
                     char:GetLocation(),
@@ -109,6 +111,7 @@ VZ_EVENT_SUBSCRIBE("Character", "ValueChange", function(char, key, value)
                     400,
                     3500
                 )
+                VZ_SetSoundOcclusion(spawn_sound_part2)
             elseif value == "brutus" then
                 local hellhound_spawn_particle = Particle(
                     char:GetLocation() - Vector(0, 0, 100),
@@ -129,6 +132,7 @@ VZ_EVENT_SUBSCRIBE("Character", "ValueChange", function(char, key, value)
                     400,
                     3500
                 )
+                VZ_SetSoundOcclusion(spawn_sound_part1)
 
             elseif value == "napalm" then
                 local hellhound_spawn_particle = Particle(
@@ -150,6 +154,7 @@ VZ_EVENT_SUBSCRIBE("Character", "ValueChange", function(char, key, value)
                     400,
                     3500
                 )
+                VZ_SetSoundOcclusion(spawn_sound_part1)
             end
         end
     end
