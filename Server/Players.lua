@@ -931,7 +931,7 @@ function SendEnemiesRemaining(ply)
                     Events.BroadcastRemote("SetClientRemainingZombies", Reliability.Unreliable, remaining)
                 end
             else
-                Events.CallRemote("SetClientRemainingZombies", ply, Reliability.Unreliable, remaining)
+                Events.CallRemote("SetClientRemainingZombies", ply, Reliability.Reliable, remaining)
             end
         end
     end
