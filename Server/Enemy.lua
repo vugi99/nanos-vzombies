@@ -689,6 +689,148 @@ function EnemyGetDamageAmount(enemy, target_char)
     end
 end
 
+function StopGrabCallback(enemy, char)
+    if IsValid(enemy) then
+        enemy:StopAnimation("vzombies-assets::AS_NAAT_Zombie_Grab_To_Wrestle")
+    end
+    if not IsValid(char) then return end
+    local ply = char:GetPlayer()
+    if (not char:GetValue("PlayerDown") and char:GetValue("PlayerGrabbedBy") and char:GetValue("PlayerGrabbedBy") == enemy) then
+        char:StopAnimation("vzombies-assets::AS_NAAT_Human_Grab_To_Wrestle")
+
+        if not IsValid(ply) then return end
+        if not ply.BOT then
+            char:SetInputEnabled(true)
+            char:SetCanAim(true)
+        else
+            RequestBotAction(ply)
+            local r_player = GetRandomPlayer()
+            if IsValid(r_player) then
+                ply:SetValue("BotAimPlayer", r_player:GetID(), true)
+            end
+        end
+        char:SetValue("PlayerGrabbedBy", nil, true)
+    end
+end
+
+function CustomGrabAttack(enemy, char, plychar_veh)
+    if not IsValid(enemy) then return end
+    if not enemy:GetValue("EnemyName") then return end
+    if enemy:GetHealth() <= 0 then return end
+    local enemy_table = GetEnemyTable(enemy)
+    if not enemy_table then return end
+    if not IsValid(char) then return end
+    if not char:GetValue("PlayerDown") then
+        local ply = char:GetPlayer()
+        if ply then
+            if not IsValid(plychar_veh) then
+                enemy:PlayAnimation("vzombies-assets::AS_NAAT_Zombie_Grab_To_Wrestle", AnimationSlotType.FullBody, true, 0.1, 0.1)
+                if not ply.BOT then
+                    char:SetInputEnabled(false)
+                    char:SetCanAim(false)
+                end
+                char:PlayAnimation("vzombies-assets::AS_NAAT_Human_Grab_To_Wrestle", AnimationSlotType.FullBody, true)
+
+                char:SetValue("PlayerGrabbedBy", enemy, true)
+
+                local l_at = VectorGetLookAt(char:GetLocation(), enemy:GetLocation())
+                char:SetRotation(Rotator(0, l_at.Yaw, 0))
+
+                CheckToStopBotReviveTimer(char, false)
+                if ply.BOT then
+                    BotResetTarget(ply)
+                    ply:SetValue("BotAimPlayer", nil, true)
+
+                    if char:GetValue("DoingAction") then
+                        --print("STOP MOVETO BOT")
+                        char:SetValue("DoingAction", nil, false)
+                        char:MoveTo(char:GetLocation(), 50)
+                    end
+                end
+                Timer.SetTimeout(function()
+                    StopGrabCallback(enemy, char)
+                end, enemy_table.Custom_Attack_Behavior.Grab_Time_ms)
+            else
+                char:LeaveVehicle()
+            end
+        end
+        return true
+    end
+end
+
+function EnemyAttackCallback(enemy, plychar, used_target_proxy)
+    if not IsValid(enemy) then return end
+    if enemy:GetHealth() <= 0 then return end
+    if not enemy:GetValue("EnemyName") then return end
+    local enemy_table = GetEnemyTable(enemy)
+    if not enemy_table then return end
+
+    local hits = 0
+    for k, v in pairs(PLAYING_PLAYERS) do
+        if IsValid(v) then
+            local char = v:GetControlledCharacter()
+            if (char and char:IsValid() and enemy:IsValid()) then
+                if not char:GetValue("PlayerDown") then
+                    local plychar_loc = char:GetLocation()
+                    local plychar_veh = char:GetVehicle()
+
+                    local dist_check_mult = 1
+                    if IsValid(plychar_veh) then
+                        dist_check_mult = plychar_veh:GetValue("Damage_Radius_sq_Mult")
+                    end
+
+                    local z_loc = enemy:GetLocation()
+                    --print(char:GetPlayer():GetAccountName(), plychar_loc:DistanceSquared(z_loc), enemy_table.Damage_At_Distance_sq*dist_check_mult)
+                    if (plychar_loc:DistanceSquared(z_loc) <= enemy_table.Damage_At_Distance_sq*dist_check_mult) then
+                        hits = hits + 1
+
+                        local rel = RelRot1(enemy:GetRotation().Yaw, VectorGetLookAt(enemy:GetLocation(), char:GetLocation()).Yaw)
+                        if (rel > -Enemies_Damage_Angle_LookAt and rel < Enemies_Damage_Angle_LookAt) then
+                            if enemy_table.Damage_Amount then
+                                local dm_amount = EnemyGetDamageAmount(enemy, char)
+                                if not IsValid(plychar_veh) then
+                                    char:ApplyDamage(dm_amount, "", DamageType.Punch)
+                                else
+                                    plychar_veh:ApplyDamage(dm_amount, "", DamageType.Punch)
+                                end
+                            end
+                            if enemy_table.Custom_Attack_Behavior then
+                                if enemy_table.Custom_Attack_Behavior.type == "grab" then
+                                    local b = CustomGrabAttack(enemy, char, plychar_veh)
+                                    if b then
+                                        break
+                                    end
+                                end
+                            end
+                        end
+                    end
+                end
+            end
+        end
+    end
+    if IsValid(plychar) then
+        if hits <= 0 then
+            if used_target_proxy then
+                plychar:SetValue("ProxyTargetAttackFails", plychar:GetValue("ProxyTargetAttackFails") + 1, false)
+
+                --print(plychar:GetPlayer():GetAccountName(), "ProxyTargetAttackFails", plychar:GetValue("ProxyTargetAttackFails"))
+
+                if plychar:GetValue("ProxyTargetAttackFails") >= Enemies_Misses_Proxy_Invalidate then
+                    plychar:SetValue("ProxyTargetAttackFails", 0, false)
+                    plychar:SetValue("ProxyTargetPoint", nil, false)
+                    plychar:SetValue("FailedToReach", 0, false)
+                    local ply = plychar:GetPlayer()
+                    if IsValid(ply) and (not ply:IsBeingDestroyed()) then
+                        Events.CallRemote("FailToReach_PointAround", ply, Reliability.Reliable)
+                    end
+                end
+            end
+        elseif used_target_proxy then
+            plychar:SetValue("ProxyTargetAttackFails", 0, false)
+        end
+    end
+end
+
 function EnemyAttack(enemy)
     local plychar = enemy:GetValue("Target")
     if (IsValid(plychar) and (not plychar:GetValue("PlayerDown"))) then
@@ -739,120 +881,7 @@ function EnemyAttack(enemy)
             if enemy_table.Damage_Amount then
                 local used_target_proxy = enemy:GetValue("UsingTargetProxy")
                 Timer.SetTimeout(function()
-                    if enemy:IsValid() then
-                        if enemy:GetHealth() > 0 then
-                            local hits = 0
-                            for k, v in pairs(PLAYING_PLAYERS) do
-                                if v:IsValid() then
-                                    local char = v:GetControlledCharacter()
-                                    if (char and char:IsValid() and enemy:IsValid()) then
-                                        if not char:GetValue("PlayerDown") then
-                                            local plychar_loc = char:GetLocation()
-                                            local plychar_veh = char:GetVehicle()
-
-                                            local dist_check_mult = 1
-                                            if IsValid(plychar_veh) then
-                                                dist_check_mult = plychar_veh:GetValue("Damage_Radius_sq_Mult")
-                                            end
-
-                                            local z_loc = enemy:GetLocation()
-                                            --print(char:GetPlayer():GetAccountName(), plychar_loc:DistanceSquared(z_loc), enemy_table.Damage_At_Distance_sq*dist_check_mult)
-                                            if (plychar_loc:DistanceSquared(z_loc) <= enemy_table.Damage_At_Distance_sq*dist_check_mult) then
-                                                hits = hits + 1
-
-                                                local rel = RelRot1(enemy:GetRotation().Yaw, VectorGetLookAt(enemy:GetLocation(), char:GetLocation()).Yaw)
-                                                if (rel > -Enemies_Damage_Angle_LookAt and rel < Enemies_Damage_Angle_LookAt) then
-                                                    if enemy_table.Damage_Amount then
-                                                        local dm_amount = EnemyGetDamageAmount(enemy, char)
-                                                        if not IsValid(plychar_veh) then
-                                                            char:ApplyDamage(dm_amount, "", DamageType.Punch)
-                                                        else
-                                                            plychar_veh:ApplyDamage(dm_amount, "", DamageType.Punch)
-                                                        end
-                                                    end
-                                                    if enemy_table.Custom_Attack_Behavior then
-                                                        if enemy_table.Custom_Attack_Behavior.type == "grab" then
-                                                            if not char:GetValue("PlayerDown") then
-                                                                local ply = char:GetPlayer()
-                                                                if ply then
-                                                                    if not plychar_veh then
-                                                                        enemy:PlayAnimation("vzombies-assets::AS_NAAT_Zombie_Grab_To_Wrestle", AnimationSlotType.FullBody, true, 0.1, 0.1)
-                                                                        if not ply.BOT then
-                                                                            char:SetInputEnabled(false)
-                                                                            char:SetCanAim(false)
-                                                                        end
-                                                                        char:PlayAnimation("vzombies-assets::AS_NAAT_Human_Grab_To_Wrestle", AnimationSlotType.FullBody, true)
-
-                                                                        char:SetValue("PlayerGrabbedBy", enemy, true)
-
-                                                                        local l_at = VectorGetLookAt(char:GetLocation(), enemy:GetLocation())
-                                                                        char:SetRotation(Rotator(0, l_at.Yaw, 0))
-
-                                                                        CheckToStopBotReviveTimer(char, false)
-                                                                        if ply.BOT then
-                                                                            BotResetTarget(ply)
-                                                                            ply:SetValue("BotAimPlayer", nil, true)
-
-                                                                            if char:GetValue("DoingAction") then
-                                                                                --print("STOP MOVETO BOT")
-                                                                                char:SetValue("DoingAction", nil, false)
-                                                                                char:MoveTo(char:GetLocation(), 50)
-                                                                            end
-                                                                        end
-                                                                        Timer.SetTimeout(function()
-                                                                            if enemy:IsValid() then
-                                                                                enemy:StopAnimation("vzombies-assets::AS_NAAT_Zombie_Grab_To_Wrestle")
-                                                                            end
-                                                                            if (char:IsValid() and not char:GetValue("PlayerDown") and char:GetValue("PlayerGrabbedBy") and char:GetValue("PlayerGrabbedBy") == enemy) then
-                                                                                char:StopAnimation("vzombies-assets::AS_NAAT_Human_Grab_To_Wrestle")
-                                                                                if not ply.BOT then
-                                                                                    char:SetInputEnabled(true)
-                                                                                    char:SetCanAim(true)
-                                                                                else
-                                                                                    RequestBotAction(ply)
-                                                                                    local r_player = GetRandomPlayer()
-                                                                                    if IsValid(r_player) then
-                                                                                        ply:SetValue("BotAimPlayer", r_player:GetID(), true)
-                                                                                    end
-                                                                                end
-                                                                                char:SetValue("PlayerGrabbedBy", nil, true)
-                                                                            end
-                                                                        end, enemy_table.Custom_Attack_Behavior.Grab_Time_ms)
-                                                                    else
-                                                                        char:LeaveVehicle()
-                                                                    end
-                                                                end
-                                                                break
-                                                            end
-                                                        end
-                                                    end
-                                                end
-                                            end
-                                        end
-                                    end
-                                end
-                            end
-
-                            if hits <= 0 then
-                                if used_target_proxy then
-                                    if IsValid(plychar) then
-                                        plychar:SetValue("ProxyTargetAttackFails", plychar:GetValue("ProxyTargetAttackFails") + 1, false)
-
-                                        --print(plychar:GetPlayer():GetAccountName(), "ProxyTargetAttackFails", plychar:GetValue("ProxyTargetAttackFails"))
-
-                                        if plychar:GetValue("ProxyTargetAttackFails") >= Enemies_Misses_Proxy_Invalidate then
-                                            plychar:SetValue("ProxyTargetAttackFails", 0, false)
-                                            plychar:SetValue("ProxyTargetPoint", nil, false)
-                                            plychar:SetValue("FailedToReach", 0, false)
-                                            Events.CallRemote("FailToReach_PointAround", plychar:GetPlayer(), Reliability.Reliable)
-                                        end
-                                    end
-                                end
-                            elseif used_target_proxy then
-                                plychar:SetValue("ProxyTargetAttackFails", 0, false)
-                            end
-                        end
-                    end
+                    EnemyAttackCallback(enemy, plychar, used_target_proxy)
                 end, random_z_attack_anim[2])
             end
 
