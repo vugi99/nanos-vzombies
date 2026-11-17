@@ -71,6 +71,7 @@ VZ_GLOBAL_FEATURES = {
         script_loaded = true,
         can_interact = true,
         Destroy_Timeout_ms = 45000,
+        Pad_Offset = Vector(0, 0, -5), -- Used to fix blocking zombie
     },
     Chargers = {
         script_loaded = true,

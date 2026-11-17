@@ -27,10 +27,12 @@ if VEHICLES_PADS then
         ParseAndInjectVehicles(NanosWorldVehicles)
     end
 
+    local poffset = VZ_GetFeatureValue("Vehicles", "Pad_Offset")
     if not WebUI3d2d then
         Console.Warn("WebUI3d2d lib not found, running in compatibility mode")
+
         for k, v in pairs(VEHICLES_PADS) do
-            local veh_pad_screen = StaticMesh(v.location + v.rotation:GetRightVector() * 252, v.rotation, "vzombies-assets::ecran1")
+            local veh_pad_screen = StaticMesh(v.location + poffset + v.rotation:GetRightVector() * 252, v.rotation, "vzombies-assets::ecran1")
         end
 
         VZ_EVENT_SUBSCRIBE("Events", "VZOMBIES_CLIENT_GAMEMODE_LOADED", function()
@@ -45,7 +47,7 @@ if VEHICLES_PADS then
                 true
             )
             local sm = veh_pad_screen_webui:GetStaticMesh()
-            sm:SetLocation(v.screen_location)
+            sm:SetLocation(v.screen_location + poffset)
             sm:SetRotation(v.screen_rotation)
             veh_pad_screen_webui:AddMouseAliasKey(Input.GetMappedKeys("Interact")[1], "LeftMouseButton")
             veh_pad_screen_webui:SetBlockedGameInput(WebUI3d2dInput.Mouse)

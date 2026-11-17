@@ -29,18 +29,20 @@ end
 if VEHICLES_PADS then
     LoadNanosVehicles()
 
+    local poffset = VZ_GetFeatureValue("Vehicles", "Pad_Offset")
+
     for i, v in ipairs(VEHICLES_PADS) do
-        local veh_pad = StaticMesh(v.location, v.rotation, "vzombies-assets::station_low")
+        local veh_pad = StaticMesh(v.location + poffset, v.rotation, "vzombies-assets::station_low")
         veh_pad:SetScale(Vector(1, 0.5, 0.5))
 
-        local veh_pad_terminal = StaticMesh(v.location + v.rotation:GetRightVector() * 252, v.rotation, "vzombies-assets::terminal")
+        local veh_pad_terminal = StaticMesh(v.location + poffset + v.rotation:GetRightVector() * 252, v.rotation, "vzombies-assets::terminal")
 
-        --local veh_pad_screen = StaticMesh(v.location + v.rotation:GetRightVector() * 252, v.rotation, "vzombies-assets::ecran1")
+        --local veh_pad_screen = StaticMesh(v.location + poffset + v.rotation:GetRightVector() * 252, v.rotation, "vzombies-assets::ecran1")
 
         veh_pad_terminal:SetValue("VehiclePad", i, true)
         veh_pad_terminal:SetValue("GroundPad", veh_pad, false)
 
-        --local debug_trigger = Trigger(v.location + Vector(0, 0, 100), v.rotation, Vector(500, 250, 300), TriggerType.Box, true, Color.RED)
+        --local debug_trigger = Trigger(v.location + poffset + Vector(0, 0, 100), v.rotation, Vector(500, 250, 300), TriggerType.Box, true, Color.RED)
 
         VEHICLE_PADS_SMs[i] = {veh_pad, veh_pad_terminal}
     end
