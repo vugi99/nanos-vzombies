@@ -103,9 +103,11 @@ if VEHICLES_PADS then
         end, VZ_GetFeatureValue("Vehicles", "Destroy_Timeout_ms"))
     end)
 
-    local loaded = Server.LoadPackage("webui3d2d")
-    if not loaded then
-        Console.Warn("Missing webui3d2d package, running in compatibility mode")
+    if not VZ_IsPackageLoaded("webui3d2d") then
+        local loaded = Server.LoadPackage("webui3d2d")
+        if not loaded then
+            Console.Warn("Missing webui3d2d package, running in compatibility mode")
+        end
     end
 end
 

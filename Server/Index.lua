@@ -9,6 +9,7 @@ MAX_PLAYERS = MAX_PLAYERS or 0
 Package.Require("Config/Config.lua")
 Package.Require("Config/sv_Config.lua")
 Package.Require("Sh_Funcs.lua")
+Package.Require("sv_Funcs.lua")
 Package.Require("CustomWeapons.lua")
 Package.Require("WonderWeapons.lua")
 Package.Require("Prepare_Loops.lua")
