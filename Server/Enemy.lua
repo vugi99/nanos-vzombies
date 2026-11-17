@@ -1037,7 +1037,8 @@ VZ_EVENT_SUBSCRIBE("Character", "Death", function(char, last_damage_taken, last_
             end
         end
 
-        SendEnemiesRemaining() -- TODO: Optimize remove this and listen for Character Death clientside?
+        -- Optimized, client calculates the remaining zombies on Death event
+        --SendEnemiesRemaining()
 
         if char:GetValue("EnemyType") == "napalm" then
             --print("Grenade")

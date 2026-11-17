@@ -928,7 +928,7 @@ function SendEnemiesRemaining(ply)
             local remaining = REMAINING_ENEMIES_TO_SPAWN + table_count(ENEMY_CHARACTERS)
             if not ply then
                 if last_sent_value ~= remaining then
-                    Events.BroadcastRemote("SetClientRemainingZombies", Reliability.Unreliable, remaining)
+                    Events.BroadcastRemote("SetClientRemainingZombies", Reliability.Reliable, remaining)
                 end
             else
                 Events.CallRemote("SetClientRemainingZombies", ply, Reliability.Reliable, remaining)

@@ -702,14 +702,26 @@ VZ_EVENT_SUBSCRIBE("Character", "Destroy", function(char)
     end
 end)
 
-VZ_EVENT_SUBSCRIBE_REMOTE("SetClientRemainingZombies", function(remaining)
+local client_r_zombies
+function VZ_GetClientRemainingZombies()
+    return client_r_zombies
+end
+Package.Export("VZ_GetClientRemainingZombies", VZ_GetClientRemainingZombies)
+
+function VZ_SetClientRemainingZombies(remaining)
+    if type(remaining) ~= "number" then return end
+    if remaining < 0 then return end
+    client_r_zombies = remaining
     if Remaining_Enemies_Text then
         if not Timed_Waves then
             One_Time_Update_Data.Zombies_Remaining_Number = remaining
             One_Time_Updates_Canvas:Repaint()
         end
     end
-end)
+    return true
+end
+Package.Export("VZ_SetClientRemainingZombies", VZ_SetClientRemainingZombies)
+VZ_EVENT_SUBSCRIBE_REMOTE("SetClientRemainingZombies", VZ_SetClientRemainingZombies)
 
 VZ_EVENT_SUBSCRIBE_REMOTE("SetClientRemainingWaveTime", function(remaining_ms)
     if Remaining_Enemies_Text then
@@ -1377,4 +1389,15 @@ end
 VZ_EVENT_SUBSCRIBE_REMOTE("NotEnoughMoney", function()
     AddNotification("Not Enough Money", 3000)
     PlayVZSound({basic_sound_tbl=NotEnoughMoney_Sound})
+end)
+
+VZ_EVENT_SUBSCRIBE("Character", "Death", function(char, last_damage_taken, last_bone_damaged, damage_type_reason, hit_from_direction, instigator, causer)
+    if not IsValid(char) then return end
+    if not char:GetValue("EnemyName") then return end
+    local enemy_table = GetEnemyTable(char)
+    if not enemy_table then return end
+    if enemy_table.Boss then return end
+    local c_r_zombies = VZ_GetClientRemainingZombies()
+    if not c_r_zombies then return end
+    VZ_SetClientRemainingZombies(c_r_zombies-1)
 end)
