@@ -1,7 +1,7 @@
 
 
 
-Server_Admins_Enabled = true
+Server_Admins_Enabled = false
 
 Server_Admins_Mod_Menu = true
 
