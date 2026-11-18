@@ -269,31 +269,30 @@ function PlayerCharacterDie(char, force_die)
     --[[if char:GetValue("PlayerDown") then
         Timer.ClearTimeout(char:GetValue("PlayerDownDieTimer"))
     end]]--
-    if char:IsValid() then
-        local ply = char:GetPlayer()
-        if (not char:GetValue("RevivingPlayer")) or force_die then
-            --ply:SetVOIPSetting(VOIPSetting.Muted)
-            --ply:SetVOIPMuted(true)
-            ply:SetVOIPLocalSetting(VOIPSetting.None)
-            ply:SetVOIPGlobalChannelSetting(2, VOIPSetting.Both)
+    if not IsValid(char) then return end
+    local ply = char:GetPlayer()
+    if (not char:GetValue("RevivingPlayer")) or force_die then
+        --ply:SetVOIPSetting(VOIPSetting.Muted)
+        --ply:SetVOIPMuted(true)
+        ply:SetVOIPLocalSetting(VOIPSetting.None)
+        ply:SetVOIPGlobalChannelSetting(2, VOIPSetting.Both)
 
-            char:Destroy()
-            Buy(ply, math.floor(ply:GetValue("ZMoney") * Dead_MoneyLost / 100))
+        char:Destroy()
+        Buy(ply, math.floor(ply:GetValue("ZMoney") * Dead_MoneyLost / 100))
 
-            for k, v in pairs(Player.GetPairs()) do
-                if v ~= ply then
-                    Events.CallRemote("AddNotification", v, Reliability.Reliable, ply:GetAccountName() .. " died", 10000)
-                end
+        for k, v in pairs(Player.GetPairs()) do
+            if v ~= ply then
+                Events.CallRemote("AddNotification", v, Reliability.Reliable, ply:GetAccountName() .. " died", 10000)
             end
-
-            -- For When the character is destroyed because of Z Limits
-            --local al_nb = GetPlayersAliveNB()
-            --if al_nb == 0 then
-            CheckRoundFinished()
-            --end
-        else
-            char:SetValue("RevivingLastChance", true, false)
         end
+
+        -- For When the character is destroyed because of Z Limits
+        --local al_nb = GetPlayersAliveNB()
+        --if al_nb == 0 then
+        CheckRoundFinished()
+        --end
+    else
+        char:SetValue("RevivingLastChance", true, false)
     end
 end
 Package.Export("PlayerCharacterDie", PlayerCharacterDie)
@@ -417,7 +416,9 @@ function PlayerCharToDown(char)
     if not solo_quick_revive then
         char:SetValue(
             "PlayerDownDieTimer",
-            Timer.SetTimeout(PlayerCharacterDie, PlayerDeadAfterTimerDown_ms, char),
+            Timer.SetTimeout(function()
+                PlayerCharacterDie(char)
+            end, PlayerDeadAfterTimerDown_ms),
             false
         )
     end

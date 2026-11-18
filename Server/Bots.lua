@@ -614,7 +614,9 @@ function BotCreateShootInterval(char)
 
     if char:GetValue("PlayerDown") then return end
 
-    char:SetValue("BOTShootInterval", Timer.SetInterval(BOTShootIntervalFunc,  weapon:GetCadence() * 1000, char), false)
+    char:SetValue("BOTShootInterval", Timer.SetInterval(function()
+        BOTShootIntervalFunc(char)
+    end,  weapon:GetCadence() * 1000), false)
     BOTShootIntervalFunc(char)
 end
 

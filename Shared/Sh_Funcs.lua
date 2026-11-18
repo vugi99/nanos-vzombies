@@ -410,3 +410,21 @@ function VZ_HasAccessToModMenu(ply)
     return VZ_IsAdmin(ply)
 end
 Package.Export("VZ_HasAccessToModMenu", VZ_HasAccessToModMenu)
+
+if ZDEV_IsModeEnabled("ZDEV_DEBUG_VARARGS_TIMERS") then
+    local def_settimeout = Timer.SetTimeout
+    Timer.SetTimeout = function(f, time, ...)
+        if select("#", ...) > 0 then
+            print("Varargs SetTimeout", NanosTable.Dump(debug.getinfo(2, "nSl")))
+        end
+        return def_settimeout(f, time, ...)
+    end
+
+    local def_setinterval = Timer.SetInterval
+    Timer.SetInterval = function(f, time, ...)
+        if select("#", ...) > 0 then
+            print("Varargs SetInterval", NanosTable.Dump(debug.getinfo(2, "nSl")))
+        end
+        return def_setinterval(f, time, ...)
+    end
+end

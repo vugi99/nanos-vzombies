@@ -534,7 +534,9 @@ end
 function EnemyInitPlayerTarget(enemy)
     enemy:SetValue(
         "RefreshTargetInterval",
-        Timer.SetInterval(EnemyRefreshTarget, Enemies_Target_Refresh_ms, enemy),
+        Timer.SetInterval(function()
+            EnemyRefreshTarget(enemy)
+        end, Enemies_Target_Refresh_ms),
         false
     )
     EnemyRefreshTarget(enemy)
@@ -614,6 +616,8 @@ end
 function AttackBarricade(enemy, barricade, start)
     --print("AttackBarricade", enemy, barricade, start)
 
+    if not IsValid(enemy) then return end
+
     --print(NanosTable.Dump(debug.getinfo(2)))
     --print("AttackBarricade", start)
     local top_barricades = table_count(barricade.top.barricades)
@@ -621,10 +625,9 @@ function AttackBarricade(enemy, barricade, start)
         if start then
             enemy:SetValue(
                 "AttackBInterval",
-                Timer.SetInterval(AttackBarricade, GetEnemyTable(enemy).Damage_Barricade_Cooldown_ms,
-                enemy,
-                barricade,
-                false),
+                Timer.SetInterval(function()
+                    AttackBarricade(enemy, barricade, false)
+                end, GetEnemyTable(enemy).Damage_Barricade_Cooldown_ms),
                 false
             )
             enemy:SetValue(
