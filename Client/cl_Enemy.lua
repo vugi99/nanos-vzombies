@@ -60,6 +60,7 @@ function HandleEnemyType(char, value)
             SoundLoopMode.Forever
         )
         napalm_fire_sound:AttachTo(char, AttachmentRule.SnapToTarget, "", 0)
+        VZ_SetSoundOcclusion(napalm_fire_sound, Napalm_Fire_Ambient_Sound.occlusion_settings)
     end
 end
 
@@ -97,6 +98,7 @@ VZ_EVENT_SUBSCRIBE("Character", "ValueChange", function(char, key, value)
                     400,
                     3500
                 )
+                VZ_SetSoundOcclusion(spawn_sound_part1)
 
                 local spawn_sound_part2 = Sound(
                     char:GetLocation(),
@@ -109,6 +111,7 @@ VZ_EVENT_SUBSCRIBE("Character", "ValueChange", function(char, key, value)
                     400,
                     3500
                 )
+                VZ_SetSoundOcclusion(spawn_sound_part2)
             elseif value == "brutus" then
                 local hellhound_spawn_particle = Particle(
                     char:GetLocation() - Vector(0, 0, 100),
@@ -129,6 +132,7 @@ VZ_EVENT_SUBSCRIBE("Character", "ValueChange", function(char, key, value)
                     400,
                     3500
                 )
+                VZ_SetSoundOcclusion(spawn_sound_part1)
 
             elseif value == "napalm" then
                 local hellhound_spawn_particle = Particle(
@@ -150,6 +154,7 @@ VZ_EVENT_SUBSCRIBE("Character", "ValueChange", function(char, key, value)
                     400,
                     3500
                 )
+                VZ_SetSoundOcclusion(spawn_sound_part1)
             end
         end
     end
@@ -168,3 +173,25 @@ if ZDEV_IsModeEnabled("ZDEV_DEBUG_ENEMIES_PREDICTION") then
         end
     end)
 end
+
+VZ_EVENT_SUBSCRIBE_REMOTE("FailToReach_PointAround", function()
+    local ply = Client.GetLocalPlayer()
+    if not IsValid(ply) then return end
+    local char = ply:GetControlledCharacter()
+    if not IsValid(char) then return end
+    if char:GetValue("PlayerDown") then return end
+
+    local loc = char:GetLocation()
+
+    for i=1, Enemies_Fail_To_Reach_Point_Around_Max_Retries do
+        local point_around = Navigation.GetRandomPointInNavigableRadius(char:GetLocation(), Enemies_Fail_To_Reach_Ask_Point_Around_Radius)
+        if (point_around and point_around ~= Vector(0, 0, 0)) then
+            local dist_sq = point_around:DistanceSquared(loc)
+            --print("FailToReach Point Around query", point_around, math.sqrt(dist_sq))
+            if dist_sq <= Enemies_Fail_To_Reach_Ask_Point_Around_Radius_3D^2 then
+                Events.CallRemote("FailToReach_Navigable_Response", Reliability.Reliable, point_around)
+                return
+            end
+        end
+    end
+end)

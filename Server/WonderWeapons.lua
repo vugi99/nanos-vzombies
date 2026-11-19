@@ -3,6 +3,8 @@ WonderWeapons = {
     Raygun = function(location, rotation)
         local weapon = Weapon(location or Vector(), rotation or Rotator(), "vzombies-assets::raygun")
 
+        local volume_custom = 0.5
+
         weapon:SetAmmoSettings(20, 1000)
         weapon:SetDamage(70)
         weapon:SetSpread(15)
@@ -24,11 +26,11 @@ WonderWeapons = {
         weapon:SetParticlesBarrel("nanos-world::P_Weapon_BarrelSmoke")
 
         weapon:SetSoundDry("nanos-world::A_Pistol_Dry")
-        weapon:SetSoundLoad("vzombies-assets::wpn_ray_reload_close")
-        weapon:SetSoundUnload("vzombies-assets::wpn_ray_reload_open")
+        weapon:SetSoundLoad("vzombies-assets::wpn_ray_reload_close", volume_custom)
+        weapon:SetSoundUnload("vzombies-assets::wpn_ray_reload_open", volume_custom)
         weapon:SetSoundZooming("nanos-world::A_AimZoom")
         weapon:SetSoundAim("nanos-world::A_Rattle")
-        weapon:SetSoundFire("vzombies-assets::ray_shot_f")
+        weapon:SetSoundFire("vzombies-assets::ray_shot_f", volume_custom)
 
         weapon:SetAnimationCharacterFire("nanos-world::A_Mannequin_Sight_Fire_Pistol")
         weapon:SetAnimationReload("nanos-world::AM_Mannequin_Reload_Pistol")
@@ -40,6 +42,8 @@ WonderWeapons = {
 
     Raygun_mk2 = function(location, rotation)
         local weapon = Weapon(location or Vector(), rotation or Rotator(), "vzombies-assets::raygun_mk2")
+
+        local volume_custom = 0.5
 
         weapon:SetAmmoSettings(10, 1000)
         weapon:SetDamage(40)
@@ -62,11 +66,11 @@ WonderWeapons = {
         weapon:SetParticlesBarrel("nanos-world::P_Weapon_BarrelSmoke")
 
         weapon:SetSoundDry("nanos-world::A_Pistol_Dry")
-        weapon:SetSoundLoad("vzombies-assets::putin_mk2")
-        weapon:SetSoundUnload("vzombies-assets::pullout_mk2")
+        weapon:SetSoundLoad("vzombies-assets::putin_mk2", volume_custom)
+        weapon:SetSoundUnload("vzombies-assets::pullout_mk2", volume_custom)
         weapon:SetSoundZooming("nanos-world::A_AimZoom")
         weapon:SetSoundAim("nanos-world::A_Rattle")
-        weapon:SetSoundFire("vzombies-assets::wpn_raygun_mk2_fire")
+        weapon:SetSoundFire("vzombies-assets::wpn_raygun_mk2_fire", 0.33)
 
         weapon:SetAnimationCharacterFire("nanos-world::A_Mannequin_Sight_Fire_Pistol")
         weapon:SetAnimationReload("nanos-world::AM_Mannequin_Reload_Pistol")

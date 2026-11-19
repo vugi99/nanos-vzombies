@@ -43,21 +43,27 @@ function OpenedMBOXResetStage1()
     Timer.ClearInterval(OpenedMysteryBox_Data.FakeInterval)
     OpenedMysteryBox_Data.MoveTimeout = nil
     OpenedMysteryBox_Data.FakeInterval = nil
-    if OpenedMysteryBox_Data.fweap then
+    if IsValid(OpenedMysteryBox_Data.fweap) then
         OpenedMysteryBox_Data.fweap:Destroy()
-        OpenedMysteryBox_Data.fweap = nil
     end
+    OpenedMysteryBox_Data.fweap = nil
 end
 
 function OpenedMBOXResetStage2()
     Timer.ClearTimeout(OpenedMysteryBox_Data.MoveTimeout)
-    OpenedMysteryBox_Data.realweap:Destroy()
-    OpenedMysteryBox_Data.SM_Attach:Destroy()
+    if IsValid(OpenedMysteryBox_Data.realweap) then
+        OpenedMysteryBox_Data.realweap:Destroy()
+    end
+    if IsValid(OpenedMysteryBox_Data.SM_Attach) then
+        OpenedMysteryBox_Data.SM_Attach:Destroy()
+    end
 end
 
 function OpenedMBOXResetStage3(real_reset)
-    OpenedMysteryBox_Data.SM_Attach:Destroy()
-    if OpenedMysteryBox_Data.bear then
+    if IsValid(OpenedMysteryBox_Data.SM_Attach) then
+        OpenedMysteryBox_Data.SM_Attach:Destroy()
+    end
+    if IsValid(OpenedMysteryBox_Data.bear) then
         OpenedMysteryBox_Data.bear:Destroy()
     end
     if real_reset then
@@ -128,7 +134,7 @@ function PickNewMysteryBox()
 end
 
 function OpenedMBoxNewFakeWeapon()
-    if OpenedMysteryBox_Data.fweap then
+    if IsValid(OpenedMysteryBox_Data.fweap) then
         OpenedMysteryBox_Data.fweap:Destroy()
     end
     local random_weap = Mystery_box_weapons[math.random(table_count(Mystery_box_weapons))]
@@ -205,7 +211,7 @@ function OpenActiveMysteryBox(char)
         end, Mystery_box_weapon_time * 1000),
     }
     OpenedMBoxNewFakeWeapon()
-    Events.BroadcastRemote("OpenMBOXSound", Reliability.Reliable, SM_MysteryBoxes[Active_MysteryBox_ID].mbox:GetLocation())
+    Events.BroadcastRemote("OpenMBOXSound", Reliability.Reliable, SM_MysteryBoxes[Active_MysteryBox_ID].mbox:GetLocation() + Vector(0, 0, 60))
 end
 
 VZ_EVENT_SUBSCRIBE_REMOTE("BuyMBOX", function(ply, mbox)

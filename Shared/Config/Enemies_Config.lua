@@ -47,6 +47,20 @@ Enemies_Stuck_DistanceSq = 4
 Enemies_Stuck_Check_Each_ms = 2500
 Enemies_Stuck_Respawn_After_x_Stuck = 8 -- Respawns after x times his location was flagged as same, resets when he reaches his target
 
+-- At which fail count treshold we ask the player to send a point around him for a partial path to him
+Enemies_Fail_To_Reach_PlyChar_threshold = Max_enemies_spawned
+-- For the navigation query, radius in 2D space
+Enemies_Fail_To_Reach_Ask_Point_Around_Radius = 80
+-- Radius is also checked in 3D, somehow we want higher values for this one, but not too far
+Enemies_Fail_To_Reach_Ask_Point_Around_Radius_3D = 175
+
+Enemies_Fail_To_Reach_Point_Around_Max_Retries = 10
+
+-- probability to use the target proxy if found on a player
+Enemies_Use_Proxy_Chance = 0.66
+-- At which point the proxy need to be invalidated (too many attack misses)
+Enemies_Misses_Proxy_Invalidate = Max_enemies_spawned*2
+
 Enemies_Weird_Punch_Respawn_After_x_Weird = 25
 
 Enemies_Ground_Dirt_Scale = Vector(5, 5, 5)
@@ -215,9 +229,12 @@ Vault_Animations = {
 }
 
 Enemy_Under_Ground_Animation = {
-    asset = "vzombies-assets::FreehangClimb",
-    duration_ms = 6100,
+    asset = "vzombies-assets::FreehangClimb_Montage",
+    -- 6202.633 is the real time
+    forward_offset = 55, -- 64 for the full anim
+    blend_out_time = 0.66,
 }
+Enemy_Under_Ground_Animation.duration_ms = 6150 - (Enemy_Under_Ground_Animation.blend_out_time*1000)/2.125
 
 Enemies_Config = {
     Zombie = {
@@ -326,15 +343,14 @@ Enemies_Config = {
 
         Custom_Anims_Transform = {
             to_crawl = function(Custom_Anims_BP, char)
-                Custom_Anims_BP:CallBlueprintEvent("SetZombieCrawl", char:GetID())
+                Custom_Anims_BP:CallBlueprintEvent("SetZombieCrawl", char)
             end
         },
 
         Custom_Anims_Func = function(Custom_Anims_BP, char)
-            char:AddActorTag("vzanimoverwrite")
-            Custom_Anims_BP:CallBlueprintEvent("SetAnimBP", char:GetID(), char:GetValue("EnemyType") == "walk")
+            Custom_Anims_BP:CallBlueprintEvent("SetAnimBP", char, char:GetValue("EnemyType") == "walk")
             if char:GetValue("EnemyType") == "crawl" then
-                Custom_Anims_BP:CallBlueprintEvent("SetZombieCrawl", char:GetID())
+                Custom_Anims_BP:CallBlueprintEvent("SetZombieCrawl", char)
             end
         end,
     },
@@ -385,8 +401,7 @@ Enemies_Config = {
         },
 
         Custom_Anims_Func = function(Custom_Anims_BP, char)
-            char:AddActorTag("vzanimoverwrite")
-            Custom_Anims_BP:CallBlueprintEvent("SetHellhound")
+            Custom_Anims_BP:CallBlueprintEvent("SetHellhound", char)
         end,
 
         Custom_Skeleton = true, -- Whether to disable hit reaction to avoid ragdoll issues
@@ -443,8 +458,7 @@ Enemies_Config = {
         },
 
         Custom_Anims_Func = function(Custom_Anims_BP, char)
-            char:AddActorTag("vzanimoverwrite")
-            Custom_Anims_BP:CallBlueprintEvent("SetBrutus")
+            Custom_Anims_BP:CallBlueprintEvent("SetBrutus", char)
         end,
 
         Custom_Skeleton = true,
@@ -499,8 +513,7 @@ Enemies_Config = {
         },
 
         Custom_Anims_Func = function(Custom_Anims_BP, char)
-            char:AddActorTag("vzanimoverwrite")
-            Custom_Anims_BP:CallBlueprintEvent("SetNapalm")
+            Custom_Anims_BP:CallBlueprintEvent("SetNapalm", char)
         end,
 
         Custom_Skeleton = true,
@@ -586,10 +599,9 @@ Enemies_Config = {
         },
 
         Custom_Anims_Func = function(Custom_Anims_BP, char)
-            char:AddActorTag("vzanimoverwrite")
-            Custom_Anims_BP:CallBlueprintEvent("SetAnimBP", char:GetID(), char:GetValue("EnemyType") == "walk")
+            Custom_Anims_BP:CallBlueprintEvent("SetAnimBP", char, char:GetValue("EnemyType") == "walk")
             if char:GetValue("EnemyType") == "crawl" then
-                Custom_Anims_BP:CallBlueprintEvent("SetZombieCrawl", char:GetID())
+                Custom_Anims_BP:CallBlueprintEvent("SetZombieCrawl", char)
             end
         end,
 

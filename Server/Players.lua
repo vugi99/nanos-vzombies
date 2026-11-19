@@ -104,6 +104,7 @@ function SpawnCharacterForPlayer(ply, spawn_id)
     new_char:SetBrakingSettings(2, 2, 128, 3000, 10, 0)
     new_char:SetCapsuleSize(table.unpack(Player_Capsule_Size))
     new_char:SetRadialDamageToRagdoll(Character_RadialDamageToRagdoll)
+    new_char:SetRagdollOnDeathEnabled(false) -- We use a custom death system, allowing ragdolls cause issues in case the player actually dies.
 
     new_char:SetValue("OwnedPerks", {}, true)
     new_char:SetValue("ZGrenadesNB", Start_Grenades_NB, true)
@@ -112,13 +113,16 @@ function SpawnCharacterForPlayer(ply, spawn_id)
     new_char:SetValue("WeirdPunchCount", 0, false)
     new_char:SetValue("CanPickupGibs", true, true)
     new_char:SetValue("CanThrowGrenades", true, true)
+    new_char:SetValue("FailedToReach", 0, false)
+    new_char:SetValue("ProxyTargetAttackFails", 0, false)
 
     if ply.BOT then
         new_char:SetGaitMode(GaitMode.Sprinting)
-        -- Nanos regression
-        --new_char:SetBrakingSettings(2, 2, 1000)
 
         --print("Bot Character spawned", ply:GetAccountName(), new_char, new_char:GetMesh())
+    else
+        -- Broken in nanos 1.167.3
+        --new_char:SetWeaponShooterMode(true)
     end
 
     for i, v in ipairs(PM_Data.Parameters) do
@@ -159,13 +163,24 @@ function GetPlayersInRadius(loc, radius)
     return in_radius_players
 end
 
-function GetRandomPlayer()
+function GetPlayersWithoutBeingDestroyed()
     local players = Player.GetAll()
+    local tbl = {}
+    for i, v in ipairs(players) do
+        if IsValid(v) and (not v:IsBeingDestroyed()) then
+            tbl[#tbl+1] = v
+        end
+    end
+    return tbl
+end
+
+function GetRandomPlayer()
+    local players = GetPlayersWithoutBeingDestroyed()
     return players[math.random(table_count(players))]
 end
 
 function GetRandomPlayerWOOne(ply)
-    local players = Player.GetAll()
+    local players = GetPlayersWithoutBeingDestroyed()
     local new_tbl = {}
     for k, v in pairs(players) do
         if v ~= ply then
@@ -254,31 +269,30 @@ function PlayerCharacterDie(char, force_die)
     --[[if char:GetValue("PlayerDown") then
         Timer.ClearTimeout(char:GetValue("PlayerDownDieTimer"))
     end]]--
-    if char:IsValid() then
-        local ply = char:GetPlayer()
-        if (not char:GetValue("RevivingPlayer")) or force_die then
-            --ply:SetVOIPSetting(VOIPSetting.Muted)
-            --ply:SetVOIPMuted(true)
-            ply:SetVOIPLocalSetting(VOIPSetting.None)
-            ply:SetVOIPGlobalChannelSetting(2, VOIPSetting.Both)
+    if not IsValid(char) then return end
+    local ply = char:GetPlayer()
+    if (not char:GetValue("RevivingPlayer")) or force_die then
+        --ply:SetVOIPSetting(VOIPSetting.Muted)
+        --ply:SetVOIPMuted(true)
+        ply:SetVOIPLocalSetting(VOIPSetting.None)
+        ply:SetVOIPGlobalChannelSetting(2, VOIPSetting.Both)
 
-            char:Destroy()
-            Buy(ply, math.floor(ply:GetValue("ZMoney") * Dead_MoneyLost / 100))
+        char:Destroy()
+        Buy(ply, math.floor(ply:GetValue("ZMoney") * Dead_MoneyLost / 100))
 
-            for k, v in pairs(Player.GetPairs()) do
-                if v ~= ply then
-                    Events.CallRemote("AddNotification", v, Reliability.Reliable, ply:GetAccountName() .. " died", 10000)
-                end
+        for k, v in pairs(Player.GetPairs()) do
+            if v ~= ply then
+                Events.CallRemote("AddNotification", v, Reliability.Reliable, ply:GetAccountName() .. " died", 10000)
             end
-
-            -- For When the character is destroyed because of Z Limits
-            --local al_nb = GetPlayersAliveNB()
-            --if al_nb == 0 then
-            CheckRoundFinished()
-            --end
-        else
-            char:SetValue("RevivingLastChance", true, false)
         end
+
+        -- For When the character is destroyed because of Z Limits
+        --local al_nb = GetPlayersAliveNB()
+        --if al_nb == 0 then
+        CheckRoundFinished()
+        --end
+    else
+        char:SetValue("RevivingLastChance", true, false)
     end
 end
 Package.Export("PlayerCharacterDie", PlayerCharacterDie)
@@ -327,7 +341,10 @@ function ApplyGriefFreeze(ply, char)
                             char:SetCanAim(true)
                         else
                             RequestBotAction(ply)
-                            ply:SetValue("BotAimPlayer", GetRandomPlayer():GetID(), true)
+                            local r_player = GetRandomPlayer()
+                            if IsValid(r_player) then
+                                ply:SetValue("BotAimPlayer", r_player:GetID(), true)
+                            end
                         end
                     end
                 end
@@ -354,6 +371,120 @@ function SetCharacterNotTargeted(char, enable)
     end
 end
 Package.Export("SetCharacterNotTargeted", SetCharacterNotTargeted)
+
+function PlayerCharToDown(char)
+    if not IsValid(char) then return end
+    local ply = char:GetPlayer()
+    if not IsValid(ply) then return end
+
+    if char:GetVehicle() then
+        char:LeaveVehicle()
+    end
+
+    local solo_quick_revive
+
+    if PLAYING_PLAYERS_NB == 1 then -- solo
+        solo_quick_revive = char:GetValue("OwnedPerks").quick_revive
+    end
+
+    char:SetValue("SoloQuickReviving", solo_quick_revive, true)
+
+    char:SetValue("PlayerDown", true, true)
+    Buy(ply, math.floor(ply:GetValue("ZMoney") * Down_MoneyLost / 100))
+    char:SetValue("OwnedPerks", {}, true)
+    for k, v in pairs(GetMergedEnemiesChars()) do
+        if (v:GetValue("Target_type") == "player" and v:GetValue("Target")) then
+            EnemyRefreshTarget(v)
+        end
+    end
+
+    local picked_thing = char:GetPicked()
+    if (picked_thing and (picked_thing:IsA(Grenade) or picked_thing:IsA(Melee))) then
+        picked_thing:Destroy()
+        local charInvID = GetCharacterInventory(char)
+        if charInvID then
+            local Inv = PlayersCharactersWeapons[charInvID]
+            EquipSlot(char, Inv.selected_slot)
+        end
+    end
+
+    if char:GetValue("PlayerGrabbedBy") then
+        char:StopAnimation("vzombies-assets::AS_NAAT_Human_Grab_To_Wrestle")
+        char:SetValue("PlayerGrabbedBy", nil, true)
+    end
+
+    if not solo_quick_revive then
+        char:SetValue(
+            "PlayerDownDieTimer",
+            Timer.SetTimeout(function()
+                PlayerCharacterDie(char)
+            end, PlayerDeadAfterTimerDown_ms),
+            false
+        )
+    end
+    char:SetSpeedMultiplier(PlayerSpeedMultiplier)
+    if not ply.BOT then
+        char:SetInputEnabled(false)
+        char:SetCanAim(false)
+    end
+
+    CheckToStopBotReviveTimer(char, false)
+    if ply.BOT then
+        BotResetTarget(ply)
+        ply:SetValue("BotAimPlayer", nil, true)
+
+        if char:GetValue("DoingAction") then
+            --print("STOP MOVETO BOT")
+            char:SetValue("DoingAction", nil, false)
+            char:MoveTo(char:GetLocation(), 50)
+        end
+    end
+
+    -- Remove third weapon from inventory (if the player had three gun)
+    local charInvID = GetCharacterInventory(char)
+    if charInvID then
+        local Inv = PlayersCharactersWeapons[charInvID]
+        for i, v in ipairs(Inv.weapons) do
+            if v.slot == 3 then
+                if v.weapon then
+                    if v.weapon:IsValid() then
+                        v.destroying = true
+                        v.weapon:Destroy()
+                    end
+                end
+                table.remove(PlayersCharactersWeapons[charInvID].weapons, i)
+                break
+            end
+        end
+        if Inv.selected_slot == 3 then
+            EquipSlot(char, 1)
+        end
+    end
+
+    char:PlayAnimation(Player_Down_Animation, AnimationSlotType.FullBody, true)
+
+    -- Remove Speed Reload on equipped weapon (if the player had speed cola)
+    local weap = char:GetPicked()
+    if weap then
+        if not weap:IsA(Grenade) and not weap:IsA(Melee) then
+            weap:ActivateSpeedReload(false)
+        end
+    end
+
+    if solo_quick_revive then
+        Timer.SetTimeout(function()
+            if char:IsValid() then
+                char:SetValue("SoloQuickReviving", nil, true)
+                RevivePlayerFinished_RevivedPart(char)
+            end
+        end, PERKS_CONFIG.quick_revive.Solo_ReviveTime_ms)
+    end
+
+    VZ_EVENT_CALL("Events", "VZ_CharacterDown", char)
+
+    CheckRoundFinished()
+end
+Package.Export("PlayerCharToDown", PlayerCharToDown)
 
 VZ_EVENT_SUBSCRIBE("Character", "TakeDamage", function(char, damage, bone, type, from_direction, instigator, causer)
     if not IsValid(char) then return end
@@ -402,109 +533,7 @@ VZ_EVENT_SUBSCRIBE("Character", "TakeDamage", function(char, damage, bone, type,
         local chealth = char:GetHealth() - damage
         ClearRegenTimeouts(char)
         if chealth <= 1000 then
-            if char:GetVehicle() then
-                char:LeaveVehicle()
-            end
-
-            local solo_quick_revive
-
-            if PLAYING_PLAYERS_NB == 1 then -- solo
-                solo_quick_revive = char:GetValue("OwnedPerks").quick_revive
-            end
-
-            char:SetValue("SoloQuickReviving", solo_quick_revive, true)
-
-            char:SetValue("PlayerDown", true, true)
-            Buy(ply, math.floor(ply:GetValue("ZMoney") * Down_MoneyLost / 100))
-            char:SetValue("OwnedPerks", {}, true)
-            for k, v in pairs(GetMergedEnemiesChars()) do
-                if (v:GetValue("Target_type") == "player" and v:GetValue("Target")) then
-                    EnemyRefreshTarget(v)
-                end
-            end
-
-            local picked_thing = char:GetPicked()
-            if (picked_thing and (picked_thing:IsA(Grenade) or picked_thing:IsA(Melee))) then
-                picked_thing:Destroy()
-                local charInvID = GetCharacterInventory(char)
-                if charInvID then
-                    local Inv = PlayersCharactersWeapons[charInvID]
-                    EquipSlot(char, Inv.selected_slot)
-                end
-            end
-
-            if char:GetValue("PlayerGrabbedBy") then
-                char:StopAnimation("vzombies-assets::AS_NAAT_Human_Grab_To_Wrestle")
-                char:SetValue("PlayerGrabbedBy", nil, true)
-            end
-
-            if not solo_quick_revive then
-                char:SetValue(
-                    "PlayerDownDieTimer",
-                    Timer.SetTimeout(PlayerCharacterDie, PlayerDeadAfterTimerDown_ms, char),
-                    false
-                )
-            end
-            char:SetSpeedMultiplier(PlayerSpeedMultiplier)
-            if not ply.BOT then
-                char:SetInputEnabled(false)
-                char:SetCanAim(false)
-            end
-            char:PlayAnimation(Player_Down_Animation, AnimationSlotType.FullBody, true)
-
-            CheckToStopBotReviveTimer(char, false)
-            if ply.BOT then
-                BotResetTarget(ply)
-                ply:SetValue("BotAimPlayer", nil, true)
-
-                if char:GetValue("DoingAction") then
-                    --print("STOP MOVETO BOT")
-                    char:SetValue("DoingAction", nil, false)
-                    char:MoveTo(char:GetLocation(), 50)
-                end
-            end
-
-            -- Remove third weapon from inventory (if the player had three gun)
-            local charInvID = GetCharacterInventory(char)
-            if charInvID then
-                local Inv = PlayersCharactersWeapons[charInvID]
-                for i, v in ipairs(Inv.weapons) do
-                    if v.slot == 3 then
-                        if v.weapon then
-                            if v.weapon:IsValid() then
-                                v.destroying = true
-                                v.weapon:Destroy()
-                            end
-                        end
-                        table.remove(PlayersCharactersWeapons[charInvID].weapons, i)
-                        break
-                    end
-                end
-                if Inv.selected_slot == 3 then
-                    EquipSlot(char, 1)
-                end
-            end
-
-            -- Remove Speed Reload on equipped weapon (if the player had speed cola)
-            local weap = char:GetPicked()
-            if weap then
-                if not weap:IsA(Grenade) and not weap:IsA(Melee) then
-                    weap:ActivateSpeedReload(false)
-                end
-            end
-
-            if solo_quick_revive then
-                Timer.SetTimeout(function()
-                    if char:IsValid() then
-                        char:SetValue("SoloQuickReviving", nil, true)
-                        RevivePlayerFinished_RevivedPart(char)
-                    end
-                end, PERKS_CONFIG.quick_revive.Solo_ReviveTime_ms)
-            end
-
-            VZ_EVENT_CALL("Events", "VZ_CharacterDown", char)
-
-            CheckRoundFinished()
+            PlayerCharToDown(char)
         else
             if instigator then
                 ApplyGriefFreeze(ply, char)
@@ -539,6 +568,16 @@ VZ_EVENT_SUBSCRIBE("Character", "TakeDamage", function(char, damage, bone, type,
             end, PlayerRegenHealthAfter_ms), false)
         end
     end
+end)
+
+-- Support in case the character dies anyway (vehicle explosion).
+VZ_EVENT_SUBSCRIBE("Character", "Death", function(char, last_damage_taken, last_bone_damaged, damage_type_reason, hit_from_direction, instigator, causer)
+	if not IsValid(char) then return end
+    local ply = char:GetPlayer()
+    if not IsValid(ply) then return end
+    char:Respawn(char:GetLocation(), char:GetRotation())
+    char:SetHealth(1000)
+    PlayerCharToDown(char)
 end)
 
 function HandlePlayerJoin(ply, bot, waittostart)
@@ -775,9 +814,15 @@ function RevivePlayerFinished_RevivedPart(revived_char)
     Events.CallRemote("UpdateGUIHealth", revived_ply, Reliability.Reliable)
     if revived_ply.BOT then
         RequestBotAction(revived_ply)
-        revived_ply:SetValue("BotAimPlayer", GetRandomPlayer():GetID(), true)
+        local r_player = GetRandomPlayer()
+        if IsValid(r_player) then
+            revived_ply:SetValue("BotAimPlayer", r_player:GetID(), true)
+        end
         revived_char:SetValue("BOTReloading", nil, false) -- fix bot not shooting after death while reloading
     end
+    revived_char:SetValue("FailedToReach", 0, false)
+    revived_char:SetValue("ProxyTargetPoint", nil, false)
+    revived_char:SetValue("ProxyTargetAttackFails", 0, false)
 end
 
 
@@ -884,10 +929,10 @@ function SendEnemiesRemaining(ply)
             local remaining = REMAINING_ENEMIES_TO_SPAWN + table_count(ENEMY_CHARACTERS)
             if not ply then
                 if last_sent_value ~= remaining then
-                    Events.BroadcastRemote("SetClientRemainingZombies", Reliability.Unreliable, remaining)
+                    Events.BroadcastRemote("SetClientRemainingZombies", Reliability.Reliable, remaining)
                 end
             else
-                Events.CallRemote("SetClientRemainingZombies", ply, Reliability.Unreliable, remaining)
+                Events.CallRemote("SetClientRemainingZombies", ply, Reliability.Reliable, remaining)
             end
         end
     end

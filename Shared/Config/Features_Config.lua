@@ -61,11 +61,17 @@ VZ_GLOBAL_FEATURES = {
         levels_xp_func = function(level)
             return math.floor(((level^2)/3 + 60) + 0.5)
         end,
-        score_mult_into_xp = 0.1
+        score_mult_into_xp = 0.1,
+        LevelUp_Sound = {
+            asset = "nanos-world::A_Kill_Feedback",
+            volume = 1,
+        }
     },
     Vehicles = {
         script_loaded = true,
         can_interact = true,
+        Destroy_Timeout_ms = 45000,
+        Pad_Offset = Vector(0, 0, -5), -- Used to fix blocking zombie
     },
     Chargers = {
         script_loaded = true,

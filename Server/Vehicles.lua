@@ -29,18 +29,20 @@ end
 if VEHICLES_PADS then
     LoadNanosVehicles()
 
+    local poffset = VZ_GetFeatureValue("Vehicles", "Pad_Offset")
+
     for i, v in ipairs(VEHICLES_PADS) do
-        local veh_pad = StaticMesh(v.location, v.rotation, "vzombies-assets::station_low")
+        local veh_pad = StaticMesh(v.location + poffset, v.rotation, "vzombies-assets::station_low")
         veh_pad:SetScale(Vector(1, 0.5, 0.5))
 
-        local veh_pad_terminal = StaticMesh(v.location + v.rotation:GetRightVector() * 252, v.rotation, "vzombies-assets::terminal")
+        local veh_pad_terminal = StaticMesh(v.location + poffset + v.rotation:GetRightVector() * 252, v.rotation, "vzombies-assets::terminal")
 
-        --local veh_pad_screen = StaticMesh(v.location + v.rotation:GetRightVector() * 252, v.rotation, "vzombies-assets::ecran1")
+        --local veh_pad_screen = StaticMesh(v.location + poffset + v.rotation:GetRightVector() * 252, v.rotation, "vzombies-assets::ecran1")
 
         veh_pad_terminal:SetValue("VehiclePad", i, true)
         veh_pad_terminal:SetValue("GroundPad", veh_pad, false)
 
-        --local debug_trigger = Trigger(v.location + Vector(0, 0, 100), v.rotation, Vector(500, 250, 300), TriggerType.Box, true, Color.RED)
+        --local debug_trigger = Trigger(v.location + poffset + Vector(0, 0, 100), v.rotation, Vector(500, 250, 300), TriggerType.Box, true, Color.RED)
 
         VEHICLE_PADS_SMs[i] = {veh_pad, veh_pad_terminal}
     end
@@ -93,9 +95,19 @@ if VEHICLES_PADS then
         print(veh, damage, bone, dtype, from_direction, instigator, causer)
     end)]]--
 
-    local loaded = Server.LoadPackage("webui3d2d")
-    if not loaded then
-        Console.Warn("Missing webui3d2d package, running in compatibility mode")
+    VZ_EVENT_SUBSCRIBE("VehicleWheeled", "Death", function(veh, last_damage_taken, last_bone_damaged, damage_type_reason, hit_from_direction, instigator, causer)
+        if not IsValid(veh) then return end
+        Timer.SetTimeout(function()
+            if not IsValid(veh) then return end
+            veh:Destroy()
+        end, VZ_GetFeatureValue("Vehicles", "Destroy_Timeout_ms"))
+    end)
+
+    if not VZ_IsPackageLoaded("webui3d2d") then
+        local loaded = Server.LoadPackage("webui3d2d")
+        if not loaded then
+            Console.Warn("Missing webui3d2d package, running in compatibility mode")
+        end
     end
 end
 
@@ -114,12 +126,13 @@ end)
 
 VZ_EVENT_SUBSCRIBE("Character", "EnterVehicle", function(char, veh, seat)
     if veh:GetCollision() == CollisionType.IgnoreOnlyPawn then
+        --print(veh, "SetCollision EnterVehicle", CollisionType.Normal)
         veh:SetCollision(CollisionType.Normal)
     end
 end)
 
 VZ_EVENT_SUBSCRIBE("Character", "LeaveVehicle", function(char, veh)
-    --print("Set")
+    --print(veh, "SetCollision LeaveVehicle", CollisionType.IgnoreOnlyPawn)
     veh:SetCollision(CollisionType.IgnoreOnlyPawn)
 end)
 

@@ -168,6 +168,10 @@ if not VZ_CL_Current_Settings["Player_Names_On_Heads"] then
     CleanupText3Ds()
 end
 
+VZ_CL_Current_Settings["Zombie_Ground_Dirt_Particle"] = AddTabCheckbox("Settings", "Other", "Zombie Ground Spawn Dirt Particle", function(checked)
+    VZ_CL_Current_Settings["Zombie_Ground_Dirt_Particle"] = checked
+end, VZ_CL_Current_Settings["Zombie_Ground_Dirt_Particle"], true)
+
 -- TODO: Reset should call all settings callbacks with the correct checked value?
 AddTabButton("Settings", "Other", "Reset Settings", function()
     ResetVZFrameSaved("Settings")

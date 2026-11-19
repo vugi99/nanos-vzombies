@@ -20,6 +20,7 @@ end
 
 function GetLocalCharacter()
     local local_player = Client.GetLocalPlayer()
+    if not IsValid(local_player) then return end
     return local_player:GetControlledCharacter()
 end
 
@@ -98,7 +99,7 @@ Events.SubscribeRemote("LoadMapConfig", function(MAP_CONFIG)
         Package.Require("cl_Leaderboards.lua")
     end
 
-    if ZDEV_IsModeEnabled("ZDEV_MOD_MENU") then
+    if VZ_HasAccessToModMenu(Client.GetLocalPlayer()) then
         Package.Require("cl_Mod_Menu.lua")
     end
 

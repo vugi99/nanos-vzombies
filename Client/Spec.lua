@@ -92,6 +92,15 @@ function SpectatePlayer(to_spec)
             if (Playing_LowHealth_Sound and health > LowHealth_Trigger_Health) then
                 StopLowHealthLoop()
             end
+
+            local veh = char:GetVehicle()
+            if IsValid(veh) then
+                if UpdateUIVehicleHealth then
+                    UpdateUIVehicleHealth(veh:GetHealth(), veh:GetMaxHealth())
+                end
+            elseif HideUIVehicleHealth then
+                HideUIVehicleHealth()
+            end
         else
             One_Time_Updates_Canvas:Repaint()
         end
@@ -109,6 +118,10 @@ function StopSpectate()
 
     CurPerks = {}
     GUI:CallEvent("ResetPerks")
+
+    if HideUIVehicleHealth then
+        HideUIVehicleHealth()
+    end
 
     local char = Client.GetLocalPlayer():GetControlledCharacter()
     if IsValid(char) then

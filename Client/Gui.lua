@@ -246,9 +246,9 @@ end
 
 function NeedToUpdateAmmoText(char, weapon)
     if (IsSelfCharacter(char) or IsSpectatingPlayerCharacter(char)) then
-        if (not weapon:IsA(Grenade) and not weapon:IsA(Melee)) then
+        if (not weapon:IsA(Melee)) then
             --print("NeedToUpdateAmmoText", weapon:GetAmmoClip(), weapon:GetAmmoBag())
-            GUI:CallEvent("SetAmmoText", tostring(weapon:GetAmmoClip()), tostring(weapon:GetAmmoBag()))
+            GUI:CallEvent("SetAmmoText", tostring((weapon.GetAmmoClip and weapon:GetAmmoClip()) or 0), tostring((weapon.GetAmmoBag and weapon:GetAmmoBag()) or 0))
         end
     end
 end
@@ -264,7 +264,7 @@ VZ_EVENT_SUBSCRIBE("Character", "PickUp", function(char, weapon)
     if (IsValid(char) and IsValid(weapon)) then
         NeedToUpdateAmmoText(char, weapon)
         if (IsSelfCharacter(char) or IsSpectatingPlayerCharacter(char)) then
-            SetWeaponNameText(weapon:GetValue("WeaponName"))
+            SetWeaponNameText(weapon:GetValue("WeaponName") or weapon:GetValue("GrenadeName"))
         end
     end
 end)
@@ -702,14 +702,26 @@ VZ_EVENT_SUBSCRIBE("Character", "Destroy", function(char)
     end
 end)
 
-VZ_EVENT_SUBSCRIBE_REMOTE("SetClientRemainingZombies", function(remaining)
+local client_r_zombies
+function VZ_GetClientRemainingZombies()
+    return client_r_zombies
+end
+Package.Export("VZ_GetClientRemainingZombies", VZ_GetClientRemainingZombies)
+
+function VZ_SetClientRemainingZombies(remaining)
+    if type(remaining) ~= "number" then return end
+    if remaining < 0 then return end
+    client_r_zombies = remaining
     if Remaining_Enemies_Text then
         if not Timed_Waves then
             One_Time_Update_Data.Zombies_Remaining_Number = remaining
             One_Time_Updates_Canvas:Repaint()
         end
     end
-end)
+    return true
+end
+Package.Export("VZ_SetClientRemainingZombies", VZ_SetClientRemainingZombies)
+VZ_EVENT_SUBSCRIBE_REMOTE("SetClientRemainingZombies", VZ_SetClientRemainingZombies)
 
 VZ_EVENT_SUBSCRIBE_REMOTE("SetClientRemainingWaveTime", function(remaining_ms)
     if Remaining_Enemies_Text then
@@ -746,10 +758,14 @@ VZ_EVENT_SUBSCRIBE_REMOTE("SetGlobalPlayerWaitingValue", function(value)
     HandlePlayerWaitingValue(value)
 end)
 
+Client.SetHighlightColor(Highlight_PlayerDown_Color, 1, HighlightMode.Always)
+
 VZ_EVENT_SUBSCRIBE("Character", "ValueChange", function(char, key, value)
     if key == "PlayerDown" then
         if not IsSelfCharacter(char) then
             if value then
+                local ply = char:GetPlayer()
+                if not IsValid(ply) then return end -- Probably a bot has not initialized yet
                 AddNotification(char:GetPlayer():GetAccountName() .. " is down", 10000)
                 local billboard = Billboard(
                     Vector(0, 0, 0),
@@ -763,6 +779,8 @@ VZ_EVENT_SUBSCRIBE("Character", "ValueChange", function(char, key, value)
 
                 billboard:AttachTo(char, AttachmentRule.SnapToTarget, "", 0)
                 billboard:SetRelativeLocation(To_Revive_Billboard_Relative_Location)
+
+                char:SetHighlightEnabled(true, 1)
             else
                 for k, v in pairs(char:GetAttachedEntities()) do
                     if v:GetValue("ToReviveBillboard") then
@@ -770,6 +788,8 @@ VZ_EVENT_SUBSCRIBE("Character", "ValueChange", function(char, key, value)
                         break
                     end
                 end
+
+                char:SetHighlightEnabled(false, 1)
             end
         end
     end
@@ -901,7 +921,7 @@ function CheckToAddText3D(char)
         end
     end
     if (char:GetPlayer() and (not IsValid(char:GetValue("Text3DEnt")))) then
-        local text_3d = Text3D(
+        --[[local text_3d = Text3D(
             Vector(),
             Rotator(),
             char:GetPlayer():GetAccountName(),
@@ -913,10 +933,9 @@ function CheckToAddText3D(char)
         text_3d:SetTextSettings(0, 0, 0, TextRenderHorizontalAlignment.Center, TextRenderVerticalAlignment.Center)
         text_3d:AttachTo(char, AttachmentRule.SnapToTarget, "", 0, false)
         text_3d:SetRelativeLocation(Player_Name_Text3D_Head_Offset)
-        text_3d:SetMaterialColorParameter("Emissive", Color.AZURE * 2)
+        text_3d:SetMaterialColorParameter("Emissive", Color.AZURE * 2)]]--
 
-        -- Nanos 1.164.0 Broken https://nanos-world.com/feedback/p/textrender-cameraaligned-broken
-        --[[local text_3d = TextRender(
+        local text_3d = TextRender(
             Vector(),
             Rotator(),
             char:GetPlayer():GetAccountName(),
@@ -924,8 +943,8 @@ function CheckToAddText3D(char)
             Color.AZURE,
             TextRenderRenderingType.UnlitCameraAligned
         )
-        text_3d:AttachTo(char, AttachmentRule.SnapToTarget, "", 0, false)
-        text_3d:SetRelativeLocation(Player_Name_Text3D_Head_Offset)]]--
+        text_3d:AttachTo(char, AttachmentRule.SnapToTarget, "", 0, true)
+        text_3d:SetRelativeLocation(Player_Name_Text3D_Head_Offset)
 
         char:SetValue("Text3DEnt", text_3d)
         table.insert(Text3Ds, text_3d)
@@ -1099,6 +1118,10 @@ function AddLocalXP(added)
                 LocalXP = LocalXP - XP_target
                 LocalLevel = LocalLevel + 1
                 AddNotification("Level Up")
+                local lu_sound_data = VZ_GetFeatureValue("Levels", "LevelUp_Sound")
+                if lu_sound_data then
+                    PlayVZSound({basic_sound_tbl=lu_sound_data})
+                end
                 SetGUILevel(LocalLevel)
             end
             SetGUIXP(LocalXP, XP_target)
@@ -1263,4 +1286,118 @@ VZ_EVENT_SUBSCRIBE_REMOTE("ClientSetChargingID", function(new_charging_id, charg
     if ui_charging_canvas_data then
         ui_charging_canvas_data.charger_begin_time = charger_begin_time
     end
+end)
+
+local function RandomString(length)
+    local str = {}
+    for i=1, length do
+        str[#str+1] = string.char(math.random(string.byte("A"), string.byte("z")))
+    end
+    return string.format(string.rep("%s", length), table.unpack(str))
+end
+
+local function Bench_SpawnText3D(on_ent)
+    local text_3d = Text3D(
+        Vector(),
+        Rotator(),
+        RandomString(16),
+        Player_Name_Text3D_Scale,
+        Color.AZURE,
+        FontType.OpenSans,
+        Text3DAlignCamera.FaceCamera
+    )
+    text_3d:SetTextSettings(0, 0, 0, TextRenderHorizontalAlignment.Center, TextRenderVerticalAlignment.Center)
+    text_3d:AttachTo(on_ent, AttachmentRule.SnapToTarget, "", 0, false)
+    text_3d:SetRelativeLocation(Player_Name_Text3D_Head_Offset)
+    text_3d:SetMaterialColorParameter("Emissive", Color.AZURE * 2)
+
+    return text_3d
+end
+
+local function Bench_SpawnTextRender(on_ent)
+    local text_3d = TextRender(
+        Vector(),
+        Rotator(),
+        RandomString(16),
+        26,
+        Color.AZURE,
+        TextRenderRenderingType.UnlitCameraAligned
+    )
+    text_3d:AttachTo(on_ent, AttachmentRule.SnapToTarget, "", 0, true)
+    text_3d:SetRelativeLocation(Player_Name_Text3D_Head_Offset)
+
+    return text_3d
+end
+
+local function SpawnNoneCharSimpleEnt(loc)
+    local csimple = CharacterSimple(loc, Rotator(0, 0, 0), "nanos-world::SK_None")
+    return csimple
+end
+
+local bench_ents = {}
+
+
+--[[
+
+Results on Blankmap:
+Text3D: 40FPS
+
+TextRender: 57FPS, clear winner
+
+]]--
+
+if ZDEV_IsModeEnabled("ZDEV_COMMANDS") then
+    VZ_EVENT_SUBSCRIBE("Chat", "PlayerSubmit", function(text, ply)
+        --print("PlayerSubmit", text, ply)
+        if not IsValid(ply) then return end
+        local start_loc = Vector(0, 0, 200)
+        local spacing = 150
+        local spawned_ents = 100
+
+        local colsize = math.ceil(math.sqrt(spawned_ents))
+
+        local function PrepareOnEnt(i)
+            local tloc = start_loc + Vector((i%colsize)*spacing, (i/colsize)*spacing, 0)
+
+            local on_ent = SpawnNoneCharSimpleEnt(tloc)
+
+            table.insert(bench_ents, on_ent)
+
+            return on_ent
+        end
+
+        if text == "/t3d_bench text3d" then
+            for i=0, spawned_ents-1 do
+                table.insert(bench_ents, Bench_SpawnText3D(PrepareOnEnt(i)))
+            end
+        elseif text == "/t3d_bench textrender" then
+            for i=0, spawned_ents-1 do
+                table.insert(bench_ents, Bench_SpawnTextRender(PrepareOnEnt(i)))
+            end
+        elseif text == "/t3d_bench cleanup" then
+            for _, v in pairs(bench_ents) do
+                if IsValid(v) then
+                    v:Destroy()
+                end
+            end
+
+            bench_ents = {}
+        end
+    end)
+end
+
+VZ_EVENT_SUBSCRIBE_REMOTE("NotEnoughMoney", function()
+    AddNotification("Not Enough Money", 3000)
+    PlayVZSound({basic_sound_tbl=NotEnoughMoney_Sound})
+end)
+
+VZ_EVENT_SUBSCRIBE("Character", "Death", function(char, last_damage_taken, last_bone_damaged, damage_type_reason, hit_from_direction, instigator, causer)
+    if not IsValid(char) then return end
+    if not char:GetValue("EnemyName") then return end
+    local enemy_table = GetEnemyTable(char)
+    if not enemy_table then return end
+    if enemy_table.Boss then return end
+    local c_r_zombies = VZ_GetClientRemainingZombies()
+    if not c_r_zombies then return end
+    VZ_SetClientRemainingZombies(c_r_zombies-1)
 end)

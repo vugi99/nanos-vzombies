@@ -1,6 +1,6 @@
 
 
-
+-- Bots shotgun reload infinite bug not yet reproduced
 
 
 function VZBot.prototype:Possess(char)
@@ -161,7 +161,10 @@ function VZBotJoin()
         end
     end, Bots_Start_Moving_ms)
 
-    Bot:SetValue("BotAimPlayer", GetRandomPlayer():GetID(), true)
+    local r_player = GetRandomPlayer()
+    if IsValid(r_player) then
+        Bot:SetValue("BotAimPlayer", r_player:GetID(), true)
+    end
 
     return ALL_BOTS[l_count + 1]
 end
@@ -206,7 +209,7 @@ function PlayerLeftCheckSyncPlayers(ply)
                 end
                 if v:GetValue("BotAimPlayer") == ply:GetID() then
                     local random_ply = GetRandomPlayerWOOne(ply)
-                    if random_ply then
+                    if IsValid(random_ply) then
                         v:SetValue("BotAimPlayer", random_ply:GetID(), true)
                     end
                 end
@@ -244,11 +247,13 @@ function RequestBotAction(bot, wo_ply, prereach)
                 char:GetValue("PrereachTrigger"):Destroy()
             end
         end
-        local ply = GetRandomPlayer()
+        local ply
         if wo_ply then
             ply = GetRandomPlayerWOOne(wo_ply)
+        else
+            ply = GetRandomPlayer()
         end
-        if ply then
+        if IsValid(ply) then
             bot:SetValue("RequestedActionFromPlayer", ply:GetID(), false)
             Events.CallRemote("RequestBotAction", ply, Reliability.Reliable, bot.ID, bot.Stored, GetPlayerInventoryTable(bot), ROOMS_UNLOCKED, prereach)
         end
@@ -492,6 +497,12 @@ function BotResetTarget(Bot)
     if not IsValid(char) then return end
     char:SetValue("BOTCanShootOn", {}, true)
     char:SetValue("BOTShootingOn", nil, false)
+
+    local weapon = char:GetPicked()
+    if IsValid(weapon) then
+        weapon:ReleaseUse() -- stop him from shooting further
+    end
+
     if char:GetValue("BOTShootInterval") then
         Timer.ClearInterval(char:GetValue("BOTShootInterval"))
         char:SetValue("BOTShootInterval", nil, false)
@@ -554,26 +565,11 @@ function BOTShootIntervalFunc(char)
                                     inaccurate_loc.Z = inaccurate_loc.Z + Bots_Shoot_Inaccuracy_Each_Distance_Unit * dist * rand_z
                                     char:LookAt(inaccurate_loc)
                                     weapon:PullUse(0)
+                                    if ZDEV_IsModeEnabled("ZDEV_DEBUG_BOTS_SHOOT") then
+                                        print("Bot " .. tostring(char:GetPlayer().ID) .. " Shoot", weapon:GetAmmoClip(), weapon:GetAmmoBag())
+                                    end
                                     --print(weapon:GetAmmoClip(), weapon:GetAmmoBag())
                                     -- 8, 8, 7, 6, ..., 1 ?
-                                    if (weapon:GetAmmoClip() <= 1) then
-                                        -- Fake Reload
-                                    --[[local clip_capacity = weapon:GetClipCapacity()
-                                        if weapon:GetAmmoBag() < clip_capacity then
-                                            clip_capacity = weapon:GetAmmoBag()
-                                        end
-                                        weapon:SetAmmoClip(clip_capacity)
-                                        weapon:SetAmmoBag(weapon:GetAmmoBag() - clip_capacity)]]--
-
-                                        if weapon:GetAmmoBag() > 0 then -- Prevent BOTReloading state from locking this func because never reloaded
-                                            if ZDEV_IsModeEnabled("ZDEV_DEBUG_BOTS_SHOOT") then
-                                                print("Bot " .. tostring(char:GetPlayer().ID) .. " Reload")
-                                            end
-
-                                            weapon:Reload()
-                                            char:SetValue("BOTReloading", true, false)
-                                        end
-                                    end
                                     return
                                 end
                             end
@@ -618,7 +614,9 @@ function BotCreateShootInterval(char)
 
     if char:GetValue("PlayerDown") then return end
 
-    char:SetValue("BOTShootInterval", Timer.SetInterval(BOTShootIntervalFunc,  weapon:GetCadence() * 1000, char), false)
+    char:SetValue("BOTShootInterval", Timer.SetInterval(function()
+        BOTShootIntervalFunc(char)
+    end,  weapon:GetCadence() * 1000), false)
     BOTShootIntervalFunc(char)
 end
 
@@ -675,9 +673,11 @@ VZ_EVENT_SUBSCRIBE("Weapon", "Reload", function(weapon, char, ammo_to_reload)
     if char then
         local ply = char:GetPlayer()
         if (ply and ply.BOT) then
-            char:SetValue("BOTReloading", nil, false)
+            if (weapon:GetAmmoClip() >= weapon:GetClipCapacity()) or weapon:GetAmmoBag() <= 0 then
+                char:SetValue("BOTReloading", nil, false)
+            end
             if ZDEV_IsModeEnabled("ZDEV_DEBUG_BOTS_SHOOT") then
-                print("Bot " .. tostring(ply.ID) .. " Reloaded " .. tostring(weapon:GetAmmoClip()) .. " / " .. tostring(weapon:GetAmmoBag()))
+                print("Bot " .. tostring(ply.ID) .. " Reloaded " .. tostring(weapon:GetAmmoClip()) .. " / " .. tostring(weapon:GetAmmoBag()), char:GetValue("BOTReloading"))
             end
             --print(weapon:GetAmmoBag())
         end
@@ -740,6 +740,7 @@ VZ_EVENT_SUBSCRIBE("Character", "RagdollModeChange", function(char, old_state, n
                             if char:GetHealth() > 0 then
                                 if not char:GetValue("PlayerDown") then
                                     char:SetRagdollMode(false)
+                                    --print("Bot char:SetRagdollMode(false)")
                                     RequestBotAction(ply)
                                 end
                             end
@@ -764,7 +765,7 @@ if Bots_Enabled then
                             if not v:GetValue("BOTShootInterval") then
                                 local weapon = v:GetPicked()
                                 if weapon then
-                                    if weapon:GetAmmoClip() < weapon:GetAmmoToReload() then
+                                    if (weapon:GetAmmoClip() < weapon:GetClipCapacity()) and weapon:GetAmmoBag() > 0 then
                                         local nearest_z, nearest_dist_sq = GetNearestEnemy(v:GetLocation())
                                         if (not nearest_z or nearest_dist_sq > Bots_Target_MaxDistance3D_Sq + 500*500) then
                                             weapon:Reload()
@@ -792,6 +793,31 @@ function BotWeaponSwitch(char, inv_weap)
         BotCreateShootInterval(char)
     end
 end
+
+-- Reload AFTER firing the bullet, if we can reload
+VZ_EVENT_SUBSCRIBE("Character", "Fire", function(char, weapon)
+    if not IsValid(char) then return end
+    local ply = char:GetPlayer()
+    if IsValid(ply) then
+        if IsValid(weapon) then
+            if char:GetPicked() ~= weapon then return end
+            if ply.BOT then
+                if (not char:IsInRagdollMode() and not char:GetValue("PlayerDown")) then
+                    if char:GetValue("BOTReloading") then return end
+                    if weapon:IsA(Melee) or weapon:IsA(Grenade) then return end
+                    if weapon:GetAmmoClip() <= 0 and weapon:GetAmmoBag() > 0 then
+                        weapon:Reload()
+                        char:SetValue("BOTReloading", true, false)
+
+                        if ZDEV_IsModeEnabled("ZDEV_DEBUG_BOTS_SHOOT") then
+                            print("Bot " .. tostring(char:GetPlayer().ID) .. " Reload after Fire")
+                        end
+                    end
+                end
+            end
+        end
+    end
+end)
 
 -- Switch weapon when no ammo
 VZ_EVENT_SUBSCRIBE("Character", "Fire", function(char, weapon)

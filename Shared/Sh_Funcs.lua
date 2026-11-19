@@ -394,3 +394,37 @@ function IsAssetPackLoaded(asset_pack)
     end
     return false
 end
+
+function VZ_ShouldModMenuLoad()
+    return (ZDEV_IsModeEnabled("ZDEV_MOD_MENU") or (Server_Admins_Enabled and Server_Admins_Mod_Menu))
+end
+Package.Export("VZ_ShouldModMenuLoad", VZ_ShouldModMenuLoad)
+
+-- Admin config being Shared is weird but very convenient right?
+-- bad admins exposed in 4K
+function VZ_HasAccessToModMenu(ply)
+    if not IsValid(ply) then return false end
+    if ZDEV_IsModeEnabled("ZDEV_MOD_MENU") then return true end
+    if not VZ_ShouldModMenuLoad() then return false end
+
+    return VZ_IsAdmin(ply)
+end
+Package.Export("VZ_HasAccessToModMenu", VZ_HasAccessToModMenu)
+
+if ZDEV_IsModeEnabled("ZDEV_DEBUG_VARARGS_TIMERS") then
+    local def_settimeout = Timer.SetTimeout
+    Timer.SetTimeout = function(f, time, ...)
+        if select("#", ...) > 0 then
+            print("Varargs SetTimeout", NanosTable.Dump(debug.getinfo(2, "nSl")))
+        end
+        return def_settimeout(f, time, ...)
+    end
+
+    local def_setinterval = Timer.SetInterval
+    Timer.SetInterval = function(f, time, ...)
+        if select("#", ...) > 0 then
+            print("Varargs SetInterval", NanosTable.Dump(debug.getinfo(2, "nSl")))
+        end
+        return def_setinterval(f, time, ...)
+    end
+end

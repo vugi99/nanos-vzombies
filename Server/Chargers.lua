@@ -266,7 +266,9 @@ function ChargeModule(sm, players_characters_in_zone)
     sm:SetValue("ChargingTrigger", sphere_trigger, false)
 
     if charger_data.force_keep_players_inside then
-        local update_players_pos_interval = Timer.SetInterval(UpdatePlayersInZoneSavedPos, 2500, sm)
+        local update_players_pos_interval = Timer.SetInterval(function()
+            UpdatePlayersInZoneSavedPos(sm)
+        end, 2500)
         Timer.Bind(update_players_pos_interval, sm)
         UpdatePlayersInZoneSavedPos(sm)
 

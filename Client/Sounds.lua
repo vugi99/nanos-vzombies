@@ -3,8 +3,6 @@ local Powerups_Loops_Sounds = {}
 
 PerksAmbSounds = {}
 
-WunderSounds = {}
-
 
 local down_sound = Sound(
     Vector(0, 0, 0),
@@ -40,10 +38,23 @@ lowhealth_sound:Stop()
 
 Playing_LowHealth_Sound = false
 
+function VZ_SetSoundOcclusion(sound, settings)
+    --print("VZ_SetSoundOcclusion", sound, IsValid(sound))
+    if not IsValid(sound) then return end
+    if sound:Is2D() then return end
+
+    settings = settings or Global_3D_Occlusion_Settings
+    sound:SetOcclusion(settings.enabled, settings.low_pass_frequency, settings.volume_multiplier)
+    --print(sound, "SetOcclusion", settings.enabled, settings.low_pass_frequency, settings.volume_multiplier)
+end
+Package.Export("VZ_SetSoundOcclusion", VZ_SetSoundOcclusion)
+
 function PlayVZSound(data_tbl, loc)
+    local sound_tbl
     if data_tbl then
         local _3D_Sound
         if data_tbl.basic_sound_tbl then
+            sound_tbl = data_tbl.basic_sound_tbl
             if data_tbl.basic_sound_tbl.falloff_distance then
                 _3D_Sound = Sound(
                     loc or Vector(),
@@ -72,6 +83,7 @@ function PlayVZSound(data_tbl, loc)
         end
 
         if data_tbl.random_sound_tbl then
+            sound_tbl = data_tbl.random_sound_tbl
             local sound_asset_to_play
             if data_tbl.random_sound_selected then
                 sound_asset_to_play = data_tbl.random_sound_selected
@@ -109,6 +121,8 @@ function PlayVZSound(data_tbl, loc)
         if IsValid(_3D_Sound) and IsValid(data_tbl.attachto) then
             _3D_Sound:AttachTo(data_tbl.attachto, AttachmentRule.SnapToTarget, "", 0)
         end
+
+        VZ_SetSoundOcclusion(_3D_Sound, sound_tbl and sound_tbl.occlusion_settings)
 
         return _3D_Sound
     end
@@ -185,6 +199,7 @@ VZ_EVENT_SUBSCRIBE("StaticMesh", "ValueChange", function(SM, key, value)
             true,
             SoundLoopMode.Forever
         )
+        VZ_SetSoundOcclusion(Powerups_Loops_Sounds[value], Powerup_Loop_Sound.occlusion_settings)
     end
 end)
 
@@ -262,6 +277,7 @@ function CreateZBehindInterval()
                         enemy_table.Behind_Sounds.radius,
                         enemy_table.Behind_Sounds.falloff_distance
                     )
+                    VZ_SetSoundOcclusion(z_behind_sound, enemy_table.Behind_Sounds.occlusion_settings)
                     z_behind_sound:AttachTo(nearest_zombie_for_sound)
 
                     Timer.ClearInterval(Z_Behind_Interval)
@@ -340,6 +356,7 @@ function CreateZAmbInterval()
                                 Random_Sounds_tbl.falloff_distance,
                                 AttenuationFunction.NaturalSound
                             )
+                            VZ_SetSoundOcclusion(z_amb_sound, Random_Sounds_tbl.occlusion_settings)
                             z_amb_sound:AttachTo(v)
 
                             v:SetValue("PlayingAmbSound", z_amb_sound, false)
@@ -424,6 +441,7 @@ Timer.SetInterval(function()
                             false,
                             SoundLoopMode.Forever
                         )
+                        VZ_SetSoundOcclusion(PerksAmbSounds[perk_name], PERKS_CONFIG[perk_name].Amb_Sound.occlusion_settings)
                     end
                 elseif PerksAmbSounds[perk_name] then
                     if PerksAmbSounds[perk_name]:IsValid() then
@@ -470,6 +488,7 @@ Timer.SetInterval(function()
                             false,
                             SoundLoopMode.Forever
                         )
+                        VZ_SetSoundOcclusion(PapAmbSound, Pack_A_Punch_Amb_Sound.occlusion_settings)
                     end
                 elseif PapAmbSound then
                     if PapAmbSound:IsValid() then
@@ -487,9 +506,25 @@ function WunderStopSound(loc)
     PlayVZSound({basic_sound_tbl=Wunderfizz_stop_Sound}, loc)
 end
 
+local function StopWunderSounds(sm)
+    if not IsValid(sm) then return end
+    local WunderSounds = sm:GetValue("WunderSounds")
+    if WunderSounds then
+        for i, v in ipairs(WunderSounds) do
+            if v:IsValid() then
+                v:Destroy()
+            end
+        end
+    end
+    sm:SetValue("WunderSounds", nil)
+end
+
 VZ_EVENT_SUBSCRIBE("StaticMesh", "ValueChange", function(sm, key, value)
     if key == "CanBuyWunder" then
         if value == false then
+            StopWunderSounds(sm)
+
+            local WunderSounds = {}
             WunderSounds[1] = Sound(
                 sm:GetLocation() + Wonderfizz_Bottles_Offset,
                 Wunderfizz_loop_Sound.asset,
@@ -504,6 +539,7 @@ VZ_EVENT_SUBSCRIBE("StaticMesh", "ValueChange", function(sm, key, value)
                 false,
                 SoundLoopMode.Forever
             )
+            VZ_SetSoundOcclusion(WunderSounds[1], Wunderfizz_loop_Sound.occlusion_settings)
 
             WunderSounds[2] = Sound(
                 sm:GetLocation() + Wonderfizz_Bottles_Offset,
@@ -519,16 +555,17 @@ VZ_EVENT_SUBSCRIBE("StaticMesh", "ValueChange", function(sm, key, value)
                 false,
                 SoundLoopMode.Forever
             )
+            VZ_SetSoundOcclusion(WunderSounds[2], Wunderfizz_vortex_Sound.occlusion_settings)
+
+            sm:SetValue("WunderSounds", WunderSounds)
         elseif value == nil then
-            if table_count(WunderSounds) > 0 then
-                WunderStopSound(sm:GetLocation() + Wonderfizz_Bottles_Offset)
-            end
-            for i, v in ipairs(WunderSounds) do
-                if v:IsValid() then
-                    v:Destroy()
+            local WunderSounds = sm:GetValue("WunderSounds")
+            if WunderSounds then
+                if table_count(WunderSounds) > 0 then
+                    WunderStopSound(sm:GetLocation() + Wonderfizz_Bottles_Offset)
                 end
             end
-            WunderSounds = {}
+            StopWunderSounds(sm)
         end
     end
 end)
@@ -537,12 +574,8 @@ VZ_EVENT_SUBSCRIBE("Prop", "ValueChange", function(prop, key, value)
     if key == "RealBottleData" then
         --print("Prop RealBottleData ValueChange")
         if value then
-            for i, v in ipairs(WunderSounds) do
-                if v:IsValid() then
-                    v:Destroy()
-                end
-            end
-            WunderSounds = {}
+            local sm = value[3]
+            StopWunderSounds(sm)
 
             WunderStopSound(prop:GetLocation())
 
@@ -555,18 +588,54 @@ function PlayStartRepairBarricade()
     PlayVZSound({basic_sound_tbl=Barricade_Start_Repair})
 end
 
-VZ_EVENT_SUBSCRIBE_REMOTE("ZombieGroundDirt", function(sound_path, loc)
+-- With Sound + Particle (x100) it takes about 0.5 of the frametime, so in normal gameplay (x1) about 5% of a frame performance.
+-- With 100 S+P I get about 5-10 FPS drop on the average framerate it seems okay, mainly due to the start stutter.
+
+-- With only sound (x100) it takes about 0.2 of frametime, so normal gameplay 2%
+function ZombieGroundDirt(sound_path, loc)
     PlayVZSound({random_sound_tbl=RANDOM_SOUNDS.spawn_dirt_sound, random_sound_selected=sound_path}, loc)
 
-    local zombie_g_dirt_particle = Particle(
-        loc,
-        Rotator(0, math.random(-180, 180), 0),
-        "vzombies-assets::PSN_Dirt_Surface",
-        true,
-        true
-    )
-    zombie_g_dirt_particle:SetScale(Enemies_Ground_Dirt_Scale)
-end)
+    if VZ_CL_Current_Settings["Zombie_Ground_Dirt_Particle"] then
+        local zombie_g_dirt_particle = Particle(
+            loc,
+            Rotator(0, math.random(-180, 180), 0),
+            "vzombies-assets::PSN_Dirt_Surface",
+            true,
+            true
+        )
+        zombie_g_dirt_particle:SetScale(Enemies_Ground_Dirt_Scale)
+    end
+end
+VZ_EVENT_SUBSCRIBE_REMOTE("ZombieGroundDirt", ZombieGroundDirt)
+
+if ZDEV_IsModeEnabled("ZDEV_COMMANDS") then
+    VZ_EVENT_SUBSCRIBE("Chat", "PlayerSubmit", function(text, ply)
+        --print("PlayerSubmit", text, ply)
+        if not IsValid(ply) then return end
+        if text ~= "/zgd_bench" then return end
+
+        local sound_path = VZ_RandomSound(RANDOM_SOUNDS.spawn_dirt_sound)
+
+        local start_loc = Vector(0, 0, 200)
+        local count = 100
+        local spacing = 150
+
+        local colsize = math.ceil(math.sqrt(count))
+
+        local start = os.clock()
+
+        for i=0, count-1 do
+            local tloc = start_loc + Vector((i%colsize)*spacing, (i/colsize)*spacing, 0)
+            ZombieGroundDirt(sound_path, tloc)
+        end
+
+        local endt = os.clock()
+
+        local bench_time = (endt-start)
+        local ft = Client.GetFrameTime()
+        print("ZombieGroundDirt (x" .. count .. ") took " .. bench_time .. "s", (bench_time/ft) .. " of the frame time")
+    end)
+end
 
 VZ_EVENT_SUBSCRIBE_REMOTE("JokerZombieSound", function(char)
     if char:IsValid() then

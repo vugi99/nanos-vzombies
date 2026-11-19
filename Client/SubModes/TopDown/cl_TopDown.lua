@@ -9,9 +9,7 @@ VZ_EVENT_SUBSCRIBE("Character", "Highlight", function(char, is_highlighted, ent)
                     local asset = ent:GetMesh()
                     local asset_split = split_str(asset, ":")
                     if asset_split[2] then
-                        InteractText(asset_split[2])
-                        InteractType = "TopDownWeapon"
-                        InteractThing = ent
+                        VZ_SetInteractingThing("TopDownWeapon", ent, asset_split[2])
                     end
                 elseif (InteractType == "TopDownWeapon" and InteractThing == ent) then
                     ResetInteractState()

@@ -130,6 +130,7 @@ RANDOM_SOUNDS = {
         volume = 1,
         radius = 400,
         falloff_distance = 2500,
+        occlusion_settings = {enabled=false},
     },
     spawn_dirt_sound = {
         base_ref = "vzombies-assets::spawn_dirt_",
@@ -343,6 +344,7 @@ Wunderfizz_leave_Sound = {
     volume = 1,
     radius = 400,
     falloff_distance = 2500,
+    occlusion_settings = {enabled=false},
 }
 
 Pack_A_Punch_Amb_Sound = {
@@ -350,6 +352,7 @@ Pack_A_Punch_Amb_Sound = {
     volume = 1,
     radius = 200,
     falloff_distance = 1500,
+    occlusion_settings = {enabled=false},
 }
 
 Wunderfizz_loop_Sound = {
@@ -357,6 +360,7 @@ Wunderfizz_loop_Sound = {
     volume = 0.5,
     radius = 400,
     falloff_distance = 2500,
+    occlusion_settings = {enabled=false},
 }
 
 Wunderfizz_vortex_Sound = {
@@ -364,6 +368,7 @@ Wunderfizz_vortex_Sound = {
     volume = 0.5,
     radius = 400,
     falloff_distance = 2500,
+    occlusion_settings = {enabled=false},
 }
 
 Wunderfizz_stop_Sound = {
@@ -371,6 +376,7 @@ Wunderfizz_stop_Sound = {
     volume = 0.5,
     radius = 400,
     falloff_distance = 2500,
+    occlusion_settings = {enabled=false},
 }
 
 Barricade_Start_Repair = {
@@ -388,6 +394,7 @@ Napalm_Fire_Ambient_Sound = {
     volume = 1,
     radius = 400,
     falloff_distance = 2500,
+    occlusion_settings = {enabled=false},
 }
 
 Player_Grief_Sound = {
@@ -415,4 +422,15 @@ Player_Pain_Sounds_Female = {
     "nanos-world::A_Female_06_Pain",
     "nanos-world::A_Female_07_Pain",
     "nanos-world::A_Female_08_Pain",
+}
+
+NotEnoughMoney_Sound = {
+    asset = "nanos-world::A_Invalid_Action",
+    volume = 1,
+}
+
+Global_3D_Occlusion_Settings = {
+    enabled = true,
+    low_pass_frequency = 800,
+    volume_multiplier = 0.9,
 }

@@ -72,7 +72,10 @@ function RoundFinished(reset_all, restart_game, ply_left)
                     ProtectedCall(function()
                         SpawnCharacterForPlayer(v, k)
                         if v.BOT then
-                            v:SetValue("BotAimPlayer", GetRandomPlayer():GetID(), true)
+                            local r_player = GetRandomPlayer()
+                            if IsValid(r_player) then
+                                v:SetValue("BotAimPlayer", r_player:GetID(), true)
+                            end
                             RequestBotAction(v)
                         end
                     end)
@@ -402,6 +405,8 @@ function StartRound()
         end
     end
 
+    Powerups_This_Round = 0
+
     SPAWN_ENEMY_INTERVAL_TIME = math.ceil(Enemies_Spawn_Cooldown/REMAINING_ENEMIES_TO_SPAWN)
     if SPAWN_ENEMY_INTERVAL_TIME < Enemies_Spawn_Interval_min_time_ms then
         SPAWN_ENEMY_INTERVAL_TIME = Enemies_Spawn_Interval_min_time_ms
@@ -516,7 +521,10 @@ VZ_EVENT_SUBSCRIBE_REMOTE("TogglePauseGame", function(ply)
                         if IsValid(char) then
                             if not char:GetValue("PlayerDown") then
                                 RequestBotAction(v)
-                                v:SetValue("BotAimPlayer", GetRandomPlayer():GetID(), true)
+                                local r_player = GetRandomPlayer()
+                                if IsValid(r_player) then
+                                    v:SetValue("BotAimPlayer", r_player:GetID(), true)
+                                end
                             end
                         end
                     end

@@ -166,7 +166,7 @@ function OpenActiveWunderfizz(char)
                 SM_Wunderfizzes[Active_Wunderfizz_ID].real_bottle:SetScale(Vector(0.01, 0.01, 0.01))
                 SM_Wunderfizzes[Active_Wunderfizz_ID].real_bottle:SetGravityEnabled(false)
                 SM_Wunderfizzes[Active_Wunderfizz_ID].real_bottle:SetGrabMode(GrabMode.Disabled)
-                SM_Wunderfizzes[Active_Wunderfizz_ID].real_bottle:SetValue("RealBottleData", {char:GetID(), perk_selected}, true)
+                SM_Wunderfizzes[Active_Wunderfizz_ID].real_bottle:SetValue("RealBottleData", {char:GetID(), perk_selected, SM_Wunderfizzes[Active_Wunderfizz_ID].body}, true)
 
                 Wunderfizz_Finished_Waiting_Timeout = Timer.SetTimeout(function()
                     ResetRunningWunderfizzStage2()

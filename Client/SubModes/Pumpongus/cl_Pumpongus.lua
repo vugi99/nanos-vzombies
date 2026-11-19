@@ -207,8 +207,7 @@ end
 function PPG_ClientCheckSabotaged(try_target)
     if IsValid(try_target) and try_target.GetValue then
         if try_target:GetValue("PPG_Last_Sabotaged_Time") then
-            InteractText("Buyable locked for " .. tostring(math.ceil((VZ_GetGamemodeConfigValue("Imposter_Sabotage_Duration_s") or 0) - ((GAME_TIMER_SECONDS or 0) - try_target:GetValue("PPG_Last_Sabotaged_Time")))) .. "s")
-            InteractThing = nil
+            VZ_SetInteractingThingOnly(nil, "Buyable locked for " .. tostring(math.ceil((VZ_GetGamemodeConfigValue("Imposter_Sabotage_Duration_s") or 0) - ((GAME_TIMER_SECONDS or 0) - try_target:GetValue("PPG_Last_Sabotaged_Time")))) .. "s")
         end
     end
 end

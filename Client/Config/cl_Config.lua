@@ -48,7 +48,7 @@ Chalks_Size = Vector(5, 41.1, 73)
 -- CLIENT SETTINGS CONFIG
 
 VZ_CL_Default_Settings = {
-    Zombies_Remaining_Showed = true,
+    Zombies_Remaining_Showed = false,
     Selected_Gamemode_Showed = true,
     Spectating_Player_Showed = true,
     Game_Time_Showed = true,
@@ -71,6 +71,7 @@ VZ_CL_Default_Settings = {
 
 
     Clientside_Gibs = true,
+    Zombie_Ground_Dirt_Particle = false, -- We mostly don't see it, and it takes some perf, especially that it spawns with the zombie, maybe when we have better game settings access I can enable it depending on particle setting.
 }
 VZ_CL_Current_Settings = {}
 VZ_CL_Current_Settings = TableDeepCopy(VZ_CL_Default_Settings)

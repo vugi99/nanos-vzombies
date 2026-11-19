@@ -9,6 +9,7 @@ MAX_PLAYERS = MAX_PLAYERS or 0
 Package.Require("Config/Config.lua")
 Package.Require("Config/sv_Config.lua")
 Package.Require("Sh_Funcs.lua")
+Package.Require("sv_Funcs.lua")
 Package.Require("CustomWeapons.lua")
 Package.Require("WonderWeapons.lua")
 Package.Require("Prepare_Loops.lua")
@@ -119,7 +120,7 @@ function LoadServerFiles()
     Package.Require("Bots.lua")
     Package.Require("Noise.lua")
 
-    if ZDEV_IsModeEnabled("ZDEV_MOD_MENU") then
+    if VZ_ShouldModMenuLoad() then
         Package.Require("Mod_Menu.lua")
     end
 
@@ -152,41 +153,30 @@ function LoadServerFiles()
     VZ_EVENT_CALL("Events", "VZOMBIES_GAMEMODE_LOADED")
 end
 
--- Patch out the environment to call his Package.Subscribe("Load") callback directly, cannot do it properly due to nanos regression
--- Note: this is awful, thanks to Syed
-local psub = Package.Subscribe
-local Package_Sub_Load_Call_Env = setmetatable({Package = setmetatable({Subscribe = function(event_name, cback, ...)
-    if event_name == "Load" then
-        return cback()
-    else
-        return psub(event_name, cback, ...)
-    end
-end}, {__index = Package})}, {__index = _ENV})
 
--- Note: Nanos 1.161 regression: Server.GetMap() returns "" on package reload all, the loading order loads the map package after vz.
-Package.Subscribe("Load", function()
-    --print(Server.GetMap())
-    if not MAP_CONFIG_LOADED then
-        local map_path = Server.GetMap()
-        --print(map_path)
-        if map_path then
-            local map_path_in_maps = "Server/Maps/" .. map_path .. ".lua"
-            local map_files = Package.GetFiles("Server/Maps", ".lua")
-            for i, v in ipairs(map_files) do
-                --print(v)
-                if v == map_path_in_maps then
-                    local succ, res = xpcall(Package.LoadFile, debug.traceback, v)
-                    if succ then
-                        res(Package_Sub_Load_Call_Env)
-                    end
-                    break
+if not MAP_CONFIG_LOADED then
+    local map_path = Server.GetMap()
+    --print(map_path)
+    if map_path then
+        local map_path_in_maps = "Server/Maps/" .. map_path .. ".lua"
+        local map_files = Package.GetFiles("Server/Maps", ".lua")
+        for i, v in ipairs(map_files) do
+            --print(v)
+            if v == map_path_in_maps then
+                local succ, res = xpcall(Package.LoadFile, debug.traceback, v)
+                if succ then
+                    res()
+                else
+                    Console.Error(res)
                 end
+                --print("okay")
+                break
             end
         end
-    else
-        Console.Warn("HotReload - Not supported, beware of bugs")
     end
-end)
+else
+    Console.Warn("HotReload - Not supported, beware of bugs")
+end
 
 
 Package.Subscribe("Load", function()

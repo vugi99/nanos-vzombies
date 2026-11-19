@@ -57,7 +57,9 @@ function RandomEnemyAttackAnim(enemy, enemy_type)
     if (enemy_table.Types[enemy_type].New_Attack_Anims) then
         on_tbl = enemy_table.Types[enemy_type].New_Attack_Anims
     end
-    return on_tbl[math.random(table_count(on_tbl))]
+    local selected = on_tbl[math.random(table_count(on_tbl))]
+    --print("RandomEnemyAttackAnim", enemy:GetValue("EnemyName"), enemy_type, NanosTable.Dump(selected))
+    return selected
 end
 
 function Calculate_Enemy_Health(enemy_table)
@@ -131,7 +133,7 @@ function SpawnEnemy(EnemyName, EnemyType)
 
             local spawn_location = selected_spawn.location + Vector(0, 0, 100)
             if (not is_ground_anim_disabled) then
-                spawn_location = selected_spawn.location - Vector(0, 0, 140)
+                spawn_location = selected_spawn.location - Vector(0, 0, 110)
             end
             --print("I guess it's from there", VZ_RandomSound(enemy_table.Death_Sounds))
 
@@ -219,8 +221,10 @@ function SpawnEnemy(EnemyName, EnemyType)
             if (enemy_table.Spawning_Config.type == "zombie_spawns" or enemy_table.Spawning_Config.type == "direct_zombie_spawns") then
                 if (not is_ground_anim_disabled) then
                     enemy:SetFlyingMode(true)
+                    enemy:SetCollision(CollisionType.NoCollision)
                     enemy:SetValue("GroundAnim", true, false)
-                    enemy:PlayAnimation(Enemy_Under_Ground_Animation.asset, AnimationSlotType.FullBody, false, 0, 0)
+                    enemy:PlayAnimation(Enemy_Under_Ground_Animation.asset, AnimationSlotType.FullBody, false, 0, Enemy_Under_Ground_Animation.blend_out_time)
+                    --print(enemy, "ground spawn", Enemy_Under_Ground_Animation.asset)
 
                     --local players_sound = GetPlayersInRadius(selected_spawn.location, RANDOM_SOUNDS.spawn_dirt_sound.falloff_distance)
                     --for k, v in pairs(players_sound) do
@@ -268,9 +272,11 @@ function EnemyOutGround(enemy, selected_spawn, selected_spawn_target, after_grou
 
     if after_ground_anim then
         enemy:SetValue("GroundAnim", nil, false)
-        enemy:StopAnimation(Enemy_Under_Ground_Animation.asset)
-        enemy:SetLocation(selected_spawn.location + Vector(0, 0, 97))
-        --zombie:SetGravityEnabled(true)
+        enemy:SetCollision(CollisionType.Normal)
+        --enemy:StopAnimation(Enemy_Under_Ground_Animation.asset)
+        local fw = selected_spawn.rotation:GetForwardVector()
+        enemy:SetLocation(selected_spawn.location + Vector(0, 0, 97) + fw*Enemy_Under_Ground_Animation.forward_offset) -- Make sure the zombie don't fall
+        --enemy:SetGravityEnabled(true)
         enemy:SetFlyingMode(false)
     end
 
@@ -417,7 +423,17 @@ function EnemyStartFollow(enemy, target_char)
     if enemy:GetLocation():DistanceSquared(target_char:GetLocation()) < enemy_table.Damage_At_Distance_sq then
         EnemyAttack(enemy)
     else
-        enemy:Follow(target_char, enemy_table.Acceptance_Radius*acceptance_r_mult, true, true, Enemy_Route_Update_ms / 1000)
+        local ar = enemy_table.Acceptance_Radius*acceptance_r_mult
+        local r_update = Enemy_Route_Update_ms / 1000
+        local target_proxy = target_char:GetValue("ProxyTargetPoint")
+        -- Try to not use TargetProxy next time
+        if target_proxy and (not enemy:GetValue("UsingTargetProxy")) and (math.random() <= Enemies_Use_Proxy_Chance) then
+            enemy:MoveTo(target_proxy, ar)
+            enemy:SetValue("UsingTargetProxy", true, false)
+        else
+            enemy:Follow(target_char, ar, true, true, r_update)
+            enemy:SetValue("UsingTargetProxy", nil, false)
+        end
         UpdateEnemyLookAt(enemy)
     end
 end
@@ -518,7 +534,9 @@ end
 function EnemyInitPlayerTarget(enemy)
     enemy:SetValue(
         "RefreshTargetInterval",
-        Timer.SetInterval(EnemyRefreshTarget, Enemies_Target_Refresh_ms, enemy),
+        Timer.SetInterval(function()
+            EnemyRefreshTarget(enemy)
+        end, Enemies_Target_Refresh_ms),
         false
     )
     EnemyRefreshTarget(enemy)
@@ -598,6 +616,8 @@ end
 function AttackBarricade(enemy, barricade, start)
     --print("AttackBarricade", enemy, barricade, start)
 
+    if not IsValid(enemy) then return end
+
     --print(NanosTable.Dump(debug.getinfo(2)))
     --print("AttackBarricade", start)
     local top_barricades = table_count(barricade.top.barricades)
@@ -605,10 +625,9 @@ function AttackBarricade(enemy, barricade, start)
         if start then
             enemy:SetValue(
                 "AttackBInterval",
-                Timer.SetInterval(AttackBarricade, GetEnemyTable(enemy).Damage_Barricade_Cooldown_ms,
-                enemy,
-                barricade,
-                false),
+                Timer.SetInterval(function()
+                    AttackBarricade(enemy, barricade, false)
+                end, GetEnemyTable(enemy).Damage_Barricade_Cooldown_ms),
                 false
             )
             enemy:SetValue(
@@ -673,6 +692,148 @@ function EnemyGetDamageAmount(enemy, target_char)
     end
 end
 
+function StopGrabCallback(enemy, char)
+    if IsValid(enemy) then
+        enemy:StopAnimation("vzombies-assets::AS_NAAT_Zombie_Grab_To_Wrestle")
+    end
+    if not IsValid(char) then return end
+    local ply = char:GetPlayer()
+    if (not char:GetValue("PlayerDown") and char:GetValue("PlayerGrabbedBy") and char:GetValue("PlayerGrabbedBy") == enemy) then
+        char:StopAnimation("vzombies-assets::AS_NAAT_Human_Grab_To_Wrestle")
+
+        if not IsValid(ply) then return end
+        if not ply.BOT then
+            char:SetInputEnabled(true)
+            char:SetCanAim(true)
+        else
+            RequestBotAction(ply)
+            local r_player = GetRandomPlayer()
+            if IsValid(r_player) then
+                ply:SetValue("BotAimPlayer", r_player:GetID(), true)
+            end
+        end
+        char:SetValue("PlayerGrabbedBy", nil, true)
+    end
+end
+
+function CustomGrabAttack(enemy, char, plychar_veh)
+    if not IsValid(enemy) then return end
+    if not enemy:GetValue("EnemyName") then return end
+    if enemy:GetHealth() <= 0 then return end
+    local enemy_table = GetEnemyTable(enemy)
+    if not enemy_table then return end
+    if not IsValid(char) then return end
+    if not char:GetValue("PlayerDown") then
+        local ply = char:GetPlayer()
+        if ply then
+            if not IsValid(plychar_veh) then
+                enemy:PlayAnimation("vzombies-assets::AS_NAAT_Zombie_Grab_To_Wrestle", AnimationSlotType.FullBody, true, 0.1, 0.1)
+                if not ply.BOT then
+                    char:SetInputEnabled(false)
+                    char:SetCanAim(false)
+                end
+                char:PlayAnimation("vzombies-assets::AS_NAAT_Human_Grab_To_Wrestle", AnimationSlotType.FullBody, true)
+
+                char:SetValue("PlayerGrabbedBy", enemy, true)
+
+                local l_at = VectorGetLookAt(char:GetLocation(), enemy:GetLocation())
+                char:SetRotation(Rotator(0, l_at.Yaw, 0))
+
+                CheckToStopBotReviveTimer(char, false)
+                if ply.BOT then
+                    BotResetTarget(ply)
+                    ply:SetValue("BotAimPlayer", nil, true)
+
+                    if char:GetValue("DoingAction") then
+                        --print("STOP MOVETO BOT")
+                        char:SetValue("DoingAction", nil, false)
+                        char:MoveTo(char:GetLocation(), 50)
+                    end
+                end
+                Timer.SetTimeout(function()
+                    StopGrabCallback(enemy, char)
+                end, enemy_table.Custom_Attack_Behavior.Grab_Time_ms)
+            else
+                char:LeaveVehicle()
+            end
+        end
+        return true
+    end
+end
+
+function EnemyAttackCallback(enemy, plychar, used_target_proxy)
+    if not IsValid(enemy) then return end
+    if enemy:GetHealth() <= 0 then return end
+    if not enemy:GetValue("EnemyName") then return end
+    local enemy_table = GetEnemyTable(enemy)
+    if not enemy_table then return end
+
+    local hits = 0
+    for k, v in pairs(PLAYING_PLAYERS) do
+        if IsValid(v) then
+            local char = v:GetControlledCharacter()
+            if (char and char:IsValid() and enemy:IsValid()) then
+                if not char:GetValue("PlayerDown") then
+                    local plychar_loc = char:GetLocation()
+                    local plychar_veh = char:GetVehicle()
+
+                    local dist_check_mult = 1
+                    if IsValid(plychar_veh) then
+                        dist_check_mult = plychar_veh:GetValue("Damage_Radius_sq_Mult")
+                    end
+
+                    local z_loc = enemy:GetLocation()
+                    --print(char:GetPlayer():GetAccountName(), plychar_loc:DistanceSquared(z_loc), enemy_table.Damage_At_Distance_sq*dist_check_mult)
+                    if (plychar_loc:DistanceSquared(z_loc) <= enemy_table.Damage_At_Distance_sq*dist_check_mult) then
+                        hits = hits + 1
+
+                        local rel = RelRot1(enemy:GetRotation().Yaw, VectorGetLookAt(enemy:GetLocation(), char:GetLocation()).Yaw)
+                        if (rel > -Enemies_Damage_Angle_LookAt and rel < Enemies_Damage_Angle_LookAt) then
+                            if enemy_table.Damage_Amount then
+                                local dm_amount = EnemyGetDamageAmount(enemy, char)
+                                if not IsValid(plychar_veh) then
+                                    char:ApplyDamage(dm_amount, "", DamageType.Punch)
+                                else
+                                    plychar_veh:ApplyDamage(dm_amount, "", DamageType.Punch)
+                                end
+                            end
+                            if enemy_table.Custom_Attack_Behavior then
+                                if enemy_table.Custom_Attack_Behavior.type == "grab" then
+                                    local b = CustomGrabAttack(enemy, char, plychar_veh)
+                                    if b then
+                                        break
+                                    end
+                                end
+                            end
+                        end
+                    end
+                end
+            end
+        end
+    end
+    if IsValid(plychar) then
+        if hits <= 0 then
+            if used_target_proxy then
+                plychar:SetValue("ProxyTargetAttackFails", plychar:GetValue("ProxyTargetAttackFails") + 1, false)
+
+                --print(plychar:GetPlayer():GetAccountName(), "ProxyTargetAttackFails", plychar:GetValue("ProxyTargetAttackFails"))
+
+                if plychar:GetValue("ProxyTargetAttackFails") >= Enemies_Misses_Proxy_Invalidate then
+                    plychar:SetValue("ProxyTargetAttackFails", 0, false)
+                    plychar:SetValue("ProxyTargetPoint", nil, false)
+                    plychar:SetValue("FailedToReach", 0, false)
+                    local ply = plychar:GetPlayer()
+                    if IsValid(ply) and (not ply:IsBeingDestroyed()) then
+                        Events.CallRemote("FailToReach_PointAround", ply, Reliability.Reliable)
+                    end
+                end
+            end
+        elseif used_target_proxy then
+            plychar:SetValue("ProxyTargetAttackFails", 0, false)
+        end
+    end
+end
+
 function EnemyAttack(enemy)
     local plychar = enemy:GetValue("Target")
     if (IsValid(plychar) and (not plychar:GetValue("PlayerDown"))) then
@@ -721,96 +882,9 @@ function EnemyAttack(enemy)
         if not plychar:GetPlayer():GetValue("MM_GodMode") then
             local enemy_table = GetEnemyTable(enemy)
             if enemy_table.Damage_Amount then
+                local used_target_proxy = enemy:GetValue("UsingTargetProxy")
                 Timer.SetTimeout(function()
-                    if enemy:IsValid() then
-                        if enemy:GetHealth() > 0 then
-                            for k, v in pairs(PLAYING_PLAYERS) do
-                                if v:IsValid() then
-                                    local char = v:GetControlledCharacter()
-                                    if (char and char:IsValid() and enemy:IsValid()) then
-                                        if not char:GetValue("PlayerDown") then
-                                            local plychar_loc = char:GetLocation()
-                                            local plychar_veh = char:GetVehicle()
-
-                                            local dist_check_mult = 1
-                                            if IsValid(plychar_veh) then
-                                                dist_check_mult = plychar_veh:GetValue("Damage_Radius_sq_Mult")
-                                            end
-
-                                            local z_loc = enemy:GetLocation()
-                                            --print(char:GetPlayer():GetAccountName(), plychar_loc:DistanceSquared(z_loc), enemy_table.Damage_At_Distance_sq*dist_check_mult)
-                                            if (plychar_loc:DistanceSquared(z_loc) <= enemy_table.Damage_At_Distance_sq*dist_check_mult) then
-                                                local rel = RelRot1(enemy:GetRotation().Yaw, VectorGetLookAt(enemy:GetLocation(), char:GetLocation()).Yaw)
-                                                if (rel > -Enemies_Damage_Angle_LookAt and rel < Enemies_Damage_Angle_LookAt) then
-                                                    if enemy_table.Damage_Amount then
-                                                        local dm_amount = EnemyGetDamageAmount(enemy, char)
-                                                        if not IsValid(plychar_veh) then
-                                                            char:ApplyDamage(dm_amount, "", DamageType.Punch)
-                                                        else
-                                                            plychar_veh:ApplyDamage(dm_amount, "", DamageType.Punch)
-                                                        end
-                                                    end
-                                                    if enemy_table.Custom_Attack_Behavior then
-                                                        if enemy_table.Custom_Attack_Behavior.type == "grab" then
-                                                            if not char:GetValue("PlayerDown") then
-                                                                local ply = char:GetPlayer()
-                                                                if ply then
-                                                                    if not plychar_veh then
-                                                                        enemy:PlayAnimation("vzombies-assets::AS_NAAT_Zombie_Grab_To_Wrestle", AnimationSlotType.FullBody, true, 0.1, 0.1)
-                                                                        if not ply.BOT then
-                                                                            char:SetInputEnabled(false)
-                                                                            char:SetCanAim(false)
-                                                                        end
-                                                                        char:PlayAnimation("vzombies-assets::AS_NAAT_Human_Grab_To_Wrestle", AnimationSlotType.FullBody, true)
-
-                                                                        char:SetValue("PlayerGrabbedBy", enemy, true)
-
-                                                                        local l_at = VectorGetLookAt(char:GetLocation(), enemy:GetLocation())
-                                                                        char:SetRotation(Rotator(0, l_at.Yaw, 0))
-
-                                                                        CheckToStopBotReviveTimer(char, false)
-                                                                        if ply.BOT then
-                                                                            BotResetTarget(ply)
-                                                                            ply:SetValue("BotAimPlayer", nil, true)
-
-                                                                            if char:GetValue("DoingAction") then
-                                                                                --print("STOP MOVETO BOT")
-                                                                                char:SetValue("DoingAction", nil, false)
-                                                                                char:MoveTo(char:GetLocation(), 50)
-                                                                            end
-                                                                        end
-                                                                        Timer.SetTimeout(function()
-                                                                            if enemy:IsValid() then
-                                                                                enemy:StopAnimation("vzombies-assets::AS_NAAT_Zombie_Grab_To_Wrestle")
-                                                                            end
-                                                                            if (char:IsValid() and not char:GetValue("PlayerDown") and char:GetValue("PlayerGrabbedBy") and char:GetValue("PlayerGrabbedBy") == enemy) then
-                                                                                char:StopAnimation("vzombies-assets::AS_NAAT_Human_Grab_To_Wrestle")
-                                                                                if not ply.BOT then
-                                                                                    char:SetInputEnabled(true)
-                                                                                    char:SetCanAim(true)
-                                                                                else
-                                                                                    RequestBotAction(ply)
-                                                                                    ply:SetValue("BotAimPlayer", GetRandomPlayer():GetID(), true)
-                                                                                end
-                                                                                char:SetValue("PlayerGrabbedBy", nil, true)
-                                                                            end
-                                                                        end, enemy_table.Custom_Attack_Behavior.Grab_Time_ms)
-                                                                    else
-                                                                        char:LeaveVehicle()
-                                                                    end
-                                                                end
-                                                                break
-                                                            end
-                                                        end
-                                                    end
-                                                end
-                                            end
-                                        end
-                                    end
-                                end
-                            end
-                        end
-                    end
+                    EnemyAttackCallback(enemy, plychar, used_target_proxy)
                 end, random_z_attack_anim[2])
             end
 
@@ -834,7 +908,8 @@ end
 
 function ZMoveCompleted(enemy, succeeded)
     if enemy:IsValid() then
-        --print("Enemy MoveCompleted", succeeded)
+        --print("Enemy MoveCompleted", succeeded, enemy:GetValue("Target_type"), enemy:GetValue("Target"), enemy:GetValue("UsingTargetProxy"))
+
         local target_type = enemy:GetValue("Target_type")
         if target_type == "barricade" then
             if succeeded then
@@ -876,6 +951,31 @@ function ZMoveCompleted(enemy, succeeded)
             end
         elseif target_type == "player" or target_type == "noise_player" then
             --print("MoveCompleted", "player", succeeded, zombie:GetValue("CanDamageTimeout"))
+
+            local plychar = enemy:GetValue("Target")
+            -- FailToReach Point around ask Only supports non-bots
+            if IsValid(plychar) then
+                local ply = plychar:GetPlayer()
+                if IsValid(ply) and (not ply.BOT) then
+                    if succeeded then
+                        -- A zombie managed to reach him, via direct follow or the target proxy, this means the route is valid and shouldn't be requested
+                        plychar:SetValue("FailedToReach", 0, false)
+                        -- A zombie managed to reach him without using the target proxy
+                        if not enemy:GetValue("UsingTargetProxy") then
+                            plychar:SetValue("ProxyTargetPoint", nil, false)
+                        end
+                    else
+                        plychar:SetValue("FailedToReach", plychar:GetValue("FailedToReach") + 1, false)
+                        --print(ply:GetAccountName(), "FailedToReach", plychar:GetValue("FailedToReach"))
+
+                        if plychar:GetValue("FailedToReach") >= Enemies_Fail_To_Reach_PlyChar_threshold then
+                            plychar:SetValue("FailedToReach", 0, false)
+                            Events.CallRemote("FailToReach_PointAround", ply, Reliability.Reliable)
+                        end
+                    end
+                end
+            end
+
             if (succeeded and not enemy:GetValue("CanDamageTimeout")) then
                 EnemyAttack(enemy)
             else
@@ -889,6 +989,15 @@ function ZMoveCompleted(enemy, succeeded)
     end
 end
 VZ_EVENT_SUBSCRIBE("Character", "MoveComplete", ZMoveCompleted)
+
+VZ_EVENT_SUBSCRIBE_REMOTE("FailToReach_Navigable_Response", function(ply, point_around)
+    if not IsValid(ply) then return end
+    local char = ply:GetControlledCharacter()
+    if not IsValid(char) then return end
+    if char:GetValue("PlayerDown") then return end
+    char:SetValue("FailedToReach", 0, false)
+    char:SetValue("ProxyTargetPoint", point_around, false)
+end)
 
 VZ_EVENT_SUBSCRIBE("Character", "Death", function(char, last_damage_taken, last_bone_damage, damage_type_reason, hit_from_direction, instigator, causer, ...)
     if char:GetValue("Enemy") == true then
@@ -960,7 +1069,8 @@ VZ_EVENT_SUBSCRIBE("Character", "Death", function(char, last_damage_taken, last_
             end
         end
 
-        SendEnemiesRemaining() -- TODO: Optimize remove this and listen for Character Death clientside?
+        -- Optimized, client calculates the remaining zombies on Death event
+        --SendEnemiesRemaining()
 
         if char:GetValue("EnemyType") == "napalm" then
             --print("Grenade")
@@ -1051,14 +1161,13 @@ function AttachRepackParticle(char, pap_repack_effect)
 end
 
 
-local DoubleDamage_Applied = false
 
 VZ_EVENT_SUBSCRIBE("Character", "TakeDamage", function(char, damage, bone, dtype, from_direction, instigator, causer)
     -- Error fired on Oct 27 2026 (1.166.0?), probably due to duplicated TakeDamage calls?
-    if not IsValid(char) then DoubleDamage_Applied = false; return end
-    if not (char:GetValue("Enemy") == true and damage > 0) then DoubleDamage_Applied = false; return end
-    if char:IsDead() then DoubleDamage_Applied = false; return end
-    --print("TakeDamage", char:GetValue("EnemyType"), damage, bone, dtype, from_direction, instigator, causer)
+    if not IsValid(char) then return end
+    if not (char:GetValue("Enemy") == true and damage > 0) then return end
+    if char:IsDead() then return end
+    --print("TakeDamage", char:GetValue("EnemyType"), char:GetHealth(), damage, bone, dtype, from_direction, instigator, causer)
 
     if causer then
         if causer:IsValid() then
@@ -1079,105 +1188,89 @@ VZ_EVENT_SUBSCRIBE("Character", "TakeDamage", function(char, damage, bone, dtype
         end
     end
     if instigator then
-        if not DoubleDamage_Applied then
-            AddMoney(instigator, Player_Zombie_Damage_Money)
-            local instig_char = instigator:GetControlledCharacter()
+        AddMoney(instigator, Player_Zombie_Damage_Money)
+        local instig_char = instigator:GetControlledCharacter()
 
-            local enemy_table = GetEnemyTable(char)
-            if (ACTIVE_POWERUPS.instakill and not enemy_table.Boss) then
-                local instigator_passed = instigator
-                if instigator.BOT then
-                    instigator_passed = "BOT"
+        local enemy_table = GetEnemyTable(char)
+        if (ACTIVE_POWERUPS.instakill and not enemy_table.Boss) then
+            local instigator_passed = instigator
+            if instigator.BOT then
+                instigator_passed = "BOT"
+            end
+            VZ_EVENT_CALL("Events", "VZ_ZombieKill_InstaKill", char, damage, bone, dtype, from_direction, instigator_passed, causer)
+
+            local zkills = instigator:GetValue("ZKills")
+            if zkills then
+                AddMoney(instigator, Player_Zombie_Kill_Money)
+                ZombieDie_SpawnRandomPowerup(char)
+                instigator:SetValue("ZKills", zkills + 1, false)
+                char:SetHealth(0)
+                KILL_COUNT = KILL_COUNT + 1
+            end
+        elseif (instig_char and not char:GetValue("ApplyingRepack")) then
+            if (not causer or (not causer:IsValid()) or ((not causer:IsA(Melee)) and (not causer:IsA(Grenade)) and (not IsAVehicle(causer)))) then
+                local perks = instig_char:GetValue("OwnedPerks")
+                local mult = 1
+                local added_damage = 0
+                if (perks and perks["doubletap"]) then
+                    mult = mult * PERKS_CONFIG.doubletap.MultDamage
                 end
-                VZ_EVENT_CALL("Events", "VZ_ZombieKill_InstaKill", char, damage, bone, dtype, from_direction, instigator_passed, causer)
+                local charInvID = GetCharacterInventory(instig_char)
+                if charInvID then
+                    local Inv = PlayersCharactersWeapons[charInvID]
+                    if Inv.selected_slot then
+                        for i, v in ipairs(Inv.weapons) do
+                            if (v.slot == Inv.selected_slot and v.weapon) then
+                                if v.weapon:IsValid() then
+                                    if v.pap then
+                                        mult = mult * Pack_a_punch_damage_mult
+                                        if v.pap_repack_effect then
+                                            if not instigator:GetValue("RepackCooldown") then
+                                                --print("PAP Repack Apply", v.pap_repack_effect)
 
-                local zkills = instigator:GetValue("ZKills")
-                if zkills then
-                    AddMoney(instigator, Player_Zombie_Kill_Money)
-                    ZombieDie_SpawnRandomPowerup(char)
-                    instigator:SetValue("ZKills", zkills + 1, false)
-                    char:SetHealth(0)
-                    KILL_COUNT = KILL_COUNT + 1
-                end
-            elseif (instig_char and not char:GetValue("ApplyingRepack")) then
-                if (not causer or (not causer:IsValid()) or ((not causer:IsA(Melee)) and (not causer:IsA(Grenade)) and (not IsAVehicle(causer)))) then
-                    local perks = instig_char:GetValue("OwnedPerks")
-                    local mult = 1
-                    local added_damage = 0
-                    if (perks and perks["doubletap"]) then
-                        mult = mult * PERKS_CONFIG.doubletap.MultDamage
-                    end
-                    local charInvID = GetCharacterInventory(instig_char)
-                    if charInvID then
-                        local Inv = PlayersCharactersWeapons[charInvID]
-                        if Inv.selected_slot then
-                            for i, v in ipairs(Inv.weapons) do
-                                if (v.slot == Inv.selected_slot and v.weapon) then
-                                    if v.weapon:IsValid() then
-                                        if v.pap then
-                                            mult = mult * Pack_a_punch_damage_mult
-                                            if v.pap_repack_effect then
-                                                if not instigator:GetValue("RepackCooldown") then
-                                                    --print("PAP Repack Apply", v.pap_repack_effect)
+                                                added_damage = added_damage + PAP_Repack_Config[v.pap_repack_effect].damage_on_target
+                                                instigator:SetValue("RepackCooldown", true, false)
+                                                Timer.SetTimeout(function()
+                                                    if instigator:IsValid() then
+                                                        instigator:SetValue("RepackCooldown", nil, false)
+                                                    end
+                                                end, PAP_Repack_Config[v.pap_repack_effect].cooldown_ms)
+                                                AttachRepackParticle(char, v.pap_repack_effect)
 
-                                                    added_damage = added_damage + PAP_Repack_Config[v.pap_repack_effect].damage_on_target
-                                                    instigator:SetValue("RepackCooldown", true, false)
-                                                    Timer.SetTimeout(function()
-                                                        if instigator:IsValid() then
-                                                            instigator:SetValue("RepackCooldown", nil, false)
-                                                        end
-                                                    end, PAP_Repack_Config[v.pap_repack_effect].cooldown_ms)
-                                                    AttachRepackParticle(char, v.pap_repack_effect)
-
-                                                    for k2, v2 in pairs(Character.GetAll()) do
-                                                        if (v2:IsValid() and v2:GetHealth() > 0 and v2 ~= char and v2:GetValue("Enemy")) then
-                                                            local dist_sq = v2:GetLocation():DistanceSquared(char:GetLocation())
-                                                            if (dist_sq > 0 and dist_sq < PAP_Repack_Config[v.pap_repack_effect].radius_sq) then
-                                                                v2:SetValue("ApplyingRepack", true, false)
-                                                                AttachRepackParticle(v2, v.pap_repack_effect)
-                                                                local ap_dam_instig = instigator
-                                                                if instigator.BOT then
-                                                                    ap_dam_instig = nil
-                                                                end
-                                                                v2:ApplyDamage(math.max(1, math.floor(PAP_Repack_Config[v.pap_repack_effect].damage_func(dist_sq) + 0.5)), bone, DamageType.Unknown, Vector(), ap_dam_instig, causer)
+                                                for k2, v2 in pairs(Character.GetAll()) do
+                                                    if (v2:IsValid() and v2:GetHealth() > 0 and v2 ~= char and v2:GetValue("Enemy")) then
+                                                        local dist_sq = v2:GetLocation():DistanceSquared(char:GetLocation())
+                                                        if (dist_sq > 0 and dist_sq < PAP_Repack_Config[v.pap_repack_effect].radius_sq) then
+                                                            v2:SetValue("ApplyingRepack", true, false)
+                                                            AttachRepackParticle(v2, v.pap_repack_effect)
+                                                            local ap_dam_instig = instigator
+                                                            if instigator.BOT then
+                                                                ap_dam_instig = nil
                                                             end
+                                                            v2:ApplyDamage(math.max(1, math.floor(PAP_Repack_Config[v.pap_repack_effect].damage_func(dist_sq) + 0.5)), bone, DamageType.Unknown, Vector(), ap_dam_instig, causer)
                                                         end
                                                     end
                                                 end
                                             end
                                         end
                                     end
-                                    break
                                 end
+                                break
                             end
                         end
                     end
-                    if mult > 1 then
-                        DoubleDamage_Applied = true
-                        --print("DOUBLE APPLY", (mult-1))
-                        if (char:GetHealth() - damage - damage * (mult-1) > 0) then
-                            RandomEnemyJoker(char)
-                        end
-                        if not instigator.BOT then
-                            --print(causer)
-                            if causer then
-                                char:ApplyDamage(damage * (mult-1) + added_damage, bone, dtype, from_direction, instigator, causer)
-                            else
-                                char:ApplyDamage(damage * (mult-1) + added_damage, bone, dtype, from_direction, instigator)
-                            end
-                        else
-                            char:ApplyDamage(damage * (mult-1) + added_damage, bone, dtype, from_direction, nil, causer)
-                        end
-                    elseif char:GetHealth() - damage > 0 then
+                end
+                if mult > 1 then
+                    --print("DOUBLE APPLY", char, mult)
+                    if (char:GetHealth() - damage - damage * (mult-1) > 0) then
                         RandomEnemyJoker(char)
                     end
+                    return mult
+                elseif char:GetHealth() - damage > 0 then
+                    RandomEnemyJoker(char)
                 end
             end
         end
-    end
-    if DoubleDamage_Applied then
-        DoubleDamage_Applied = false
-        --print("DoubleDamage_Applied = false so TakeDamage called 2 times, good")
     end
     if (char:IsValid() and char:GetValue("ApplyingRepack")) then
         char:SetValue("ApplyingRepack", nil, false)
@@ -1469,10 +1562,10 @@ if ZDEV_IsModeEnabled("ZDEV_COMMANDS") then
                                 end
                             end
                             SpawnEnemy(split_txt[2], boss_type)
+                            return
                         end
+                        Chat.SendMessage(ply, "/spawnenemy <EnemyName> (<EnemyType>)")
                     end
-                else
-                    Chat.SendMessage(ply, "/spawnenemy <EnemyName> (<EnemyType>)")
                 end
             end
         end
