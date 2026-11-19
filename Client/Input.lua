@@ -145,7 +145,9 @@ function VZ_InteractPress(simulated)
                         InteractAction(table.unpack(tbl_value))
                     end
                     INTERACT_HELD = false
-                elseif (not simulated) then
+                end
+
+                if (not InteractType) and (not simulated) then
                     -- If no Interact found, hold the Interact so when something is found we can directly interact with it
                     INTERACT_HELD = true
                 end

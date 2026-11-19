@@ -92,25 +92,52 @@ function VZ_GetITFirstPrioAvailable()
 end
 Package.Export("VZ_GetITFirstPrioAvailable", VZ_GetITFirstPrioAvailable)
 
-if VZ_GetFeatureValue("Map_Weapons", "can_interact") then
-    VZ_SetInteractTypePriority("MapWeapon", 13)
-    VZ_EVENT_SUBSCRIBE("Character", "Highlight", function(char, Highlight, ent)
-        if IsSelfCharacter(char) then
-            if ent then -- error when highlight ground weapons :thinking:
-                if not VZ_InteractTypeCheck("MapWeapon") then return end
-                local m_weap_id = ent:GetValue("MapWeaponID")
-                if m_weap_id then
-                    if Highlight then
-                        VZ_SetInteractingThing("MapWeapon", ent)
-                        BuyText(MAP_WEAPONS[m_weap_id].weapon_name .. " / Ammo", tostring(MAP_WEAPONS[m_weap_id].price) .. "$ / " .. tostring(math.floor(MAP_WEAPONS[m_weap_id].price * Weapons_Ammo_Price_Percentage / 100)) .. " $ / " .. tostring(Pack_a_punch_price))
-                    elseif (InteractType == "MapWeapon" and InteractThing == ent) then
-                        ResetInteractState()
-                    end
-                end
-            end
+
+VZ_SetInteractTypePriority("MapWeapon", 13)
+
+VZ_SetInteractTypePriority("Highlight", 14)
+VZ_EVENT_SUBSCRIBE("Character", "Highlight", function(char, Highlight, ent)
+    if not IsSelfCharacter(char) then return end
+    if not IsValid(ent) then -- error when highlight ground weapons :thinking:
+        return
+    end
+    local m_weap_id = ent:GetValue("MapWeaponID")
+    if m_weap_id then
+        if not VZ_GetFeatureValue("Map_Weapons", "can_interact") then return end
+        if not VZ_InteractTypeCheck("MapWeapon") then return end
+        if Highlight then
+            VZ_SetInteractingThing("MapWeapon", ent)
+            BuyText(MAP_WEAPONS[m_weap_id].weapon_name .. " / Ammo", tostring(MAP_WEAPONS[m_weap_id].price) .. "$ / " .. tostring(math.floor(MAP_WEAPONS[m_weap_id].price * Weapons_Ammo_Price_Percentage / 100)) .. " $ / " .. tostring(Pack_a_punch_price))
+        elseif (InteractType == "MapWeapon" and InteractThing == ent) then
+            ResetInteractState()
         end
-    end)
-end
+    else
+        if not VZ_InteractTypeCheck("Highlight") then return end
+        if Highlight then
+            VZ_SetInteractingThing("Highlight", ent, "")
+        elseif (ent == InteractThing) then
+            ResetInteractState()
+        end
+    end
+end)
+
+VZ_EVENT_SUBSCRIBE("Grenade", "Destroy", function(weap)
+    if InteractThing == weap then
+        ResetInteractState()
+    end
+end)
+
+VZ_EVENT_SUBSCRIBE("Melee", "Destroy", function(weap)
+    if InteractThing == weap then
+        ResetInteractState()
+    end
+end)
+
+VZ_EVENT_SUBSCRIBE("Weapon", "Destroy", function(weap)
+    if InteractThing == weap then
+        ResetInteractState()
+    end
+end)
 
 function InteractCheck(interact_type, loop_params, Interact_Check_Interval_ms, CheckFunc)
 
@@ -282,7 +309,7 @@ if VZ_GetFeatureValue("Revive", "can_interact") then
 end
 
 if VZ_GetFeatureValue("MysteryBox", "can_interact") then
-    VZ_SetInteractTypePriority("MapMBOX", 3)
+    VZ_SetInteractTypePriority("MapMBOX", 15)
     RegisterPreparedLoop("MysteryBoxes", StaticMesh, "CanBuyMysteryBox")
     InteractCheck("MapMBOX", {LoopFunc = PreparedLoops["MysteryBoxes"], check_is_valid = true}, MBOX_Interact_Check_Interval_ms, function(local_player, local_char, local_char_location, v)
         local can_buy_mbox = v:GetValue("CanBuyMysteryBox")
