@@ -26,7 +26,7 @@ function GooTPlaySound(goo, sound_tbl)
                 sound_tbl.falloff_distance or 3600,
                 AttenuationFunction.NaturalSound
             )
-            VZ_SetSoundOcclusion(goo_t_sound)
+            VZ_SetSoundOcclusion(goo_t_sound, sound_tbl.occlusion_settings)
 
             if sound_tbl.looping then
                 goo_t_sound:AttachTo(goo, AttachmentRule.SnapToTarget, "", 0)

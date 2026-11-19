@@ -50,9 +50,11 @@ end
 Package.Export("VZ_SetSoundOcclusion", VZ_SetSoundOcclusion)
 
 function PlayVZSound(data_tbl, loc)
+    local sound_tbl
     if data_tbl then
         local _3D_Sound
         if data_tbl.basic_sound_tbl then
+            sound_tbl = data_tbl.basic_sound_tbl
             if data_tbl.basic_sound_tbl.falloff_distance then
                 _3D_Sound = Sound(
                     loc or Vector(),
@@ -81,6 +83,7 @@ function PlayVZSound(data_tbl, loc)
         end
 
         if data_tbl.random_sound_tbl then
+            sound_tbl = data_tbl.random_sound_tbl
             local sound_asset_to_play
             if data_tbl.random_sound_selected then
                 sound_asset_to_play = data_tbl.random_sound_selected
@@ -119,7 +122,7 @@ function PlayVZSound(data_tbl, loc)
             _3D_Sound:AttachTo(data_tbl.attachto, AttachmentRule.SnapToTarget, "", 0)
         end
 
-        VZ_SetSoundOcclusion(_3D_Sound)
+        VZ_SetSoundOcclusion(_3D_Sound, sound_tbl and sound_tbl.occlusion_settings)
 
         return _3D_Sound
     end
@@ -196,7 +199,7 @@ VZ_EVENT_SUBSCRIBE("StaticMesh", "ValueChange", function(SM, key, value)
             true,
             SoundLoopMode.Forever
         )
-        VZ_SetSoundOcclusion(Powerups_Loops_Sounds[value])
+        VZ_SetSoundOcclusion(Powerups_Loops_Sounds[value], Powerup_Loop_Sound.occlusion_settings)
     end
 end)
 
@@ -274,7 +277,7 @@ function CreateZBehindInterval()
                         enemy_table.Behind_Sounds.radius,
                         enemy_table.Behind_Sounds.falloff_distance
                     )
-                    VZ_SetSoundOcclusion(z_behind_sound)
+                    VZ_SetSoundOcclusion(z_behind_sound, enemy_table.Behind_Sounds.occlusion_settings)
                     z_behind_sound:AttachTo(nearest_zombie_for_sound)
 
                     Timer.ClearInterval(Z_Behind_Interval)
@@ -353,7 +356,7 @@ function CreateZAmbInterval()
                                 Random_Sounds_tbl.falloff_distance,
                                 AttenuationFunction.NaturalSound
                             )
-                            VZ_SetSoundOcclusion(z_amb_sound)
+                            VZ_SetSoundOcclusion(z_amb_sound, Random_Sounds_tbl.occlusion_settings)
                             z_amb_sound:AttachTo(v)
 
                             v:SetValue("PlayingAmbSound", z_amb_sound, false)
@@ -438,7 +441,7 @@ Timer.SetInterval(function()
                             false,
                             SoundLoopMode.Forever
                         )
-                        VZ_SetSoundOcclusion(PerksAmbSounds[perk_name])
+                        VZ_SetSoundOcclusion(PerksAmbSounds[perk_name], PERKS_CONFIG[perk_name].Amb_Sound.occlusion_settings)
                     end
                 elseif PerksAmbSounds[perk_name] then
                     if PerksAmbSounds[perk_name]:IsValid() then
@@ -485,7 +488,7 @@ Timer.SetInterval(function()
                             false,
                             SoundLoopMode.Forever
                         )
-                        VZ_SetSoundOcclusion(PapAmbSound)
+                        VZ_SetSoundOcclusion(PapAmbSound, Pack_A_Punch_Amb_Sound.occlusion_settings)
                     end
                 elseif PapAmbSound then
                     if PapAmbSound:IsValid() then
@@ -536,7 +539,7 @@ VZ_EVENT_SUBSCRIBE("StaticMesh", "ValueChange", function(sm, key, value)
                 false,
                 SoundLoopMode.Forever
             )
-            VZ_SetSoundOcclusion(WunderSounds[1])
+            VZ_SetSoundOcclusion(WunderSounds[1], Wunderfizz_loop_Sound.occlusion_settings)
 
             WunderSounds[2] = Sound(
                 sm:GetLocation() + Wonderfizz_Bottles_Offset,
@@ -552,7 +555,7 @@ VZ_EVENT_SUBSCRIBE("StaticMesh", "ValueChange", function(sm, key, value)
                 false,
                 SoundLoopMode.Forever
             )
-            VZ_SetSoundOcclusion(WunderSounds[2])
+            VZ_SetSoundOcclusion(WunderSounds[2], Wunderfizz_vortex_Sound.occlusion_settings)
 
             sm:SetValue("WunderSounds", WunderSounds)
         elseif value == nil then

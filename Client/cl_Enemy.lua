@@ -60,7 +60,7 @@ function HandleEnemyType(char, value)
             SoundLoopMode.Forever
         )
         napalm_fire_sound:AttachTo(char, AttachmentRule.SnapToTarget, "", 0)
-        VZ_SetSoundOcclusion(napalm_fire_sound)
+        VZ_SetSoundOcclusion(napalm_fire_sound, Napalm_Fire_Ambient_Sound.occlusion_settings)
     end
 end
 

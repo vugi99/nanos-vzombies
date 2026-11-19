@@ -14,6 +14,7 @@ PERKS_CONFIG = {
             volume = 1,
             radius = 200,
             falloff_distance = 1500,
+            occlusion_settings = {enabled=false},
         },
     },
     quick_revive = {
@@ -30,6 +31,7 @@ PERKS_CONFIG = {
             volume = 1,
             radius = 200,
             falloff_distance = 1500,
+            occlusion_settings = {enabled=false},
         },
     },
     doubletap = {
@@ -45,6 +47,7 @@ PERKS_CONFIG = {
             volume = 1,
             radius = 200,
             falloff_distance = 1500,
+            occlusion_settings = {enabled=false},
         },
     },
     three_gun = {
@@ -59,6 +62,7 @@ PERKS_CONFIG = {
             volume = 1,
             radius = 200,
             falloff_distance = 1500,
+            occlusion_settings = {enabled=false},
         },
     },
     stamin_up = {
@@ -74,6 +78,7 @@ PERKS_CONFIG = {
             volume = 1,
             radius = 200,
             falloff_distance = 1500,
+            occlusion_settings = {enabled=false},
         },
     },
     speed_cola = {
@@ -89,6 +94,7 @@ PERKS_CONFIG = {
             volume = 1,
             radius = 200,
             falloff_distance = 1500,
+            occlusion_settings = {enabled=false},
         },
     },
 }

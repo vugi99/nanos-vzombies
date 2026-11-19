@@ -211,7 +211,7 @@ function OpenActiveMysteryBox(char)
         end, Mystery_box_weapon_time * 1000),
     }
     OpenedMBoxNewFakeWeapon()
-    Events.BroadcastRemote("OpenMBOXSound", Reliability.Reliable, SM_MysteryBoxes[Active_MysteryBox_ID].mbox:GetLocation())
+    Events.BroadcastRemote("OpenMBOXSound", Reliability.Reliable, SM_MysteryBoxes[Active_MysteryBox_ID].mbox:GetLocation() + Vector(0, 0, 60))
 end
 
 VZ_EVENT_SUBSCRIBE_REMOTE("BuyMBOX", function(ply, mbox)
